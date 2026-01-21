@@ -43,6 +43,16 @@ require heavy model files. Run tests with:
 pytest -q
 ```
 
+Real OCR expert
+- The repository includes a real OCR expert (`ocr_expert_real`) that uses the
+	Tesseract binary via `pytesseract` and `Pillow` to extract text, bounding
+	boxes, and per-word confidence scores.
+- Requirements: install system Tesseract (e.g., `apt install tesseract-ocr` on
+	Debian/Ubuntu, or download installer for Windows) and Python packages from
+	`requirements.txt`.
+- The OCR unit test is skipped when Tesseract or `pytesseract` is not available.
+
+
 **Repository layout**
 - `ocrchestra/orchestrator.py` — orchestrator skeleton, model loader, JSON-only plan generation
 - `ocrchestra/schemas/execution_plan_schema.json` — minimal execution plan JSON Schema

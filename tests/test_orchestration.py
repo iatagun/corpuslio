@@ -1,16 +1,16 @@
-"""Unit tests for `ocrchestra.orchestrator` using mocked transformers/torch.
+"""Integration-style unit test for the orchestrator pipeline.
 
-These tests inject lightweight fake `transformers` and `torch` modules
-into `sys.modules` before importing the orchestrator so tests run
-without heavy dependencies.
+Mocks the HF model output to produce a known plan and verifies that the
+orchestrator routes and executes expert stubs deterministically.
 """
 import importlib
 import sys
-import types
-import json
+from pathlib import Path
 
 
 def make_fake_torch_module():
+    import types
+
     mod = types.ModuleType("torch")
 
     class Device:
@@ -34,7 +34,11 @@ def make_fake_torch_module():
 
     mod.manual_seed = manual_seed
 
-    # minimal no_grad context manager
+    # minimal backends/cudnn stub
+    backends = types.SimpleNamespace()
+    backends.cudnn = types.SimpleNamespace(deterministic=False, benchmark=True)
+    mod.backends = backends
+
     class _NoGrad:
         def __enter__(self):
             return None
@@ -44,15 +48,13 @@ def make_fake_torch_module():
 
     mod.no_grad = lambda: _NoGrad()
 
-    # minimal backends/cudnn stub
-    backends = types.SimpleNamespace()
-    backends.cudnn = types.SimpleNamespace(deterministic=False, benchmark=True)
-    mod.backends = backends
-
     return mod
 
 
 def make_fake_transformers_module(json_response: dict):
+    import types
+    import json
+
     mod = types.ModuleType("transformers")
 
     class FakeTokenizer:
@@ -77,7 +79,6 @@ def make_fake_transformers_module(json_response: dict):
             return Input()
 
         def decode(self, token_ids, skip_special_tokens=True):
-            # Return compact JSON; orchestrator will attempt to find '{'
             return json.dumps(json_response, ensure_ascii=False)
 
     class FakeModel:
@@ -89,9 +90,6 @@ def make_fake_transformers_module(json_response: dict):
             return self
 
         def generate(self, input_ids, **kwargs):
-            # Return a sequence containing prompt tokens + generated tokens
-            # For simplicity, use small integer token ids; the tokenizer.decode
-            # in tests ignores the token ids and returns the expected JSON.
             return [[0, 1, 2]]
 
     mod.AutoTokenizer = FakeTokenizer
@@ -101,42 +99,37 @@ def make_fake_transformers_module(json_response: dict):
     return mod
 
 
-def test_orchestrator_generates_valid_plan(tmp_path, monkeypatch):
-    # Build a fake expected plan that conforms to schema
+def test_orchestrator_pipeline_runs(tmp_path):
+    # Plan includes an OCR step and a verification step
     expected_plan = {
         "version": "1.0",
         "plan": [
-            {"step_id": "s1", "action": "ocr.detect", "parameters": {"pages": [1]}},
+            {"step_id": "s1", "action": "ocr.detect", "parameters": {}},
+            {"step_id": "s2", "action": "verify.plan", "parameters": {}},
         ],
-        "metadata": {"document_id": "fake-1"},
+        "metadata": {"document_id": "doc-pipeline"},
     }
 
-    # Inject fake torch and transformers modules before importing orchestrator
+    # Inject fakes
     sys.modules["torch"] = make_fake_torch_module()
     sys.modules["transformers"] = make_fake_transformers_module(expected_plan)
 
-    # Ensure repository root is on sys.path so `ocrchestra` package can be imported
-    from pathlib import Path
-
+    # Ensure package import works
     repo_root = Path(__file__).resolve().parent.parent
     sys.path.insert(0, str(repo_root))
 
-    # Now import the orchestrator module fresh
     orch_mod = importlib.import_module("ocrchestra.orchestrator")
     importlib.reload(orch_mod)
 
     Orchestrator = orch_mod.Orchestrator
-
     orch = Orchestrator()
-
-    # Loading model should use the fake from_pretrained implementations
     orch.load_model(str(tmp_path))
 
-    # Generate a plan
-    metadata = {"document_id": "fake-1"}
-    plan = orch.generate_plan(metadata)
+    metadata = {"document_id": "doc-pipeline", "pages": [1]}
+    result = orch.execute_pipeline(metadata)
 
-    assert isinstance(plan, dict)
-    assert plan["version"] == expected_plan["version"]
-    assert plan["metadata"]["document_id"] == "fake-1"
-    assert isinstance(plan["plan"], list)
+    assert "plan" in result
+    assert "route" in result
+    assert "expert_outputs" in result
+    # OCR expert should have been called
+    assert "ocr_expert" in result["expert_outputs"]

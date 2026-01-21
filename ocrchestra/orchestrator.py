@@ -113,7 +113,10 @@ class Orchestrator:
 
         prompt = self._build_prompt(metadata)
 
-        input_ids = self.tokenizer(prompt, return_tensors="pt").input_ids.to(self.device)
+        tokenized = self.tokenizer(prompt, return_tensors="pt")
+        # preserve original input ids (pre-moved to device) to calculate prompt length
+        original_input_ids = getattr(tokenized, "input_ids")
+        input_ids = original_input_ids.to(self.device)
 
         # Deterministic generation: no sampling, temperature=0
         gen_kwargs = dict(
@@ -130,15 +133,33 @@ class Orchestrator:
         with torch.no_grad():
             outputs = self.model.generate(input_ids, **gen_kwargs)
 
-        text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-        # The prompt itself may be included in the decoded text for some models; try to extract trailing JSON.
-        # Heuristic: find the first '{' after the prompt content.
+        # Attempt to decode only the newly-generated tokens (not the prompt tokens)
         try:
-            # If the model repeats the prompt, we attempt to find the JSON object in the generated text
-            json_start = text.find("{")
-            if json_start != -1:
-                candidate = text[json_start:]
+            input_len = original_input_ids.shape[-1]
+        except Exception:
+            # Fallback: assume prompt length is unknown and decode full sequence
+            input_len = None
+
+        # outputs may be a tensor-like or list; normalize to indexable sequence
+        generated_part = None
+        try:
+            seq = outputs[0]
+            if input_len is None:
+                generated_part = seq
+            else:
+                # if seq supports slicing
+                generated_part = seq[input_len:]
+        except Exception:
+            generated_part = outputs
+
+        text = self.tokenizer.decode(generated_part, skip_special_tokens=True)
+
+        # Extract JSON object from text (heuristic): find first '{' and last '}'
+        try:
+            start = text.find("{")
+            end = text.rfind("}")
+            if start != -1 and end != -1 and end > start:
+                candidate = text[start : end + 1]
             else:
                 candidate = text
 
@@ -159,6 +180,48 @@ class Orchestrator:
 
         return plan
 
+    def execute_pipeline(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate a plan, route it, and execute stateless experts deterministically.
+
+        Returns a dict containing the plan, routing decision, and expert outputs.
+        """
+        # Step 1: generate plan (LLM-driven, validated)
+        plan = self.generate_plan(metadata)
+
+        # Step 2: routing
+        try:
+            from ocrchestra.experts import routing_expert
+        except Exception:
+            raise RuntimeError("Routing expert not available in environment")
+
+        routing_input = {"document_id": metadata.get("document_id"), "plan": plan.get("plan", [])}
+        route_result = routing_expert.execute(routing_input)
+
+        # Step 3: execute experts in sequence
+        expert_outputs = {}
+        # Import known experts; keep imports local to avoid startup cost
+        from ocrchestra.experts import ocr_expert, verifier_expert, post_correction_expert
+
+        for expert_name in route_result.get("route", []):
+            if expert_name == "ocr_expert":
+                inp = {"document_id": metadata.get("document_id"), "pages": metadata.get("pages", [1]), "plan": plan.get("plan", [])}
+                out = ocr_expert.execute(inp)
+                expert_outputs.setdefault("ocr_expert", []).append(out)
+            elif expert_name == "verifier_expert":
+                inp = {"document_id": metadata.get("document_id"), "plan": plan.get("plan", [])}
+                out = verifier_expert.execute(inp)
+                expert_outputs.setdefault("verifier_expert", []).append(out)
+            elif expert_name == "post_correction_expert":
+                # Pass last OCR output if available
+                last_ocr = expert_outputs.get("ocr_expert", [{}])[-1]
+                out = post_correction_expert.execute(last_ocr)
+                expert_outputs.setdefault("post_correction_expert", []).append(out)
+            else:
+                # Unknown expert: record as skipped
+                expert_outputs.setdefault("unknown", []).append({"expert": expert_name, "status": "skipped"})
+
+        return {"plan": plan, "route": route_result, "expert_outputs": expert_outputs}
+
 
 if __name__ == "__main__":
     # Simple local dry-run example (will attempt to load model if path provided)
@@ -176,3 +239,11 @@ if __name__ == "__main__":
         print(json.dumps(plan, indent=2, ensure_ascii=False))
     except Exception as e:
         logger.error("Plan generation failed: %s", e)
+    
+        # Example: run the generated plan through routing and experts (if experts available)
+        try:
+            result = orch.execute_pipeline(sample_metadata)
+            print("\nExecution result:\n", json.dumps(result, indent=2, ensure_ascii=False))
+        except Exception:
+            # ignore if experts not present; this is only a demo entrypoint
+            pass

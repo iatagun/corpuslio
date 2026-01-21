@@ -1,0 +1,10 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["document_id", "verified", "findings"],
+  "properties": {
+    "document_id": {"type": "string"},
+    "verified": {"type": "boolean"},
+    "findings": {"type": "array"}
+  }
+}

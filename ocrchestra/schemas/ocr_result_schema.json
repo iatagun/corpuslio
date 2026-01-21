@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["document_id", "ocr"],
+  "properties": {
+    "document_id": {"type": "string"},
+    "pages": {"type": "array", "items": {"type": "integer"}},
+    "ocr": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["page", "text", "confidence", "bounding_boxes"],
+        "properties": {
+          "page": {"type": "integer"},
+          "text": {"type": "string"},
+          "confidence": {"type": "number"},
+          "bounding_boxes": {"type": "array"}
+        }
+      }
+    }
+  }
+}

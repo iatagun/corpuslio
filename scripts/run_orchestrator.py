@@ -22,8 +22,8 @@ def main():
 
     orch = Orchestrator()
     orch.load_model(args.model_path)
-    plan = orch.generate_plan(metadata)
-    print(json.dumps(plan, indent=2, ensure_ascii=False))
+    result = orch.execute_pipeline(metadata)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":
