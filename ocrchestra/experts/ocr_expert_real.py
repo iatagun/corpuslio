@@ -29,8 +29,9 @@ except Exception as exc:  # pragma: no cover - dependency
     Image = None
 
 try:
-    import pytesseract
-    from pytesseract import Output
+    import importlib
+    pytesseract = importlib.import_module("pytesseract")
+    Output = getattr(pytesseract, "Output", None)
 except Exception:
     pytesseract = None
     Output = None
@@ -51,11 +52,16 @@ class OCRRealExpert(ExpertBase):
 
     @staticmethod
     def _load_image_from_base64(b64: str):
+        if Image is None:
+            raise RuntimeError("Pillow is not available: install the 'pillow' package to load images.")
         data = base64.b64decode(b64)
         return Image.open(io.BytesIO(data))
 
     @staticmethod
-    def _process_image(img: "Image.Image") -> Dict[str, Any]:
+    def _process_image(img: Any) -> Dict[str, Any]:
+        # Ensure pytesseract and Output are available (helps static type checkers and runtime)
+        assert pytesseract is not None and Output is not None, "pytesseract or Output not available; install 'pytesseract' and ensure import succeeded."
+
         # Use pytesseract to produce word-level boxes + confidences
         data = pytesseract.image_to_data(img, output_type=Output.DICT)
 
@@ -101,6 +107,7 @@ class OCRRealExpert(ExpertBase):
 
         if image_paths:
             for idx, p in enumerate(image_paths, start=1):
+                assert Image is not None, "Pillow is not available: install the 'pillow' package to load images."
                 img = Image.open(p)
                 out = OCRRealExpert._process_image(img)
                 results.append({"page": idx, "text": out["text"], "confidence": out["confidence"], "bounding_boxes": out["bounding_boxes"]})

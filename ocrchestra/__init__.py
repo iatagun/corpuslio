@@ -1,5 +1,12 @@
 """OCRchestra package initializer.
 
-Minimal package for the orchestrator and future expert modules.
+Ollama-based document processing orchestra system.
 """
-__all__ = ["orchestrator"]
+from .ollama_client import OllamaClient
+from .ollama_orchestrator import OllamaOrchestrator, process_file
+
+__all__ = [
+    "OllamaClient",
+    "OllamaOrchestrator",
+    "process_file",
+]

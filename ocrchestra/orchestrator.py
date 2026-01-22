@@ -20,11 +20,7 @@ from typing import Any, Dict, Optional
 
 import jsonschema
 import torch
-from transformers import (
-    AutoModelForCausalLM,
-    AutoModelForSeq2SeqLM,
-    AutoTokenizer,
-)
+from .model_loader import ModelLoader
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -43,42 +39,23 @@ class Orchestrator:
     """
 
     def __init__(self, device: Optional[torch.device] = None):
-        self.model = None
+        self.loader = ModelLoader(device=device)
         self.tokenizer = None
         self.model_path: Optional[str] = None
         self.device = device or (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
 
-    def load_model(self, model_path: str) -> None:
-        """Load tokenizer and model from a local path.
+    def load_model(self, model_path: str, **hf_kwargs) -> None:
+        """Load model via `ModelLoader`.
 
-        model_path: Local filesystem path where the model files exist.
-
-        This method uses `local_files_only=True` to ensure no network calls.
-        It attempts to load a causal LM first, then a seq2seq LM.
+        Accepts additional HuggingFace `from_pretrained` kwargs such as
+        `device_map`, `load_in_8bit`, `trust_remote_code`, and `torch_dtype`.
+        This enforces local-only loading unless overridden by explicit args.
         """
         self.model_path = model_path
-        logger.info("Loading tokenizer from %s (local_files_only=True)", model_path)
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
-
-        # Try causal LM first, then seq2seq. Do not attempt downloads.
-        try:
-            logger.info("Attempting to load causal LM model from %s", model_path)
-            self.model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
-        except Exception:
-            logger.info("Causal LM load failed; attempting to load seq2seq model from %s", model_path)
-            self.model = AutoModelForSeq2SeqLM.from_pretrained(model_path, local_files_only=True)
-
-        # Move to device (CPU-first; GPU optional)
-        self.model.to(self.device)
-        # Make deterministic where possible
-        if torch.cuda.is_available():
-            try:
-                torch.backends.cudnn.deterministic = True
-                torch.backends.cudnn.benchmark = False
-            except Exception:
-                pass
-
-        logger.info("Model loaded and moved to %s", self.device)
+        # Forward HF loader kwargs to ModelLoader (e.g., device_map, load_in_8bit)
+        self.loader.load(model_path, **hf_kwargs)
+        self.tokenizer = self.loader.tokenizer
+        logger.info("Model loaded via ModelLoader from %s", model_path)
 
     def _build_prompt(self, metadata: Dict[str, Any]) -> str:
         # Minimal instruction: produce JSON matching execution plan schema, nothing else.
@@ -108,60 +85,22 @@ class Orchestrator:
 
         Raises ValueError on validation/parsing errors.
         """
-        if self.model is None or self.tokenizer is None:
+        if self.loader.model is None or self.loader.tokenizer is None:
             raise ValueError("Model not loaded. Call `load_model(model_path)` first.")
 
         prompt = self._build_prompt(metadata)
 
-        tokenized = self.tokenizer(prompt, return_tensors="pt")
-        # preserve original input ids (pre-moved to device) to calculate prompt length
-        original_input_ids = getattr(tokenized, "input_ids")
-        input_ids = original_input_ids.to(self.device)
-
-        # Deterministic generation: no sampling, temperature=0
-        gen_kwargs = dict(
-            max_new_tokens=max_new_tokens,
-            do_sample=False,
-            temperature=0.0,
-            num_beams=1,
-            eos_token_id=self.tokenizer.eos_token_id if self.tokenizer.eos_token_id is not None else self.tokenizer.pad_token_id,
-        )
-
-        # Set a seed for repeatability on CPU
-        torch.manual_seed(42)
-
-        with torch.no_grad():
-            outputs = self.model.generate(input_ids, **gen_kwargs)
-
-        # Attempt to decode only the newly-generated tokens (not the prompt tokens)
-        try:
-            input_len = original_input_ids.shape[-1]
-        except Exception:
-            # Fallback: assume prompt length is unknown and decode full sequence
-            input_len = None
-
-        # outputs may be a tensor-like or list; normalize to indexable sequence
-        generated_part = None
-        try:
-            seq = outputs[0]
-            if input_len is None:
-                generated_part = seq
-            else:
-                # if seq supports slicing
-                generated_part = seq[input_len:]
-        except Exception:
-            generated_part = outputs
-
-        text = self.tokenizer.decode(generated_part, skip_special_tokens=True)
+        # Use ModelLoader to generate deterministic text
+        raw_text = self.loader.generate_text(prompt, max_new_tokens=max_new_tokens, temperature=0.0)
 
         # Extract JSON object from text (heuristic): find first '{' and last '}'
         try:
-            start = text.find("{")
-            end = text.rfind("}")
+            start = raw_text.find("{")
+            end = raw_text.rfind("}")
             if start != -1 and end != -1 and end > start:
-                candidate = text[start : end + 1]
+                candidate = raw_text[start : end + 1]
             else:
-                candidate = text
+                candidate = raw_text
 
             plan = json.loads(candidate)
         except Exception as exc:
@@ -185,8 +124,19 @@ class Orchestrator:
 
         Returns a dict containing the plan, routing decision, and expert outputs.
         """
-        # Step 1: generate plan (LLM-driven, validated)
-        plan = self.generate_plan(metadata)
+        # Step 1: generate plan (LLM-driven, validated) unless a plan is provided
+        if "plan" in metadata:
+            provided = metadata.get("plan")
+            # If user provided a plain list of steps, wrap into the expected
+            # execution-plan dict so downstream code can use `plan.get("plan", [])`.
+            if isinstance(provided, list):
+                plan = {"version": "1.0", "plan": provided, "metadata": metadata}
+            elif isinstance(provided, dict):
+                plan = provided
+            else:
+                raise ValueError("Provided metadata 'plan' must be a list or dict")
+        else:
+            plan = self.generate_plan(metadata)
 
         # Step 2: routing
         try:
@@ -239,11 +189,11 @@ if __name__ == "__main__":
         print(json.dumps(plan, indent=2, ensure_ascii=False))
     except Exception as e:
         logger.error("Plan generation failed: %s", e)
-    
-        # Example: run the generated plan through routing and experts (if experts available)
-        try:
-            result = orch.execute_pipeline(sample_metadata)
-            print("\nExecution result:\n", json.dumps(result, indent=2, ensure_ascii=False))
-        except Exception:
-            # ignore if experts not present; this is only a demo entrypoint
-            pass
+
+    # Example: run the generated plan through routing and experts (if experts available)
+    try:
+        result = orch.execute_pipeline(sample_metadata)
+        print("\nExecution result:\n", json.dumps(result, indent=2, ensure_ascii=False))
+    except Exception:
+        # ignore if experts not present; this is only a demo entrypoint
+        pass

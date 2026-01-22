@@ -1,0 +1,49 @@
+name: Download Model & Smoke Test
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  download-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt huggingface_hub
+
+      - name: Download model snapshot
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+          repo = os.getenv('MODEL_REPO','Qwen/Qwen2.5-7b-instruct')
+          out = os.getenv('MODEL_DIR','models/qwen2.5-7b-instruct')
+          token = os.environ.get('HF_TOKEN')
+          if token is None:
+              raise SystemExit('HF_TOKEN secret is required to download private models')
+          print('Downloading', repo, '->', out)
+          snapshot_download(repo_id=repo, local_dir=out, use_auth_token=token)
+          print('Downloaded')
+          PY
+
+      - name: Smoke-load model via ModelLoader
+        run: |
+          python - <<'PY'
+          from ocrchestra.model_loader import ModelLoader
+          import os
+          p = os.getenv('MODEL_DIR','models/qwen2.5-7b-instruct')
+          loader = ModelLoader()
+          loader.load(p)
+          print('ModelLoader loaded model at', p)
+          PY

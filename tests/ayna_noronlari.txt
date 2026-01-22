@@ -1,0 +1,72 @@
+--- Sayfa 1 ---
+Ayna Nöronları
+Özet: Ayna Nöronları ve Sosyal Etkileşimdeki
+Rolü
+Ayna nöronları, bir başkasının hareketini gözlemlediğimizde veya kendimiz
+gerçekleştirdiğimizde aktif hale gelen beyin hücreleridir. Bu inceleme, ayna nöronlarının
+insan davranışı, empati, öğrenme ve sosyal etkileşim üzerindeki etkilerini ele alır. Ayna
+nöronları ilk kez maymunlarda keşfedilmiş ve insanlarda da benzer işlevlere sahip oldukları
+gösterilmiştir. Literatürde, bu nöronların empati, taklit ve sosyal öğrenme süreçlerinde kritik
+bir rol oynadığı, özellikle bebeklerin dil öğrenimi ve sosyal bağlar geliştirmesinde etkili
+olduğu görülmektedir.
+Rizzolatti, G., & Craighero, L. (2004) çalışmaları, ayna nöronlarının temelini atarken,
+Iacoboni (2009) gibi araştırmacılar bu sistemin empati ve taklit ile ilişkisini genişletmiştir.
+Ayrıca, Gallese ve Goldman (1998), ayna nöronları ile simülasyon teorisini ilişkilendirerek
+zihinselleştirme süreçlerine katkıda bulunmuşlardır. Diğer çalışmalar (Oberman &
+Ramachandran, 2007) ayna nöronlarının sosyal bilişteki işlevlerini incelemiş, özellikle otizm
+gibi nörogelişimsel bozukluklarda bu sistemin işlevsel farklılıklar gösterdiğini ortaya
+koymuştur (Dapretto et al., 2006).
+Ayna nöronları sadece fiziksel hareketler değil, duygusal ve duyusal deneyimlerin de taklit
+edilmesinde rol oynamaktadır (Keysers & Gazzola, 2009). Bu bulgular, insanlarda dil
+öğrenme, okuma ve sosyal davranışların gelişimi açısından ayna nöronlarının önemini
+vurgulamaktadır. Otizm gibi durumlarda ise ayna nöronlarının düzgün çalışmaması, sosyal
+etkileşimlerde zorluklara yol açabilmektedir.
+Sonuç olarak, ayna nöronları, insan sosyal bilişi ve öğrenme süreçlerinde merkezi bir role
+sahiptir. Bu sistem, bireyler arasında duygusal ve davranışsal uyumu sağlamakta, empatiyi
+kolaylaştırmakta ve öğrenme süreçlerine katkıda bulunmaktadır.
+Kaynakça
+1. [Rizzolatti, G., & Craighero, L. (2004)]
+(https://www.annualreviews.org/doi/abs/10.1146/annurev.neuro.27.070203.144230)
+. The mirror-neuron system. Annual Review of Neuroscience, 27, 169-192. Özeti Ayna
+nöronlarının keşfini ve temel işlevlerini açıklayan klasik bir çalışma. Rizzolatti, ayna
+nöronlarının kuramsal temelini atan en önemli araştırmacılardan biri.
+2. Iacoboni, M. (2009). Imitation, empathy, and mirror neurons. Annual Review of
+Psychology, 60, 653-670.
+
+--- Sayfa 2 ---
+Ayna nöronlarının empati ve taklit üzerindeki rolünü tartışan önemli bir inceleme.
+Sosyal etkileşim ve öğrenme süreçlerine dair perspektifler sunar.
+3. Gallese, V., & Goldman, A. (1998). Mirror neurons and the simulation theory of mind-
+reading. Trends in Cognitive Sciences, 2(12), 493-501.
+Ayna nöronları ile zihin okuma ve simülasyon teorisi arasındaki bağlantıları ele alan
+kuramsal bir makale.
+4. Oberman, L. M., & Ramachandran, V. S. (2007). The simulating social mind: The role
+of the mirror neuron system and simulation in social cognition. Psychological Bulletin,
+133(2), 310-327.
+Ayna nöronlarının sosyal biliş üzerindeki rolünü geniş bir bakış açısıyla ele alan
+derleme.
+5. Keysers, C., & Gazzola, V. (2009). Expanding the mirror: Vicarious activity for actions,
+emotions, and sensations. Current Opinion in Neurobiology, 19(6), 666-671.
+Ayna nöronlarının yalnızca hareketleri değil, aynı zamanda duyguları ve duyusal bilgiyi
+de işlediğini tartışan çalışma.
+6. Marshall, P. J., & Meltzoff, A. N. (2011). Neural mirroring mechanisms and imitation in
+human infants. Philosophical Transactions of the Royal Society B: Biological Sciences,
+366(1567), 1818-1827.
+Ayna nöronlarının bebeklerde taklit ve öğrenme süreçleri üzerindeki etkisini inceleyen
+bir çalışma.
+7. Dapretto, M., et al. (2006). Understanding emotions in others: Mirror neuron
+dysfunction in children with autism spectrum disorders. Nature Neuroscience, 9(1), 28-
+30.
+Otizm spektrum bozukluğu olan bireylerde ayna nöronları ve sosyal biliş arasındaki
+ilişkiyi tartışan önemli bir araştırma.
+8. Heyes, C. (2010). Where do mirror neurons come from? Neuroscience & Biobehavioral
+Reviews, 34(4), 575-583.
+Ayna nöronlarının evrimsel kökenlerini inceleyen kritik bir çalışma.
+9. Glenberg, A. M. (2011). How reading comprehension is embodied and why that
+matters. International Electronic Journal of Elementary Education, 4(1), 5-18.
+Dil öğrenme ve okuma süreçlerinde ayna nöronlarının olası işlevlerini inceleyen bir
+çalışma.
+10. Catmur, C. (2015). Understanding intentions from actions: Direct perception, inference,
+and the roles of mirror and mentalizing systems. Consciousness and Cognition, 36,
+426-433.
+Ayna nöronları ve zihinselleştirme sistemleri arasındaki farkları tartışan makale.

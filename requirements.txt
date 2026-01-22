@@ -1,5 +1,6 @@
-transformers>=4.0.0
-torch
 jsonschema
 pytest
-
+requests
+PyMuPDF
+python-docx
+Pillow
