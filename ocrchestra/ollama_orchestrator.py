@@ -74,6 +74,12 @@ class OllamaOrchestrator:
             self._docx_expert = DOCXExpert()
         return self._docx_expert
 
+    @property
+    def corpus_expert(self):
+        """Lazy load Corpus expert."""
+        from .experts.corpus_expert import CorpusExpert
+        return CorpusExpert(ollama_client=self.client)
+
     def detect_format(self, file_path: Union[str, Path]) -> str:
         """Detect file format.
 
@@ -140,6 +146,57 @@ class OllamaOrchestrator:
         if output_path and result.get("success"):
             self._save_output(result.get("text", ""), output_path)
             result["output_file"] = str(output_path)
+
+        return result
+
+    def process_and_export(
+        self,
+        file_path: Union[str, Path],
+        export_format: str = "label_studio",
+        output_path: Optional[Union[str, Path]] = None,
+        analyze: bool = True
+    ) -> Dict[str, Any]:
+        """Process file and export to specific format.
+
+        Args:
+            file_path: Input file path
+            export_format: Export format (default: label_studio)
+            output_path: Output file path for the export
+            analyze: Whether to run linguistic analysis (POS/Lemma)
+
+        Returns:
+            Result dictionary
+        """
+        # 1. Extract Text
+        result = self.process(file_path)
+        if not result.get("success"):
+            return result
+
+        text = result.get("text", "")
+        
+        # 2. Clean Text
+        cleaned_text = self.corpus_expert.clean_text(text)
+        
+        # 3. Analyze (Optional)
+        analysis = []
+        if analyze:
+            logger.info("Linguistic analysis started (this may take time)...")
+            analysis = self.corpus_expert.analyze_with_ollama(cleaned_text)
+
+        # 4. Export
+        if export_format == "label_studio":
+            if not output_path:
+                # Default: input_name.json
+                p = Path(file_path)
+                output_path = p.with_suffix(".json")
+            
+            self.corpus_expert.export_to_label_studio(
+                text=cleaned_text, 
+                analysis=analysis, 
+                output_path=str(output_path)
+            )
+            result["export_file"] = str(output_path)
+            result["analysis_count"] = len(analysis)
 
         return result
 

@@ -1,0 +1,427 @@
+[
+  {
+    "data": {
+      "text": "Ayna Nöronları Özet: Ayna Nöronları ve Sosyal Etkileşimdeki Rolü Ayna nöronları, bir başkasının hareketini gözlemlediğimizde veya kendimiz gerçekleştirdiğimizde aktif hale gelen beyin hücreleridir . Bu inceleme, ayna nöronlarının insan davranışı, empati, öğrenme ve sosyal etkileşim üzerindeki etkilerini ele alır . Ayna nöronları ilk kez maymunlarda keşfedilmiş ve insanlarda da benzer işlevlere sahip oldukları gösterilmiştir . Literatürde, bu nöronların empati, taklit ve sosyal öğrenme süreçlerinde kritik bir rol oynadığı, özellikle bebeklerin dil öğrenimi ve sosyal bağlar geliştirmesinde etkili olduğu görülmektedir.",
+      "meta_info": {
+        "word_count": 79,
+        "analysis_count": 59
+      },
+      "analysis": [
+        {
+          "word": "Ayna",
+          "lemma": "Ayna",
+          "pos": "PROPN",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "Nöronları",
+          "lemma": "Nöron",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "Özet",
+          "lemma": "Özet",
+          "pos": "NOUN",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": "Ayna",
+          "lemma": "Ayna",
+          "pos": "PROPN",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "Nöronları",
+          "lemma": "Nöron",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "ve",
+          "lemma": "",
+          "pos": "CONJ",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "Sosyal",
+          "lemma": "Sosyal",
+          "pos": "ADJ",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "Etkileşimdeki",
+          "lemma": "Etkileşim",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "Rolu",
+          "lemma": "Röl",
+          "pos": "NOUN",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": "Ayna",
+          "lemma": "Ayna",
+          "pos": "PROPN",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "nöronları",
+          "lemma": "Nöron",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": ", ",
+          "lemma": "",
+          "pos": "PUNCT",
+          "confidence": 1.0,
+          "needs_review": false
+        },
+        {
+          "word": "bir",
+          "lemma": "Bir",
+          "pos": "DET",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "başkasının",
+          "lemma": "Başkası",
+          "pos": "PRON",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "hareketini",
+          "lemma": "Hareket",
+          "pos": "NOUN",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": "görmüştüğümüzde",
+          "lemma": "",
+          "pos": "ADV",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "ya",
+          "lemma": "Ya",
+          "pos": "CONJ",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "kendimiz",
+          "lemma": "Kendimiz",
+          "pos": "PRON",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "gerçekleştirdiğimizde",
+          "lemma": "",
+          "pos": "ADV",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "aktif",
+          "lemma": "Aktif",
+          "pos": "ADJ",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "hale",
+          "lemma": "Hale",
+          "pos": "NOUN",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": "gelen",
+          "lemma": "Gelen",
+          "pos": "VERB",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "beyin",
+          "lemma": "Beyin",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "hücreleridir",
+          "lemma": "",
+          "pos": "VERB",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": ", ",
+          "lemma": "",
+          "pos": "PUNCT",
+          "confidence": 1.0,
+          "needs_review": false
+        },
+        {
+          "word": "Bu",
+          "lemma": "Bu",
+          "pos": "DET",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "inceleme",
+          "lemma": "İnceleme",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": ", ",
+          "lemma": "",
+          "pos": "PUNCT",
+          "confidence": 1.0,
+          "needs_review": false
+        },
+        {
+          "word": "ayna",
+          "lemma": "Ayna",
+          "pos": "PROPN",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "nöronları",
+          "lemma": "Nöron",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": ", ",
+          "lemma": "",
+          "pos": "PUNCT",
+          "confidence": 1.0,
+          "needs_review": false
+        },
+        {
+          "word": "insan",
+          "lemma": "Insan",
+          "pos": "NOUN",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "davranışı",
+          "lemma": "Davranış",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": ", ",
+          "lemma": "",
+          "pos": "PUNCT",
+          "confidence": 1.0,
+          "needs_review": false
+        },
+        {
+          "word": "empati",
+          "lemma": "Empati",
+          "pos": "NOUN",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": ", ",
+          "lemma": "",
+          "pos": "PUNCT",
+          "confidence": 1.0,
+          "needs_review": false
+        },
+        {
+          "word": "öğrenme",
+          "lemma": "Öğrenme",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "ve",
+          "lemma": "",
+          "pos": "CONJ",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "sosyal",
+          "lemma": "Sosyal",
+          "pos": "ADJ",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "etkileşim",
+          "lemma": "Etkileşim",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": ", ",
+          "lemma": "",
+          "pos": "PUNCT",
+          "confidence": 1.0,
+          "needs_review": false
+        },
+        {
+          "word": "taklit",
+          "lemma": "Taklit",
+          "pos": "NOUN",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": ", ",
+          "lemma": "",
+          "pos": "PUNCT",
+          "confidence": 1.0,
+          "needs_review": false
+        },
+        {
+          "word": "sosyal",
+          "lemma": "Sosyal",
+          "pos": "ADJ",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "öğrenme",
+          "lemma": "Öğrenme",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "şekilde",
+          "lemma": "",
+          "pos": "ADV",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "kritik",
+          "lemma": "Kritik",
+          "pos": "ADJ",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "bir",
+          "lemma": "Bir",
+          "pos": "DET",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "rol",
+          "lemma": "Rol",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "oynadığı",
+          "lemma": "",
+          "pos": "VERB",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "eski",
+          "lemma": "Eski",
+          "pos": "ADJ",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "bebeklerin",
+          "lemma": "Bebek",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "dil",
+          "lemma": "Dil",
+          "pos": "NOUN",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": "öğrenimi",
+          "lemma": "",
+          "pos": "VERB",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "ve",
+          "lemma": "",
+          "pos": "CONJ",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "sosyal",
+          "lemma": "Sosyal",
+          "pos": "ADJ",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "bağlar",
+          "lemma": "Bağlar",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "geliştirmesinde",
+          "lemma": "",
+          "pos": "ADV",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "efektif",
+          "lemma": "Etkilift",
+          "pos": "ADJ",
+          "confidence": 0.9,
+          "needs_review": false
+        }
+      ]
+    },
+    "predictions": []
+  }
+]

@@ -53,6 +53,11 @@ def main():
         default="http://localhost:11434",
         help="Ollama sunucu adresi",
     )
+    parser.add_argument(
+        "--label-studio",
+        action="store_true",
+        help="Label Studio için JSON export al (derlem formatı)",
+    )
 
     args = parser.parse_args()
 
@@ -93,17 +98,35 @@ def main():
     # Process single file or directory
     if input_path.is_file():
         output_path = args.output
-        result = orch.process(input_path, output_path)
+        
+        # Check for Label Studio export
+        if getattr(args, "label_studio", False):
+            print(f"\nİşleniyor ve Label Studio için hazırlanıyor: {input_path}")
+            result = orch.process_and_export(
+                input_path, 
+                export_format="label_studio",
+                output_path=output_path,
+                analyze=True # Always analyze for LS export per plan
+            )
+        else:
+            result = orch.process(input_path, output_path)
         
         if result.get("success"):
             print(f"\n✓ İşlendi: {result['file']}")
             print(f"  Format: {result['format']}")
+            
             if "output_file" in result:
                 print(f"  Çıkış: {result['output_file']}")
-            print(f"\n--- Metin ---\n")
-            print(result.get("text", "")[:2000])
-            if len(result.get("text", "")) > 2000:
-                print("\n... (metin kısaltıldı)")
+            
+            if "export_file" in result:
+                print(f"  Label Studio Export: {result['export_file']}")
+                print(f"  Analiz edilen kelime/öğe: {result.get('analysis_count', 0)}")
+                
+            if not getattr(args, "label_studio", False):
+                print(f"\n--- Metin ---\n")
+                print(result.get("text", "")[:2000])
+                if len(result.get("text", "")) > 2000:
+                    print("\n... (metin kısaltıldı)")
         else:
             print(f"\n✗ Hata: {result.get('error')}", file=sys.stderr)
             return 1
@@ -111,6 +134,9 @@ def main():
     elif input_path.is_dir():
         # Process all supported files in directory
         output_dir = Path(args.output) if args.output else None
+        
+        # If no output dir specified but using LS export, output to same dir
+        # ... logic for batch LS export is complex, keeping simple for now
         
         files = []
         for ext in orch.SUPPORTED_FORMATS.keys():
@@ -122,7 +148,15 @@ def main():
 
         print(f"\n{len(files)} dosya işlenecek...\n")
         
-        results = orch.process_batch(files, output_dir)
+        results = []
+        for f in files:
+             # Serial processing for batch to allow better logging
+             if getattr(args, "label_studio", False):
+                 print(f"Extracting & Analyzing: {f.name}...")
+                 res = orch.process_and_export(f, export_format="label_studio", analyze=True)
+             else:
+                 res = orch.process(f, output_dir / f.stem + ".txt" if output_dir else None)
+             results.append(res)
         
         success_count = sum(1 for r in results if r.get("success"))
         print(f"\n=== Sonuç ===")
