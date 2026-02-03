@@ -1,0 +1,322 @@
+[
+  {
+    "data": {
+      "text": "Sabahın erken saatlerinde, henüz şehrin gürültüsü tam olarak uyanmamışken, pencere aralığından sızan ışık masanın üzerindeki dağınıklığı yumuşak bir gölgeyle örtüyordu . Dün yarım bırakılmış bir defter, kapağı açık bir kitap ve ne işe yaradığı artık hatırlanmayan bir kalem, sanki kendi aralarında sessiz bir anlaşma yapmış gibiydi.",
+      "meta_info": {
+        "word_count": 46,
+        "analysis_count": 44
+      },
+      "analysis": [
+        {
+          "word": "Sabahın",
+          "lemma": "Sabah",
+          "pos": "NOUN",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "erken",
+          "lemma": "erkem",
+          "pos": "ADJ",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "saatlerinde",
+          "lemma": "saa",
+          "pos": "NOUN",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": "yetenek",
+          "lemma": "yetenek",
+          "pos": "NOUN",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "şehrin",
+          "lemma": "şehr",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "gürültüsü",
+          "lemma": "gürültü",
+          "pos": "NOUN",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": "tam",
+          "lemma": "tam",
+          "pos": "ADJ",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "sıra",
+          "lemma": "sır",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "uyanmamışken",
+          "lemma": "uyma",
+          "pos": "VERB",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "pencere",
+          "lemma": "pençe",
+          "pos": "NOUN",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": "aralığından",
+          "lemma": "aralık",
+          "pos": "ADP",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "sızan",
+          "lemma": "sız",
+          "pos": "VERB",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "ışık",
+          "lemma": "ışık",
+          "pos": "NOUN",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": "masanın",
+          "lemma": "masa",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "üstü",
+          "lemma": "üst",
+          "pos": "ADP",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "dağınıklığı",
+          "lemma": "dağıntı",
+          "pos": "NOUN",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": "yumuşak",
+          "lemma": "yumuşak",
+          "pos": "ADJ",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "bir",
+          "lemma": "bir",
+          "pos": "DET",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "gölgeyle",
+          "lemma": "gölge",
+          "pos": "NOUN",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": "örtüyordu",
+          "lemma": "ortu",
+          "pos": "VERB",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "Dün",
+          "lemma": "Dün",
+          "pos": "CONJ",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "yarım",
+          "lemma": "yarım",
+          "pos": "ADJ",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "bırakılmış",
+          "lemma": "bıraktırm",
+          "pos": "VERB",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "bir",
+          "lemma": "bir",
+          "pos": "DET",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "defter",
+          "lemma": "defter",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "kapağı",
+          "lemma": "kapak",
+          "pos": "NOUN",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": "açık",
+          "lemma": "açık",
+          "pos": "ADJ",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "bir",
+          "lemma": "bir",
+          "pos": "DET",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "kitap",
+          "lemma": "kitap",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "ve",
+          "lemma": "ve",
+          "pos": "CONJ",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "ne",
+          "lemma": "ne",
+          "pos": "PRON",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": "ise",
+          "lemma": "ise",
+          "pos": "PRON",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "yaradığı",
+          "lemma": "yar",
+          "pos": "VERB",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "artık",
+          "lemma": "artık",
+          "pos": "ADJ",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "hatırlanmayan",
+          "lemma": "hatır",
+          "pos": "NOUN",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": "bir",
+          "lemma": "bir",
+          "pos": "DET",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "kalem",
+          "lemma": "kalem",
+          "pos": "NOUN",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "sanki",
+          "lemma": "sanki",
+          "pos": "CONJ",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "fendi",
+          "lemma": "fendi",
+          "pos": "PRON",
+          "confidence": 0.5,
+          "needs_review": true
+        },
+        {
+          "word": "aralarında",
+          "lemma": "arada",
+          "pos": "ADP",
+          "confidence": 0.7,
+          "needs_review": false
+        },
+        {
+          "word": "sessiz",
+          "lemma": "sessiz",
+          "pos": "ADJ",
+          "confidence": 0.8,
+          "needs_review": false
+        },
+        {
+          "word": "bir",
+          "lemma": "bir",
+          "pos": "DET",
+          "confidence": 0.9,
+          "needs_review": false
+        },
+        {
+          "word": "anlaşma",
+          "lemma": "anlaşma",
+          "pos": "NOUN",
+          "confidence": 0.6,
+          "needs_review": false
+        },
+        {
+          "word": "mahşup",
+          "lemma": "mahşup",
+          "pos": "ADP",
+          "confidence": 0.5,
+          "needs_review": true
+        }
+      ]
+    },
+    "predictions": []
+  }
+]

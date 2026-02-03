@@ -6,3 +6,4 @@ python-docx
 Pillow
 streamlit
 sqlalchemy
+groq

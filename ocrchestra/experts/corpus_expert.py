@@ -19,13 +19,13 @@ logger = logging.getLogger(__name__)
 class CorpusExpert(ExpertBase):
     """Expert for corpus operations: Cleaning, Analysis, Export."""
 
-    def __init__(self, ollama_client=None):
+    def __init__(self, client=None):
         """Initialize Corpus expert.
 
         Args:
-            ollama_client: OllamaClient for LLM operations
+            client: LLM client (OllamaClient or GroqClient)
         """
-        self.ollama_client = ollama_client
+        self.client = client
 
     @staticmethod
     def is_available() -> bool:
@@ -109,7 +109,7 @@ class CorpusExpert(ExpertBase):
         
         return text.strip()
 
-    def analyze_with_ollama(self, text: str, chunk_size: int = 1000) -> List[Dict[str, Any]]:
+    def analyze_with_ollama(self, text: str, chunk_size: int = 1000, max_tokens: int = 4096) -> List[Dict[str, Any]]:
         """Analyze text using Ollama (POS, Lemma) with confidence scores.
 
         Args:
@@ -119,8 +119,8 @@ class CorpusExpert(ExpertBase):
         Returns:
             List of word analysis dicts with confidence scores
         """
-        if not self.ollama_client:
-            logger.warning("Ollama Client not provided, skipping analysis.")
+        if not self.client:
+            logger.warning("Client not provided, skipping analysis.")
             return []
 
         # Split text into chunks
@@ -129,20 +129,30 @@ class CorpusExpert(ExpertBase):
         full_analysis = []
         
         system_prompt = (
-            "You are a Turkish linguistic expert. Analyze the following text and return ONLY a valid JSON array. "
-            "Do NOT include any explanations, markdown formatting, or additional text.\n\n"
-            "For each word, provide:\n"
-            "- 'word': the exact word\n"
-            "- 'lemma': root form (kök)\n"
-            "- 'pos': Part of Speech (NOUN, VERB, ADJ, ADV, PRON, DET, CONJ, ADP, PUNCT, NUM)\n"
-            "- 'confidence': confidence score (0.0-1.0) for this annotation\n\n"
-            "IMPORTANT Turkish-specific rules:\n"
-            "- 'O' can be DET (o kitap) or PRON (o geldi) - check context carefully\n"
-            "- 'gibi', 'için', 'ile' are usually ADP (postpositions), not CONJ\n"
-            "- Words ending in -me/-ma/-yen/-yan may be NOUN (deverbal) even if verb-derived\n"
-            "- Set confidence < 0.6 if you're uncertain about context-dependent cases\n\n"
-            "CRITICAL: Your response must be ONLY the JSON array starting with [ and ending with ]. "
-            "No markdown code blocks, no explanations, JUST the JSON array."
+            "You are a Turkish linguistics expert. Analyze the following text and return ONLY a valid JSON array. "
+            "Do NOT include explanations, markdown, or any extra text.\n\n"
+
+            "For each token, return an object with:\n"
+            "- 'word': surface form exactly as in the text\n"
+            "- 'lemma': dictionary base form (sözlük biçimi, kök)\n"
+            "- 'pos': one of [NOUN, VERB, ADJ, ADV, PRON, DET, CONJ, ADP, PUNCT, NUM]\n"
+            "- 'confidence': float between 0.0 and 1.0\n\n"
+
+            "Turkish-specific rules:\n"
+            "- 'O' is DET when modifying a noun (o kitap), PRON when standing alone (o geldi)\n"
+            "- 'gibi', 'için', 'ile' are ADP (postpositions), not CONJ\n"
+            "- Words ending with -me/-ma/-yen/-yan may be NOUN (deverbal) depending on usage\n"
+            "- If a token could reasonably belong to more than one POS, choose the best one AND lower confidence\n\n"
+
+            "Confidence guidelines:\n"
+            "- Clear and unambiguous: 0.85–1.0\n"
+            "- Mild ambiguity: 0.6–0.85\n"
+            "- Strong ambiguity / context-dependent: < 0.6\n\n"
+
+            "CRITICAL:\n"
+            "- Output MUST be a raw JSON array only\n"
+            "- Start with '[' and end with ']'\n"
+            "- No comments, no explanations, no code blocks"
         )
 
         for i, chunk in enumerate(chunks):
@@ -151,11 +161,11 @@ class CorpusExpert(ExpertBase):
             prompt = f"Analyze this Turkish text:\n\n{chunk}"
             
             try:
-                response = self.ollama_client.generate(
+                response = self.client.generate(
                     prompt=prompt,
                     system=system_prompt,
                     temperature=0.0,
-                    model=self.ollama_client.default_model
+                    max_tokens=max_tokens
                 )
                 
                 # Parse JSON from response - handle markdown and explanatory text

@@ -78,7 +78,7 @@ class OllamaOrchestrator:
     def corpus_expert(self):
         """Lazy load Corpus expert."""
         from .experts.corpus_expert import CorpusExpert
-        return CorpusExpert(ollama_client=self.client)
+        return CorpusExpert(client=self.client)
 
     def detect_format(self, file_path: Union[str, Path]) -> str:
         """Detect file format.
