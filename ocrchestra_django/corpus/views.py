@@ -2,6 +2,9 @@
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User, Group
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -53,6 +56,8 @@ def home_view(request):
     return render(request, 'corpus/home.html', context)
 
 
+@login_required
+@login_required
 @ensure_csrf_cookie
 def library_view(request):
     """Display all documents in library with filtering."""
@@ -199,7 +204,7 @@ def upload_view(request):
     return render(request, 'corpus/upload.html', context)
 
 
-
+@login_required
 def analysis_view(request, doc_id):
     """Display corpus analysis and KWIC search."""
     document = get_object_or_404(Document, id=doc_id)
@@ -264,6 +269,7 @@ def analysis_view(request, doc_id):
     return render(request, 'corpus/analysis.html', context)
 
 
+@login_required
 def statistics_view(request):
     """Display corpus-wide statistics."""
     documents = Document.objects.filter(processed=True)
@@ -280,6 +286,8 @@ def statistics_view(request):
     return render(request, 'corpus/statistics.html', context)
 
 
+@login_required
+@user_passes_test(is_academician)
 @require_http_methods(["POST"])
 def delete_document(request, doc_id):
     """Delete a document."""
@@ -291,6 +299,7 @@ def delete_document(request, doc_id):
     return redirect('corpus:library')
 
 
+@login_required
 def download_search_results(request, doc_id):
     """Download KWIC search results as CSV."""
     document = get_object_or_404(Document, id=doc_id)
@@ -339,6 +348,7 @@ def download_search_results(request, doc_id):
     return response
 
 
+@login_required
 def export_document(request, doc_id):
     """Export document in specified format."""
     document = get_object_or_404(Document, id=doc_id)
@@ -386,3 +396,104 @@ def task_status_view(request, task_id):
         })
     except ProcessingTask.DoesNotExist:
         return JsonResponse({'error': 'Task not found'}, status=404)
+
+
+# Authentication Views
+def login_view(request):
+    """User login view."""
+    if request.user.is_authenticated:
+        return redirect('corpus:home')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            
+            # Get user role for personalized message
+            role = "Süper Kullanıcı" if user.is_superuser else (
+                user.groups.first().name if user.groups.exists() else "Kullanıcı"
+            )
+            
+            welcome_name = user.get_full_name() or user.username
+            messages.success(
+                request, 
+                f'🎉 Hoş geldiniz, {welcome_name}! ({role})'
+            )
+            
+            next_url = request.GET.get('next', 'corpus:home')
+            return redirect(next_url)
+        else:
+            messages.error(request, '❌ Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.')
+    
+    return render(request, 'corpus/login.html')
+
+
+def register_view(request):
+    """User registration view."""
+    if request.user.is_authenticated:
+        return redirect('corpus:home')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        first_name = request.POST.get('first_name', '')
+        last_name = request.POST.get('last_name', '')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+        
+        # Validation
+        if not username or not email or not password1:
+            messages.error(request, '⚠️ Lütfen tüm zorunlu alanları doldurun.')
+            return render(request, 'corpus/register.html')
+        
+        if password1 != password2:
+            messages.error(request, '🔒 Şifreler eşleşmiyor. Lütfen aynı şifreyi girin.')
+            return render(request, 'corpus/register.html')
+        
+        if len(password1) < 8:
+            messages.error(request, '🔑 Şifre en az 8 karakter olmalıdır.')
+            return render(request, 'corpus/register.html')
+        
+        if User.objects.filter(username=username).exists():
+            messages.error(request, '👤 Bu kullanıcı adı zaten kullanılıyor. Lütfen başka bir kullanıcı adı seçin.')
+            return render(request, 'corpus/register.html')
+        
+        if User.objects.filter(email=email).exists():
+            messages.error(request, '✉️ Bu e-posta adresi zaten kullanılıyor.')
+            return render(request, 'corpus/register.html')
+        
+        # Create user
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password1,
+            first_name=first_name,
+            last_name=last_name
+        )
+        
+        messages.success(
+            request, 
+            f'✅ Hesabınız başarıyla oluşturuldu! Hoş geldiniz {first_name or username}, şimdi giriş yapabilirsiniz.'
+        )
+        return redirect('corpus:login')
+    
+    return render(request, 'corpus/register.html')
+
+
+def logout_view(request):
+    """User logout view."""
+    username = request.user.get_full_name() or request.user.username
+    logout(request)
+    messages.success(request, f'👋 Görüşmek üzere, {username}! Başarıyla çıkış yaptınız.')
+    return redirect('corpus:login')
+
+
+@login_required
+def profile_view(request):
+    """User profile view."""
+    return render(request, 'corpus/profile.html', {
+        'active_tab': 'profile'
+    })

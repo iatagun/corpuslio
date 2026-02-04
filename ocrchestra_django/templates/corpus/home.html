@@ -13,15 +13,27 @@
         </p>
 
         <div class="hero-buttons">
-            <a href="{% url 'corpus:upload' %}" class="btn btn-primary btn-large">
-                <span class="material-icons">cloud_upload</span> Analiz Başlat
-            </a>
-            <a href="{% url 'corpus:library' %}" class="btn btn-secondary btn-large">
-                <span class="material-icons">library_books</span> Kütüphane
-            </a>
-            <a href="{% url 'corpus:dashboard' %}" class="btn btn-outline btn-large">
-                <span class="material-icons">dashboard</span> Dashboard
-            </a>
+            {% if user.is_authenticated %}
+                {% load auth_extras %}
+                {% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or request.user.is_superuser %}
+                    <a href="{% url 'corpus:upload' %}" class="btn btn-primary btn-large">
+                        <span class="material-icons">cloud_upload</span> Analiz Başlat
+                    </a>
+                {% endif %}
+                <a href="{% url 'corpus:library' %}" class="btn btn-secondary btn-large">
+                    <span class="material-icons">library_books</span> Kütüphane
+                </a>
+                <a href="{% url 'corpus:dashboard' %}" class="btn btn-outline btn-large">
+                    <span class="material-icons">dashboard</span> Dashboard
+                </a>
+            {% else %}
+                <a href="{% url 'corpus:login' %}" class="btn btn-primary btn-large">
+                    <span class="material-icons">login</span> Giriş Yap
+                </a>
+                <a href="{% url 'corpus:register' %}" class="btn btn-secondary btn-large">
+                    <span class="material-icons">person_add</span> Kayıt Ol
+                </a>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -51,6 +63,7 @@
     </div>
 </section>
 
+{% if user.is_authenticated %}
 <!-- Stats Section -->
 <section class="stats-section">
 
@@ -102,8 +115,12 @@
     </div>
 </section>
 {% endif %}
+{% endif %}
 
 <!-- CTA Section -->
+{% if user.is_authenticated %}
+{% load auth_extras %}
+{% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or request.user.is_superuser %}
 <section class="cta-section">
     <h2>Hemen Başlayın</h2>
     <p>Türkçe metin korpusunuzu yükleyin ve güçlü NLP araçları
@@ -112,11 +129,26 @@
         <span class="material-icons">add_circle</span> Yeni Belge Yükle
     </a>
 </section>
+{% endif %}
+{% else %}
+<section class="cta-section">
+    <h2>Platformumuza Katılın</h2>
+    <p>OCRchestra ile Türkçe metin korpuslarınızı yönetin, analiz edin ve güçlü NLP araçlarından faydalanın.</p>
+    <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
+        <a href="{% url 'corpus:login' %}" class="btn btn-primary btn-large">
+            <span class="material-icons">login</span> Giriş Yap
+        </a>
+        <a href="{% url 'corpus:register' %}" class="btn btn-outline btn-large" style="background: var(--bg-surface); color: var(--accent-primary); border-color: var(--accent-primary);">
+            <span class="material-icons">person_add</span> Kayıt Ol
+        </a>
+    </div>
+</section>
+{% endif %}
 
 <style>
     /* Hero Section */
     .hero-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-hover) 100%);
         padding: 4rem 2rem;
         border-radius: 16px;
         margin-bottom: 3rem;
@@ -125,7 +157,7 @@
 
     .hero-title {
         font-size: 3.5rem;
-        color: white;
+        color: #ffffff;
         margin-bottom: 1rem;
         font-weight: 700;
     }
@@ -177,7 +209,7 @@
     .section-title {
         font-size: 2rem;
         margin-bottom: 2rem;
-        color: #f8fafc;
+        color: var(--text-main);
         text-align: center;
     }
 
@@ -188,9 +220,9 @@
     }
 
     .feature-card {
-        background: rgba(30, 41, 59, 0.6);
+        background: var(--bg-surface);
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(100, 116, 139, 0.3);
+        border: 1px solid var(--border-subtle);
         border-radius: 12px;
         padding: 2rem;
         transition: transform 0.3s, box-shadow 0.3s;
@@ -198,7 +230,7 @@
 
     .feature-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        box-shadow: 0 10px 30px var(--bg-surface-hover);
     }
 
     .feature-icon {
@@ -207,12 +239,12 @@
     }
 
     .feature-card h3 {
-        color: #f8fafc;
+        color: var(--text-main);
         margin-bottom: 1rem;
     }
 
     .feature-card p {
-        color: #cbd5e1;
+        color: var(--text-secondary);
         margin-bottom: 1rem;
         line-height: 1.6;
     }
@@ -223,7 +255,7 @@
     }
 
     .feature-list li {
-        color: #94a3b8;
+        color: var(--text-tertiary);
         padding: 0.5rem 0;
         padding-left: 1.5rem;
         position: relative;
@@ -233,7 +265,7 @@
         content: "✓";
         position: absolute;
         left: 0;
-        color: #14b8a6;
+        color: var(--accent-success);
         font-weight: bold;
     }
 
@@ -245,8 +277,8 @@
     }
 
     .stat-card {
-        background: rgba(30, 41, 59, 0.6);
-        border: 1px solid rgba(100, 116, 139, 0.3);
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
         border-radius: 12px;
         padding: 2rem;
         text-align: center;
@@ -255,12 +287,12 @@
     .stat-number {
         font-size: 3rem;
         font-weight: 700;
-        color: #6366f1;
+        color: var(--accent-primary);
         margin-bottom: 0.5rem;
     }
 
     .stat-label {
-        color: #94a3b8;
+        color: var(--text-secondary);
         font-size: 0.9rem;
     }
 
@@ -272,8 +304,8 @@
     }
 
     .recent-card {
-        background: rgba(30, 41, 59, 0.6);
-        border: 1px solid rgba(100, 116, 139, 0.3);
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
         border-radius: 12px;
         padding: 1.5rem;
     }
@@ -286,7 +318,7 @@
     }
 
     .recent-header h4 {
-        color: #f8fafc;
+        color: var(--text-main);
         margin: 0;
         font-size: 1rem;
     }
@@ -296,12 +328,12 @@
         gap: 1rem;
         margin-bottom: 1rem;
         font-size: 0.85rem;
-        color: #94a3b8;
+        color: var(--text-secondary);
     }
 
     /* CTA Section */
     .cta-section {
-        background: linear-gradient(135deg, #14b8a6 0%, #0891b2 100%);
+        background: linear-gradient(135deg, var(--accent-success) 0%, var(--accent-primary) 100%);
         padding: 3rem 2rem;
         border-radius: 16px;
         text-align: center;
@@ -309,7 +341,7 @@
     }
 
     .cta-section h2 {
-        color: white;
+        color: #ffffff;
         margin-bottom: 1rem;
     }
 

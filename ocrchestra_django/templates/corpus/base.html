@@ -27,9 +27,9 @@
                 <span class="nav-text">Ana Sayfa</span>
             </a>
 
+            {% if user.is_authenticated %}
             {% load auth_extras %}
-            {% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or
-            request.user.is_superuser %}
+            {% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or request.user.is_superuser %}
             <a href="{% url 'corpus:upload' %}" class="nav-item {% if active_tab == 'upload' %}active{% endif %}">
                 <span class="material-icons nav-icon">upload_file</span>
                 <span class="nav-text">Yükle (Akademik)</span>
@@ -57,6 +57,15 @@
                 <span class="material-icons nav-icon">api</span>
                 <span class="nav-text">API Docs</span>
             </a>
+            {% else %}
+            <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
+                <p style="font-size: 0.85rem; margin-bottom: 15px;">Tüm özelliklere erişmek için giriş yapın</p>
+                <a href="{% url 'corpus:login' %}" class="btn btn-primary" style="width: 100%;">
+                    <span class="material-icons" style="font-size: 16px;">login</span>
+                    Giriş Yap
+                </a>
+            </div>
+            {% endif %}
         </nav>
     </aside>
 
@@ -70,18 +79,77 @@
                 {% endblock %}
             </div>
 
-            <!-- Profile Section -->
-            <div class="profile-section">
-                <div class="profile-dropdown">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <!-- Theme Switcher -->
+                <div class="theme-switcher">
+                    <button class="theme-btn" onclick="toggleThemeMenu()" title="Tema Değiştir">
+                        <span class="material-icons theme-icon">palette</span>
+                    </button>
+                    <div class="theme-menu" id="themeMenu">
+                        <div class="theme-option" onclick="setTheme('dark')">
+                            <span class="material-icons">dark_mode</span>
+                            <span>Koyu Tema</span>
+                            <span class="theme-check" id="check-dark"></span>
+                        </div>
+                        <div class="theme-option" onclick="setTheme('light')">
+                            <span class="material-icons">light_mode</span>
+                            <span>Açık Tema</span>
+                            <span class="theme-check" id="check-light"></span>
+                        </div>
+                        <div class="theme-option" onclick="setTheme('auto')">
+                            <span class="material-icons">brightness_auto</span>
+                            <span>Otomatik</span>
+                            <span class="theme-check" id="check-auto"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Section -->
+                <div class="profile-section">
+                    {% if user.is_authenticated %}
+                <div class="profile-dropdown" onclick="toggleDropdown()">
                     <div class="profile-avatar">
                         <span class="material-icons" style="font-size: 18px;">person</span>
                     </div>
                     <div class="profile-info">
-                        <span class="profile-name">Corpus Admin</span>
-                        <span class="profile-role">Researcher</span>
+                        <span class="profile-name">{{ user.get_full_name|default:user.username }}</span>
+                        <span class="profile-role">
+                            {% if user.is_superuser %}
+                                Süper Kullanıcı
+                            {% elif user.groups.all %}
+                                {{ user.groups.first.name }}
+                            {% else %}
+                                Kullanıcı
+                            {% endif %}
+                        </span>
                     </div>
+                    <span class="material-icons dropdown-arrow" style="font-size: 18px; margin-left: 8px;">expand_more</span>
                 </div>
-            </div>
+                <div class="dropdown-menu" id="profileDropdown">
+                    <a href="{% url 'corpus:profile' %}" class="dropdown-item">
+                        <span class="material-icons">account_circle</span>
+                        <span>Profil</span>
+                    </a>
+                    {% if user.is_staff %}
+                    <a href="/admin/" class="dropdown-item" target="_blank">
+                        <span class="material-icons">admin_panel_settings</span>
+                        <span>Admin Paneli</span>
+                    </a>
+                    {% endif %}
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'corpus:logout' %}" class="dropdown-item logout">
+                        <span class="material-icons">logout</span>
+                        <span>Çıkış Yap</span>
+                    </a>
+                </div>
+                {% else %}
+                <div class="auth-buttons">
+                    <a href="{% url 'corpus:login' %}" class="btn-login">
+                        <span class="material-icons" style="font-size: 18px;">login</span>
+                        <span>Giriş Yap</span>
+                    </a>
+                </div>
+                {% endif %}                </div>            </div>
         </header>
 
         <!-- Messages -->
@@ -89,7 +157,25 @@
         <div class="messages-container">
             {% for message in messages %}
             <div class="alert alert-{{ message.tags }}">
-                {{ message }}
+                <div class="alert-icon">
+                    <span class="material-icons">
+                        {% if message.tags == 'success' %}
+                            check_circle
+                        {% elif message.tags == 'error' %}
+                            error
+                        {% elif message.tags == 'warning' %}
+                            warning
+                        {% else %}
+                            info
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="alert-content">
+                    <div class="alert-message">{{ message }}</div>
+                </div>
+                <button class="alert-close" onclick="this.parentElement.remove()">
+                    <span class="material-icons">close</span>
+                </button>
             </div>
             {% endfor %}
         </div>
@@ -111,6 +197,88 @@
     </div>
 
     {% block extra_js %}{% endblock %}
+    
+    <script>
+        // Theme Management
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeChecks(savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            updateThemeChecks(theme);
+            updateThemeIcon(theme);
+            document.getElementById('themeMenu').classList.remove('show');
+        }
+
+        function updateThemeChecks(theme) {
+            ['dark', 'light', 'auto'].forEach(t => {
+                const check = document.getElementById(`check-${t}`);
+                if (check) {
+                    check.innerHTML = t === theme ? '<span class="material-icons" style="font-size: 18px; color: var(--accent-primary);">check</span>' : '';
+                }
+            });
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = document.querySelector('.theme-icon');
+            if (icon) {
+                if (theme === 'dark') {
+                    icon.textContent = 'dark_mode';
+                } else if (theme === 'light') {
+                    icon.textContent = 'light_mode';
+                } else {
+                    icon.textContent = 'brightness_auto';
+                }
+            }
+        }
+
+        function toggleThemeMenu() {
+            const menu = document.getElementById('themeMenu');
+            menu.classList.toggle('show');
+        }
+
+        // Profile Dropdown
+        function toggleDropdown() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // Close dropdowns when clicking outside
+        window.onclick = function(event) {
+            if (!event.target.closest('.profile-dropdown')) {
+                const dropdown = document.getElementById('profileDropdown');
+                if (dropdown && dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
+            }
+            if (!event.target.closest('.theme-switcher')) {
+                const themeMenu = document.getElementById('themeMenu');
+                if (themeMenu && themeMenu.classList.contains('show')) {
+                    themeMenu.classList.remove('show');
+                }
+            }
+        }
+
+        // Auto-dismiss alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    alert.style.animation = 'slideOutRight 0.3s ease-out';
+                    setTimeout(function() {
+                        alert.remove();
+                    }, 300);
+                }, 5000);
+            });
+        });
+    </script>
 </body>
 
 </html>

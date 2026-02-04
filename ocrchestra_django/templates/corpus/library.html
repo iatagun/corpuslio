@@ -4,11 +4,10 @@
 
 {% block content %}
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-    <h2><span class="material-icons" style="vertical-align:middle; margin-right:0.5rem;">library_books</span> Mevcut
-        Kitaplar</h2>
-    <span class="badge" style="background:var(--bg-surface); color:var(--text-secondary);">{{ page_obj.paginator.count
-        }}
-        kaynak</span>
+    <h2><span class="material-icons" style="vertical-align:middle; margin-right:0.5rem;">library_books</span> Mevcut Kitaplar</h2>
+    <span class="badge" style="background:var(--bg-surface); color:var(--text-secondary);">
+        {{ page_obj.paginator.count }} doküman
+    </span>
 </div>
 
 <!-- Search and Filters -->
@@ -85,6 +84,8 @@
             <a href="{% url 'corpus:analysis' doc.id %}" class="btn btn-secondary btn-small">İncele</a>
             <a href="{% url 'corpus:export' doc.id %}?format=vrt" class="btn btn-outline btn-small">VRT</a>
             {% endif %}
+            {% load auth_extras %}
+            {% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or request.user.is_superuser %}
             <form method="POST" action="{% url 'corpus:delete' doc.id %}" style="display:inline;"
                 onsubmit="return confirm('Silmek istediğinize emin misiniz?');">
                 {% csrf_token %}
@@ -92,6 +93,7 @@
                     <span class="material-icons" style="font-size:16px;">delete</span>
                 </button>
             </form>
+            {% endif %}
         </div>
     </div>
     {% endfor %}

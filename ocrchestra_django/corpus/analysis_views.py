@@ -1,11 +1,13 @@
 """Additional corpus analysis views."""
 
 from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from .models import Document
 from .ngrams import NgramAnalyzer
 import json
 
 
+@login_required
 def ngrams_view(request, doc_id):
     """N-gram and collocation analysis view."""
     document = get_object_or_404(Document, id=doc_id)
@@ -46,6 +48,7 @@ def ngrams_view(request, doc_id):
     return render(request, 'corpus/ngrams.html', context)
 
 
+@login_required
 def wordcloud_view(request, doc_id):
     """Word cloud and frequency visualization."""
     document = get_object_or_404(Document, id=doc_id)

@@ -1,0 +1,119 @@
+{% extends "corpus/base.html" %}
+{% load static %}
+
+{% block title %}Profil - OCRchestra{% endblock %}
+
+{% block breadcrumb %}
+<a href="{% url 'corpus:home' %}">Ana Sayfa</a> / <span>Profil</span>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 0 auto;">
+    <div class="card">
+        <div style="display: flex; align-items: center; gap: 15px; padding: 20px; border-bottom: 1px solid var(--border-subtle);">
+            <div style="width: 48px; height: 48px; background: var(--accent-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <span class="material-icons" style="font-size: 28px; color: white;">person</span>
+            </div>
+            <div>
+                <h2 style="margin: 0; color: var(--text-main);">Kullanıcı Profili</h2>
+                <p style="margin: 5px 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">Hesap bilgilerinizi görüntüleyin</p>
+            </div>
+        </div>
+        
+        <div style="padding: 30px;">
+            <div class="profile-section" style="margin-bottom: 30px;">
+                <h3 style="margin-bottom: 20px; color: var(--text-main); font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-icons" style="font-size: 20px; color: var(--accent-primary);">info</span>
+                    Kişisel Bilgiler
+                </h3>
+                <div style="display: grid; grid-template-columns: 160px 1fr; gap: 16px; background: var(--bg-surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);">
+                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Kullanıcı Adı:</div>
+                    <div style="color: var(--text-main);">{{ user.username }}</div>
+                    
+                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Ad Soyad:</div>
+                    <div style="color: var(--text-main);">{{ user.get_full_name|default:"Belirtilmemiş" }}</div>
+                    
+                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">E-posta:</div>
+                    <div style="color: var(--text-main);">{{ user.email|default:"Belirtilmemiş" }}</div>
+                    
+                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Üyelik Tarihi:</div>
+                    <div style="color: var(--text-main);">{{ user.date_joined|date:"d F Y, H:i" }}</div>
+                    
+                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Son Giriş:</div>
+                    <div style="color: var(--text-main);">{{ user.last_login|date:"d F Y, H:i" }}</div>
+                </div>
+            </div>
+
+            <div class="profile-section" style="margin-bottom: 30px;">
+                <h3 style="margin-bottom: 20px; color: var(--text-main); font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-icons" style="font-size: 20px; color: var(--accent-primary);">verified_user</span>
+                    Yetkilendirme
+                </h3>
+                <div style="display: grid; grid-template-columns: 160px 1fr; gap: 16px; background: var(--bg-surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);">
+                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Rol:</div>
+                    <div>
+                        {% if user.is_superuser %}
+                            <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 5px 14px; border-radius: 14px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                                <span class="material-icons" style="font-size: 14px;">admin_panel_settings</span>
+                                Süper Kullanıcı
+                            </span>
+                        {% elif user.groups.all %}
+                            {% for group in user.groups.all %}
+                                <span style="background: var(--accent-primary); color: white; padding: 5px 14px; border-radius: 14px; font-size: 0.8rem; font-weight: 600; margin-right: 5px; display: inline-flex; align-items: center; gap: 5px;">
+                                    <span class="material-icons" style="font-size: 14px;">
+                                        {% if group.name == "Academician" %}school{% elif group.name == "Developer" %}code{% else %}group{% endif %}
+                                    </span>
+                                    {{ group.name }}
+                                </span>
+                            {% endfor %}
+                        {% else %}
+                            <span style="background: var(--text-tertiary); color: white; padding: 5px 14px; border-radius: 14px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                                <span class="material-icons" style="font-size: 14px;">person</span>
+                                Standart Kullanıcı
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Durum:</div>
+                    <div>
+                        {% if user.is_active %}
+                            <span style="color: var(--accent-success); display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
+                                <span class="material-icons" style="font-size: 18px;">check_circle</span>
+                                Aktif
+                            </span>
+                        {% else %}
+                            <span style="color: var(--accent-danger); display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
+                                <span class="material-icons" style="font-size: 18px;">cancel</span>
+                                Pasif
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    {% if user.is_staff %}
+                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Yetkiler:</div>
+                    <div>
+                        <span style="color: var(--accent-success); display: inline-flex; align-items: center; gap: 5px; font-size: 0.85rem;">
+                            <span class="material-icons" style="font-size: 16px;">admin_panel_settings</span>
+                            Admin Paneli Erişimi
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
+                <a href="{% url 'corpus:home' %}" class="btn btn-outline">
+                    <span class="material-icons" style="font-size: 18px;">arrow_back</span>
+                    Ana Sayfaya Dön
+                </a>
+                {% if user.is_staff %}
+                <a href="/admin/" class="btn btn-secondary" target="_blank">
+                    <span class="material-icons" style="font-size: 18px;">admin_panel_settings</span>
+                    Admin Paneli
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

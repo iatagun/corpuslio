@@ -111,6 +111,12 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# Authentication settings
+LOGIN_URL = 'corpus:login'
+LOGIN_REDIRECT_URL = 'corpus:home'
+LOGOUT_REDIRECT_URL = 'corpus:login'
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
@@ -150,6 +156,15 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# DRF Spectacular settings
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'OCRchestra API',
+    'DESCRIPTION': 'OCR ve Corpus Analysis API',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 

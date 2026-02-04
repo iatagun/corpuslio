@@ -1,11 +1,13 @@
 """Visualization dashboard view."""
 
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 from .models import Document, Analysis
 from collections import Counter
 import json
 
 
+@login_required
 def dashboard_view(request):
     """Interactive visualization dashboard."""
     

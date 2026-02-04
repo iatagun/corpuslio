@@ -2,10 +2,12 @@
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from .collections import Collection
 from .models import Document
 
 
+@login_required
 def collections_view(request):
     """List all collections."""
     collections = Collection.objects.all()
@@ -17,6 +19,7 @@ def collections_view(request):
     return render(request, 'corpus/collections.html', context)
 
 
+@login_required
 def collection_detail_view(request, coll_id):
     """View collection details."""
     collection = get_object_or_404(Collection, id=coll_id)
@@ -29,6 +32,7 @@ def collection_detail_view(request, coll_id):
     return render(request, 'corpus/collection_detail.html', context)
 
 
+@login_required
 def create_collection_view(request):
     """Create new collection."""
     if request.method == 'POST':

@@ -3,11 +3,35 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.types import OpenApiTypes
 
 from corpus.models import Document
 from corpus.services import CorpusService
 
 
+@extend_schema(
+    responses={200: {
+        'type': 'object',
+        'properties': {
+            'count': {'type': 'integer'},
+            'documents': {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'id': {'type': 'integer'},
+                        'filename': {'type': 'string'},
+                        'format': {'type': 'string'},
+                        'processed': {'type': 'boolean'},
+                        'word_count': {'type': 'integer'}
+                    }
+                }
+            }
+        }
+    }},
+    description="İşlenmiş tüm dökümanları listeler"
+)
 @api_view(['GET'])
 def documents_list(request):
     """List all documents."""
@@ -26,6 +50,24 @@ def documents_list(request):
     return Response({'count': len(data), 'documents': data})
 
 
+@extend_schema(
+    request={
+        'type': 'object',
+        'properties': {
+            'doc_id': {'type': 'integer'},
+            'query': {'type': 'string'}
+        },
+        'required': ['doc_id']
+    },
+    responses={200: {
+        'type': 'object',
+        'properties': {
+            'matches': {'type': 'integer'},
+            'concordance': {'type': 'array', 'items': {'type': 'object'}}
+        }
+    }},
+    description="Bir döküman içinde arama yapar"
+)
 @api_view(['POST'])
 def search_corpus(request):
     """Search within a document."""
@@ -48,6 +90,20 @@ def search_corpus(request):
     })
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(name='doc_id', type=OpenApiTypes.INT, location=OpenApiParameter.PATH, description='Döküman ID')
+    ],
+    responses={200: {
+        'type': 'object',
+        'properties': {
+            'word_count': {'type': 'integer'},
+            'unique_words': {'type': 'integer'},
+            'average_word_length': {'type': 'number'}
+        }
+    }},
+    description="Döküman istatistiklerini getirir"
+)
 @api_view(['GET'])
 def document_stats(request, doc_id):
     """Get statistics for a document."""
@@ -65,6 +121,20 @@ def document_stats(request, doc_id):
     return Response(stats)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(name='doc_id', type=OpenApiTypes.INT, location=OpenApiParameter.PATH, description='Döküman ID'),
+        OpenApiParameter(name='format', type=OpenApiTypes.STR, location=OpenApiParameter.QUERY, description='Export formatı (json, vrt, txt)')
+    ],
+    responses={200: {
+        'type': 'object',
+        'properties': {
+            'format': {'type': 'string'},
+            'content': {'type': 'string'}
+        }
+    }},
+    description="Dökümanı belirtilen formatta export eder"
+)
 @api_view(['GET'])
 def export_corpus(request, doc_id):
     """Export document in specified format."""
@@ -85,3 +155,4 @@ def export_corpus(request, doc_id):
         'format': export_format,
         'content': content
     })
+

@@ -9,6 +9,13 @@ from . import dashboard_views
 app_name = 'corpus'
 
 urlpatterns = [
+    # Authentication
+    path('login/', views.login_view, name='login'),
+    path('register/', views.register_view, name='register'),
+    path('logout/', views.logout_view, name='logout'),
+    path('profile/', views.profile_view, name='profile'),
+    
+    # Main pages
     path('', views.home_view, name='home'),
     path('library/', views.library_view, name='library'),
     path('upload/', views.upload_view, name='upload'),
