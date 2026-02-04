@@ -26,10 +26,15 @@
                 <span class="material-icons nav-icon">home</span>
                 <span class="nav-text">Ana Sayfa</span>
             </a>
+
+            {% load auth_extras %}
+            {% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or
+            request.user.is_superuser %}
             <a href="{% url 'corpus:upload' %}" class="nav-item {% if active_tab == 'upload' %}active{% endif %}">
                 <span class="material-icons nav-icon">upload_file</span>
-                <span class="nav-text">Yükle</span>
+                <span class="nav-text">Yükle (Akademik)</span>
             </a>
+            {% endif %}
             <a href="{% url 'corpus:library' %}" class="nav-item {% if active_tab == 'library' %}active{% endif %}">
                 <span class="material-icons nav-icon">library_books</span>
                 <span class="nav-text">Kütüphane</span>

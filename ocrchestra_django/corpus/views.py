@@ -10,8 +10,23 @@ from .models import Document, ProcessingTask, Analysis
 from .forms import DocumentUploadForm
 from .tasks import process_document_task
 from .services import CorpusService
+from .services import CorpusService
 from .collections import Collection
 import os
+from django.contrib.auth.decorators import user_passes_test, login_required
+
+def is_academician(user):
+    """Check if user has Academician or Developer access."""
+    return user.is_authenticated and (
+        user.is_superuser or 
+        user.groups.filter(name__in=['Academician', 'Developer']).exists()
+    )
+
+def is_developer(user):
+    return user.is_authenticated and (
+        user.is_superuser or 
+        user.groups.filter(name='Developer').exists()
+    )
 
 
 def home_view(request):

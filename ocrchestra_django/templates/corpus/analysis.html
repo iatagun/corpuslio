@@ -255,6 +255,8 @@
 </div>
 {% endif %}
 
+{% load auth_extras %}
+{% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or request.user.is_superuser %}
 <!-- Export Options -->
 <div class="card">
     <h3>📤 Export</h3>
@@ -274,6 +276,7 @@
         <a href="{% url 'corpus:wordcloud' document.id %}" class="btn">Frekans Grafikleri</a>
     </div>
 </div>
+{% endif %}
 
 <style>
     .analysis-header {
