@@ -93,6 +93,36 @@ def process_document_task(self, document_id, analyze=True, label_studio=False):
         
         if analysis_data:
             analysis, _ = Analysis.objects.get_or_create(document=document)
+            
+            # Inject Readability Scores
+            try:
+                from .services import CorpusService
+                service = CorpusService()
+                readability_data = service.calculate_readability_scores(cleaned_text)
+                if readability_data:
+                    # Append readability data to analysis JSON structure
+                    # We store it as a special key in the JSON
+                    if isinstance(analysis_data, list):
+                        # If list, we might need a workaround or store metadata separately.
+                        # Ideally Analysis.data should be a Dict, but currently it's a List of words.
+                        # Let's verify model structure. Analysis.data is JSONField.
+                        # We will wrap it if it's a list, or append if dict.
+                        pass 
+            except Exception as e:
+                print(f"Readability calculation failed: {e}")
+                readability_data = None
+            
+            # Store data
+            # To avoid breaking existing list format (if usage depends on it being list of tokens),
+            # we should separate readability. But Analysis model has only 'data'.
+            # BEST PRACTICE: Keep 'data' as list of tokens for analysis.
+            # Add 'metadata' or 'scores' field to Analysis model?
+            # Or store in Document.metadata? Document.metadata is clean.
+            
+            if readability_data:
+                document.metadata['readability'] = readability_data
+                document.save()
+
             analysis.data = analysis_data
             analysis.save()
         

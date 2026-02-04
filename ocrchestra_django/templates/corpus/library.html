@@ -6,7 +6,8 @@
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
     <h2><span class="material-icons" style="vertical-align:middle; margin-right:0.5rem;">library_books</span> Mevcut
         Kitaplar</h2>
-    <span class="badge" style="background:var(--bg-surface); color:var(--text-secondary);">{{ documents.count }}
+    <span class="badge" style="background:var(--bg-surface); color:var(--text-secondary);">{{ page_obj.paginator.count
+        }}
         kaynak</span>
 </div>
 
@@ -19,13 +20,29 @@
 
             <input type="text" name="author" value="{{ request.GET.author }}" placeholder="Yazar" class="form-control">
 
-            <select name="genre" class="form-control">
+            <select name="genre" class="form-control" id="genreSelect">
                 <option value="">-- Tür --</option>
                 {% for genre in all_genres %}
-                <option value="{{ genre }}" {% if request.GET.genre==genre %}selected{% endif %}>{{ genre|title }}
-                </option>
+                <option value="{{ genre }}">{{ genre|title }}</option>
                 {% endfor %}
             </select>
+            <script>
+                // Set selected genre from URL parameter (Robust Solution)
+                document.addEventListener('DOMContentLoaded', function () {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const genre = urlParams.get('genre');
+                    if (genre) {
+                        const select = document.getElementById('genreSelect');
+                        // Find option with specific value
+                        for (let i = 0; i < select.options.length; i++) {
+                            if (select.options[i].value === genre) {
+                                select.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                });
+            </script>
 
             <input type="text" name="date" value="{{ request.GET.date }}" placeholder="Tarih" class="form-control">
 
@@ -79,6 +96,32 @@
     </div>
     {% endfor %}
 </div>
+
+<!-- Pagination Controls -->
+{% if page_obj.has_other_pages %}
+<div class="pagination-container" style="display:flex; justify-content:center; margin-top:3rem;">
+    <div class="pagination" style="display:flex; gap:0.5rem; align-items:center;">
+        {% if page_obj.has_previous %}
+        <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.author %}&author={{ request.GET.author }}{% endif %}{% if request.GET.genre %}&genre={{ request.GET.genre }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}"
+            class="btn btn-outline btn-small">&laquo; İlk</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.author %}&author={{ request.GET.author }}{% endif %}{% if request.GET.genre %}&genre={{ request.GET.genre }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}"
+            class="btn btn-outline btn-small">&lsaquo; Önceki</a>
+        {% endif %}
+
+        <span class="current" style="color:var(--text-secondary); font-size:0.9rem; margin:0 1rem;">
+            Sayfa {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.author %}&author={{ request.GET.author }}{% endif %}{% if request.GET.genre %}&genre={{ request.GET.genre }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}"
+            class="btn btn-outline btn-small">Sonraki &rsaquo;</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.author %}&author={{ request.GET.author }}{% endif %}{% if request.GET.genre %}&genre={{ request.GET.genre }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}"
+            class="btn btn-outline btn-small">Son &raquo;</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 {% else %}
 <div class="alert alert-info" style="display:flex; align-items:center; gap:0.5rem;">
     <span class="material-icons">info</span>
@@ -91,89 +134,19 @@
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
         gap: 1.5rem;
-        margin-top: 2rem;
-    }
-
-    .document-card h3 {
-        color: #f8fafc;
-        font-size: 18px;
-        margin-bottom: 1rem;
-        word-break: break-word;
-    }
-
-    .meta {
-        display: flex;
-        gap: 1rem;
-        align-items: center;
-        margin-bottom: 1rem;
-        font-size: 14px;
-        color: #94a3b8;
-    }
-
-    .format-badge {
-        background: rgba(99, 102, 241, 0.2);
-        color: #818cf8;
-        padding: 0.25rem 0.75rem;
-        border-radius: 4px;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 11px;
-    }
-
-    .status {
-        margin-bottom: 1.5rem;
-    }
-
-    .badge {
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        font-size: 13px;
-        font-weight: 600;
-        margin-right: 1rem;
-    }
-
-    .badge-success {
-        background: rgba(20, 184, 166, 0.2);
-        color: #14b8a6;
-    }
-
-    .badge-pending {
-        background: rgba(245, 158, 11, 0.2);
-        color: #f59e0b;
-    }
-
-    .word-count {
-        color: #64748b;
-        font-size: 13px;
-    }
-
-    .actions {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-
-    .export-buttons {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-
-    .filter-section {
-        margin-bottom: 2rem;
     }
 
     .filter-grid {
         display: grid;
-        grid-template-columns: 2fr 1fr 1fr 1fr auto auto;
-        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
         align-items: center;
     }
-
-    @media (max-width: 1024px) {
-        .filter-grid {
-            grid-template-columns: 1fr 1fr;
-        }
-    }
 </style>
+<script>
+    // Auto-submit form when select changes (optional)
+    document.querySelector('select[name="genre"]').addEventListener('change', function () {
+        this.form.submit();
+    });
+</script>
 {% endblock %}

@@ -30,6 +30,123 @@
 </div>
 {% endif %}
 
+<!-- MEB Pedagogical Metrics -->
+{% if document.metadata.readability %}
+<div class="card metrics-card">
+    <h3>🎓 Pedagojik Analiz (MEB)</h3>
+    <div class="readability-grid">
+        <!-- Ateşman Score -->
+        <div class="score-box">
+            <h4>Ateşman Okunabilirlik</h4>
+            <div class="score-value">{{ document.metadata.readability.scores.atesman.score }}</div>
+            <div
+                class="score-badge {% if document.metadata.readability.scores.atesman.score >= 80 %}easy{% elif document.metadata.readability.scores.atesman.score >= 60 %}medium{% else %}hard{% endif %}">
+                {{ document.metadata.readability.scores.atesman.level }}
+            </div>
+            <p class="score-desc">0 (Zor) - 100 (Kolay)</p>
+        </div>
+
+        <!-- Çetinkaya-Uzun Score -->
+        <div class="score-box">
+            <h4>Çetinkaya-Uzun</h4>
+            <div class="score-value">{{ document.metadata.readability.scores.cetinkaya.score }}</div>
+            <p class="score-desc">Eğitsel Metin Uygunluğu</p>
+        </div>
+
+        <!-- Detailed Stats -->
+        <div class="stats-list">
+            <div class="stat-item">
+                <span>Hece Sayısı:</span>
+                <strong>{{ document.metadata.readability.metrics.syllable_count }}</strong>
+            </div>
+            <div class="stat-item">
+                <span>Ort. Cümle Uzunluğu:</span>
+                <strong>{{ document.metadata.readability.metrics.avg_sentence_len_word }} kelime</strong>
+            </div>
+            <div class="stat-item">
+                <span>Ort. Kelime Uzunluğu:</span>
+                <strong>{{ document.metadata.readability.metrics.avg_word_len_syllable }} hece</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .metrics-card {
+        background: linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8));
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .readability-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 2rem;
+        margin-top: 1rem;
+    }
+
+    .score-box {
+        text-align: center;
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+    }
+
+    .score-value {
+        font-size: 3rem;
+        font-weight: 800;
+        color: #f8fafc;
+        line-height: 1;
+        margin: 0.5rem 0;
+    }
+
+    .score-badge {
+        display: inline-block;
+        padding: 0.25rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .score-badge.easy {
+        background: rgba(34, 197, 94, 0.2);
+        color: #4ade80;
+    }
+
+    .score-badge.medium {
+        background: rgba(234, 179, 8, 0.2);
+        color: #facc15;
+    }
+
+    .score-badge.hard {
+        background: rgba(239, 68, 68, 0.2);
+        color: #f87171;
+    }
+
+    .stats-list {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 0.5rem;
+        color: #cbd5e1;
+    }
+
+    @media (max-width: 768px) {
+        .readability-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endif %}
+
 <!-- Search Form -->
 <div class="card search-card">
     <h3>🔍 KWIC Concordance Arama</h3>
@@ -110,9 +227,31 @@
         </table>
     </div>
 </div>
-{% elif request.GET.query %}
-<div class="alert alert-info">
-    <p>🔍 Eşleşme bulunamadı.</p>
+{% endif %}
+
+<!-- Pagination Controls -->
+{% if search_results.has_other_pages %}
+<div class="pagination-container" style="display:flex; justify-content:center; margin-top:2rem;">
+    <div class="pagination" style="display:flex; gap:0.5rem; align-items:center;">
+        {% if search_results.has_previous %}
+        <a href="?page=1&query={{ request.GET.query }}&search_type={{ request.GET.search_type }}&context_size={{ request.GET.context_size|default:5 }}&case_sensitive={{ request.GET.case_sensitive }}&regex={{ request.GET.regex }}"
+            class="btn btn-outline btn-small">&laquo; İlk</a>
+        <a href="?page={{ search_results.previous_page_number }}&query={{ request.GET.query }}&search_type={{ request.GET.search_type }}&context_size={{ request.GET.context_size|default:5 }}&case_sensitive={{ request.GET.case_sensitive }}&regex={{ request.GET.regex }}"
+            class="btn btn-outline btn-small">&lsaquo; Önceki</a>
+        {% endif %}
+
+        <span class="current" style="color:var(--text-secondary); font-size:0.9rem; margin:0 1rem;">
+            Sayfa {{ search_results.number }} / {{ search_results.paginator.num_pages }}
+            <span style="opacity:0.6">({{ search_results.paginator.count }} sonuç)</span>
+        </span>
+
+        {% if search_results.has_next %}
+        <a href="?page={{ search_results.next_page_number }}&query={{ request.GET.query }}&search_type={{ request.GET.search_type }}&context_size={{ request.GET.context_size|default:5 }}&case_sensitive={{ request.GET.case_sensitive }}&regex={{ request.GET.regex }}"
+            class="btn btn-outline btn-small">Sonraki &rsaquo;</a>
+        <a href="?page={{ search_results.paginator.num_pages }}&query={{ request.GET.query }}&search_type={{ request.GET.search_type }}&context_size={{ request.GET.context_size|default:5 }}&case_sensitive={{ request.GET.case_sensitive }}&regex={{ request.GET.regex }}"
+            class="btn btn-outline btn-small">Son &raquo;</a>
+        {% endif %}
+    </div>
 </div>
 {% endif %}
 

@@ -8,9 +8,9 @@ from .models import Document, Content, Analysis, ProcessingTask
 class DocumentAdmin(admin.ModelAdmin):
     """Admin interface for Document model."""
     
-    list_display = ['filename', 'format', 'upload_date', 'processed', 'get_word_count']
-    list_filter = ['processed', 'format', 'upload_date']
-    search_fields = ['filename']
+    list_display = ['filename', 'grade_level', 'subject', 'author', 'publisher', 'format', 'upload_date', 'processed']
+    list_filter = ['processed', 'format', 'grade_level', 'upload_date']
+    search_fields = ['filename', 'author', 'subject', 'publisher']
     readonly_fields = ['upload_date']
     
     def get_word_count(self, obj):

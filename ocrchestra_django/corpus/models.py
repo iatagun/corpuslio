@@ -12,13 +12,49 @@ class Document(models.Model):
     format = models.CharField(max_length=10, verbose_name="Format")
     upload_date = models.DateTimeField(default=timezone.now, verbose_name="Yüklenme Tarihi")
     processed = models.BooleanField(default=False, verbose_name="İşlendi mi?")
-    
-    # Metadata for corpus linguistics
+    # Core Metadata Fields (Promoted from JSON)
+    author = models.CharField(max_length=255, blank=True, verbose_name="Yazar")
+    genre = models.CharField(max_length=100, blank=True, verbose_name="Tür")
+    language = models.CharField(max_length=10, default='tr', verbose_name="Dil")
+    source = models.CharField(max_length=255, blank=True, verbose_name="Kaynak")
+
+    # MEB - Söz Varlığı Projesi Metadata Fields
+    GRADE_LEVEL_CHOICES = [
+        ('PRE', 'Okul Öncesi'),
+        ('1', '1. Sınıf'),
+        ('2', '2. Sınıf'),
+        ('3', '3. Sınıf'),
+        ('4', '4. Sınıf'),
+        ('5', '5. Sınıf'),
+        ('6', '6. Sınıf'),
+        ('7', '7. Sınıf'),
+        ('8', '8. Sınıf'),
+        ('9', '9. Sınıf'),
+        ('10', '10. Sınıf'),
+        ('11', '11. Sınıf'),
+        ('12', '12. Sınıf'),
+        ('UNI', 'Üniversite/Akademik'),
+        ('GEN', 'Genel/Yetişkin'),
+    ]
+
+    grade_level = models.CharField(
+        max_length=10, 
+        choices=GRADE_LEVEL_CHOICES, 
+        blank=True, 
+        null=True, 
+        verbose_name="Sınıf Seviyesi"
+    )
+    subject = models.CharField(max_length=100, blank=True, verbose_name="Ders/Alan")
+    publisher = models.CharField(max_length=255, blank=True, verbose_name="Yayınevi")
+    publication_year = models.IntegerField(null=True, blank=True, verbose_name="Basım Yılı")
+    isbn = models.CharField(max_length=20, blank=True, verbose_name="ISBN")
+
+    # Legacy metadata (kept for backward compatibility & extra fields)
     metadata = models.JSONField(
         default=dict,
         blank=True,
-        verbose_name="Metadata",
-        help_text="Yazar, tarih, kaynak, tür vb. bilgiler"
+        verbose_name="Ek Metadata",
+        help_text="Diğer detaylar (JSON)"
     )
     
     class Meta:

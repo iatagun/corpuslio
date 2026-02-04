@@ -8,26 +8,48 @@ from django.conf import settings
 class DocumentUploadForm(forms.ModelForm):
     """Form for uploading documents."""
     
-    # Metadata fields
+    # Form Fields corresponding to Model Fields
     author = forms.CharField(
         required=False,
-        max_length=200,
         label="Yazar",
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Örn: Orhan Pamuk'})
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Örn: Ömer Seyfettin'})
     )
     
-    date = forms.CharField(
+    grade_level = forms.ChoiceField(
         required=False,
-        max_length=50,
-        label="Tarih/Yıl",
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Örn: 2023 veya 19. Yüzyıl'})
+        label="Sınıf Seviyesi",
+        choices=Document.GRADE_LEVEL_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    subject = forms.CharField(
+        required=False,
+        label="Ders/Alan",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Örn: Türkçe, Matematik'})
+    )
+    
+    publisher = forms.CharField(
+        required=False,
+        label="Yayınevi",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Örn: MEB Yayınları'})
+    )
+    
+    publication_year = forms.IntegerField(
+        required=False,
+        label="Basım Yılı",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '2024'})
+    )
+
+    isbn = forms.CharField(
+        required=False,
+        label="ISBN",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '978-...'}),
     )
     
     source = forms.CharField(
         required=False,
-        max_length=200,
-        label="Kaynak",
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Örn: Cumhuriyet Gazetesi'})
+        label="Kaynak Adı",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Örn: 5. Sınıf Türkçe Ders Kitabı'})
     )
     
     genre = forms.ChoiceField(
@@ -35,32 +57,14 @@ class DocumentUploadForm(forms.ModelForm):
         label="Tür",
         choices=[
             ('', '-- Seçiniz --'),
-            ('roman', 'Roman'),
-            ('hikaye', 'Hikaye'),
-            ('şiir', 'Şiir'),
+            ('ders_kitabi', 'Ders Kitabı'),
+            ('hikaye', 'Hikaye/Roman'),
+            ('siir', 'Şiir'),
             ('makale', 'Makale'),
-            ('haber', 'Haber'),
-            ('blog', 'Blog'),
-            ('akademik', 'Akademik'),
-            ('resmi', 'Resmi Belge'),
-            ('diğer', 'Diğer'),
+            ('soru_bankasi', 'Soru Bankası'),
+            ('diger', 'Diğer'),
         ],
         widget=forms.Select(attrs={'class': 'form-control'})
-    )
-    
-    language = forms.CharField(
-        required=False,
-        initial='tr',
-        max_length=10,
-        label="Dil",
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'tr'})
-    )
-    
-    publisher = forms.CharField(
-        required=False,
-        max_length=200,
-        label="Yayınevi",
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Örn: İletişim Yayınları'})
     )
     
     analyze = forms.BooleanField(
@@ -79,7 +83,7 @@ class DocumentUploadForm(forms.ModelForm):
     
     class Meta:
         model = Document
-        fields = ['file']
+        fields = ['file', 'author', 'grade_level', 'subject', 'publisher', 'publication_year', 'isbn', 'source', 'genre']
         widgets = {
             'file': forms.FileInput(attrs={
                 'class': 'form-control',
@@ -100,22 +104,14 @@ class DocumentUploadForm(forms.ModelForm):
         return file
     
     def save(self, commit=True):
-        """Save document with extracted filename, format, and metadata."""
+        """Save document and auto-fill filename/format."""
         instance = super().save(commit=False)
         if instance.file:
             import os
             instance.filename = instance.file.name
             instance.format = os.path.splitext(instance.file.name)[1][1:].upper()
         
-        # Save metadata
-        instance.metadata = {
-            'author': self.cleaned_data.get('author', ''),
-            'date': self.cleaned_data.get('date', ''),
-            'source': self.cleaned_data.get('source', ''),
-            'genre': self.cleaned_data.get('genre', ''),
-            'language': self.cleaned_data.get('language', 'tr'),
-            'publisher': self.cleaned_data.get('publisher', ''),
-        }
+        # Metadata is now handled by model fields naturally via ModelForm
         
         if commit:
             instance.save()

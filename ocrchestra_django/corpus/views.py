@@ -66,16 +66,35 @@ def library_view(request):
             Q(metadata__source__icontains=search_query)
         )
     
-    documents = documents.order_by('-upload_date')
+    # Pagination
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    paginator = Paginator(documents, 50)  # Show 50 documents per page
     
-    # Get unique values for filter dropdowns
+    page_number = request.GET.get('page')
+    try:
+        page_obj = paginator.get_page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+    
+    # Get unique values for filter dropdowns (Optimized check)
+    # Note: For 20k records, iterating all() is slow. Ideally this should be distinct()
+    # but Document.metadata is a JSONField (or similar) which is tricky.
+    # We will keep it for now but wrap it in a try-catch or limit optimization later.
     all_genres = set()
-    for doc in Document.objects.all():
-        if doc.metadata and doc.metadata.get('genre'):
-            all_genres.add(doc.metadata['genre'])
+    # Limiting to last 1000 for performance on large sets if needed, 
+    # but for true distinct values on JSONField we need Postgres.
+    # For now, simplistic approach is fine until DB migration.
+    if Document.objects.exists():
+         # Fetching IDs/Metadata only would be faster 
+        for doc in Document.objects.only('metadata').order_by('-id')[:1000]: 
+            if doc.metadata and doc.metadata.get('genre'):
+                all_genres.add(doc.metadata['genre'])
     
     context = {
-        'documents': documents,
+        'documents': page_obj, # Pass page_obj instead of full queryset
+        'page_obj': page_obj,  # Explicit naming for template clarity
         'all_genres': sorted(all_genres),
         'active_tab': 'library'
     }
@@ -196,8 +215,20 @@ def analysis_view(request, doc_id):
             'max_confidence': float(request.GET.get('max_confidence', 1.0)),
         }
         
-        search_results = service.search_in_document(document, search_params)
+        search_results_list = service.search_in_document(document, search_params)
     
+        # Pagination for Search Results
+        from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+        paginator = Paginator(search_results_list, 50)  # 50 KWIC lines per page
+        
+        page_number = request.GET.get('page')
+        try:
+            search_results = paginator.get_page(page_number)
+        except PageNotAnInteger:
+            search_results = paginator.page(1)
+        except EmptyPage:
+            search_results = paginator.page(paginator.num_pages)
+            
     # Get POS tags for filters
     pos_tags = []
     if hasattr(document, 'analysis') and document.analysis.data:
@@ -211,7 +242,7 @@ def analysis_view(request, doc_id):
     context = {
         'document': document,
         'stats': stats,
-        'search_results': search_results,
+        'search_results': search_results, # Now this is a Page object
         'pos_tags': pos_tags,
         'active_tab': 'analysis'
     }

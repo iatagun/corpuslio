@@ -24,21 +24,12 @@
                 <div id="file-names" class="file-name"></div>
             </div>
 
-            <h3 style="margin-top: 2rem;">📋 Metadata (Opsiyonel)</h3>
+            <h3 style="margin-top: 2rem;">📋 Metadata (MEB Standardı)</h3>
             <div class="metadata-grid">
+                <!-- Row 1: Basic Info -->
                 <div class="form-group">
                     <label for="{{ form.author.id_for_label }}" class="form-label">{{ form.author.label }}</label>
                     {{ form.author }}
-                </div>
-
-                <div class="form-group">
-                    <label for="{{ form.date.id_for_label }}" class="form-label">{{ form.date.label }}</label>
-                    {{ form.date }}
-                </div>
-
-                <div class="form-group">
-                    <label for="{{ form.source.id_for_label }}" class="form-label">{{ form.source.label }}</label>
-                    {{ form.source }}
                 </div>
 
                 <div class="form-group">
@@ -46,14 +37,39 @@
                     {{ form.genre }}
                 </div>
 
+                <!-- Row 2: MEB Specifics -->
                 <div class="form-group">
-                    <label for="{{ form.language.id_for_label }}" class="form-label">{{ form.language.label }}</label>
-                    {{ form.language }}
+                    <label for="{{ form.grade_level.id_for_label }}" class="form-label">{{ form.grade_level.label
+                        }}</label>
+                    {{ form.grade_level }}
                 </div>
 
                 <div class="form-group">
+                    <label for="{{ form.subject.id_for_label }}" class="form-label">{{ form.subject.label }}</label>
+                    {{ form.subject }}
+                </div>
+
+                <!-- Row 3: Publication Info -->
+                <div class="form-group">
                     <label for="{{ form.publisher.id_for_label }}" class="form-label">{{ form.publisher.label }}</label>
                     {{ form.publisher }}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.publication_year.id_for_label }}" class="form-label">{{
+                        form.publication_year.label }}</label>
+                    {{ form.publication_year }}
+                </div>
+
+                <!-- Row 4: Extra Info -->
+                <div class="form-group">
+                    <label for="{{ form.isbn.id_for_label }}" class="form-label">{{ form.isbn.label }}</label>
+                    {{ form.isbn }}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.source.id_for_label }}" class="form-label">{{ form.source.label }}</label>
+                    {{ form.source }}
                 </div>
             </div>
 

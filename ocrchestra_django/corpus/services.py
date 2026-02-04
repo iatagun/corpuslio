@@ -22,6 +22,68 @@ class CorpusService:
         """Initialize service."""
         pass
     
+    def calculate_readability_scores(self, text):
+        """
+        Calculate readability scores for Turkish text.
+        formules: Ateşman, Çetinkaya-Uzun
+        """
+        if not text:
+            return None
+
+        # Basic Stats
+        import re
+        sentences = re.split(r'[.!?]+', text)
+        sentences = [s.strip() for s in sentences if s.strip()]
+        sentence_count = len(sentences) or 1
+        
+        words = text.split()
+        word_count = len(words) or 1
+        
+        # Syllable Calculation (Turkish vowel count)
+        vowels = "aeıioöuüAEIİOÖUÜ"
+        syllable_count = sum(1 for char in text if char in vowels) or 1
+        
+        # Averages
+        avg_word_len_syllable = syllable_count / word_count
+        avg_sentence_len_word = word_count / sentence_count
+        
+        # 1. Ateşman Readability Formula
+        # Skor = 198.825 - 40.175 * (Hece/Kelime) - 2.610 * (Kelime/Cümle)
+        atesman_score = 198.825 - (40.175 * avg_word_len_syllable) - (2.610 * avg_sentence_len_word)
+        atesman_score = max(0, min(100, atesman_score))  # Clamp 0-100
+        
+        # Ateşman Interpretation
+        if atesman_score >= 90: atesman_level = "Çok Kolay (4. Sınıf ve altı)"
+        elif atesman_score >= 80: atesman_level = "Kolay (5-6. Sınıf)"
+        elif atesman_score >= 70: atesman_level = "Orta Güçlükte (7-8. Sınıf)"
+        elif atesman_score >= 60: atesman_level = "Zor (Lise)"
+        elif atesman_score >= 50: atesman_level = "Çok Zor (Üniversite)"
+        else: atesman_level = "Akademik/Bilimsel"
+
+        # 2. Çetinkaya-Uzun Formula
+        # Skor = 118.823 - 25.96 * (Hece/Kelime) - 0.971 * (Kelime/Cümle)
+        cetinkaya_score = 118.823 - (25.96 * avg_word_len_syllable) - (0.971 * avg_sentence_len_word)
+        cetinkaya_score = max(0, min(100, cetinkaya_score))
+        
+        return {
+            'metrics': {
+                'syllable_count': syllable_count,
+                'word_count': word_count,
+                'sentence_count': sentence_count,
+                'avg_word_len_syllable': round(avg_word_len_syllable, 2),
+                'avg_sentence_len_word': round(avg_sentence_len_word, 2)
+            },
+            'scores': {
+                'atesman': {
+                    'score': round(atesman_score, 2),
+                    'level': atesman_level
+                },
+                'cetinkaya': {
+                    'score': round(cetinkaya_score, 2)
+                }
+            }
+        }
+    
     def search_in_document(self, document, search_params):
         """
         Search within a document using CorpusSearchEngine.
