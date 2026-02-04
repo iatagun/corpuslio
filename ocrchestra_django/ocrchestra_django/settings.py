@@ -161,7 +161,7 @@ REST_FRAMEWORK = {
 
 # DRF Spectacular settings
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'OCRchestra API',
+    'TITLE': 'CorpusIO API',
     'DESCRIPTION': 'OCR ve Corpus Analysis API',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,

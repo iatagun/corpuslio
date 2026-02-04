@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}OCRchestra{% endblock %}</title>
+    <title>{% block title %}CorpusIO{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -17,7 +17,7 @@
     <aside class="sidebar">
         <div class="sidebar-header">
             <a href="{% url 'corpus:home' %}" class="logo-link">
-                <h2 class="sidebar-logo"><span class="material-icons">graphic_eq</span> OCRchestra</h2>
+                <h2 class="sidebar-logo"><span class="material-icons">graphic_eq</span> CorpusIO</h2>
             </a>
         </div>
 
@@ -183,14 +183,63 @@
 
         <!-- Page Content -->
         <main class="content-area">
+            <!-- Global Loading Overlay (can be triggered from any page) -->
+            <div id="globalLoading" class="loading-overlay hidden">
+                <div class="spinner-large"></div>
+                <div class="loading-text" id="globalLoadingText">Yükleniyor...</div>
+            </div>
+            
+            <!-- Toast Notification Container -->
+            <div id="toastContainer" class="toast-container"></div>
+            
+            <!-- Global Search Modal (Ctrl+K) -->
+            <div id="searchModal" class="search-modal-backdrop">
+                <div class="search-modal">
+                    <div class="search-modal-header">
+                        <span class="material-icons">search</span>
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            class="search-modal-input" 
+                            placeholder="Belgeler ve koleksiyonlarda ara..."
+                            autocomplete="off"
+                        >
+                        <div class="search-modal-shortcut">
+                            <span>ESC</span>
+                        </div>
+                    </div>
+                    <div class="search-modal-body" id="searchResults">
+                        <div class="search-modal-empty">
+                            <span class="material-icons">search</span>
+                            <p>Aramaya başlamak için yazmaya başlayın</p>
+                        </div>
+                    </div>
+                    <div class="search-modal-footer">
+                        <div class="search-modal-hint">
+                            <kbd>↑</kbd>
+                            <kbd>↓</kbd>
+                            <span>gezin</span>
+                        </div>
+                        <div class="search-modal-hint">
+                            <kbd>Enter</kbd>
+                            <span>seç</span>
+                        </div>
+                        <div class="search-modal-hint">
+                            <kbd>ESC</kbd>
+                            <span>kapat</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             {% block content %}{% endblock %}
         </main>
 
         <!-- Footer -->
         <footer class="footer">
-            <p>&copy; 2026 OCRchestra - Modern Turkish Corpus Analysis Platform</p>
+            <p>&copy; 2026 CorpusIO - Modern Türkçe Korpus Analizi Platformu</p>
             <div class="footer-links">
-                <a href="/api/docs/" target="_blank">API Docs</a>
+                <a href="/api/docs/" target="_blank">API Dokümanları</a>
                 <a href="https://github.com/iatagun/OCRchestra" target="_blank">GitHub</a>
             </div>
         </footer>
@@ -278,6 +327,330 @@
                 }, 5000);
             });
         });
+
+        // Global Loading Helper Functions
+        window.showLoading = function(message = 'Yükleniyor...') {
+            const overlay = document.getElementById('globalLoading');
+            const text = document.getElementById('globalLoadingText');
+            if (overlay) {
+                text.textContent = message;
+                overlay.classList.remove('hidden');
+            }
+        };
+
+        window.hideLoading = function() {
+            const overlay = document.getElementById('globalLoading');
+            if (overlay) {
+                overlay.classList.add('hidden');
+            }
+        };
+
+        // Toast Notification System
+        let toastQueue = [];
+        const MAX_TOASTS = 3;
+
+        window.showToast = function(options) {
+            // Options: { type, title, message, duration }
+            const defaults = {
+                type: 'info', // success, error, warning, info
+                title: '',
+                message: '',
+                duration: 5000
+            };
+            
+            const config = { ...defaults, ...options };
+            
+            // Icon mapping
+            const icons = {
+                success: 'check_circle',
+                error: 'error',
+                warning: 'warning',
+                info: 'info'
+            };
+
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${config.type}`;
+            
+            toast.innerHTML = `
+                <div class="toast-icon">
+                    <span class="material-icons">${icons[config.type]}</span>
+                </div>
+                <div class="toast-content">
+                    ${config.title ? `<div class="toast-title">${config.title}</div>` : ''}
+                    <div class="toast-message">${config.message}</div>
+                </div>
+                <button class="toast-close" onclick="closeToast(this)">
+                    <span class="material-icons" style="font-size: 18px;">close</span>
+                </button>
+                ${config.duration > 0 ? '<div class="toast-progress"><div class="toast-progress-bar"></div></div>' : ''}
+            `;
+
+            const container = document.getElementById('toastContainer');
+            
+            // Remove oldest toast if max limit reached
+            const existingToasts = container.querySelectorAll('.toast');
+            if (existingToasts.length >= MAX_TOASTS) {
+                closeToast(existingToasts[0].querySelector('.toast-close'));
+            }
+
+            container.appendChild(toast);
+
+            // Auto dismiss
+            if (config.duration > 0) {
+                setTimeout(() => {
+                    closeToast(toast.querySelector('.toast-close'));
+                }, config.duration);
+            }
+
+            return toast;
+        };
+
+        window.closeToast = function(element) {
+            const toast = element.closest ? element.closest('.toast') : element;
+            if (toast) {
+                toast.classList.add('removing');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }
+        };
+
+        // Convenience methods
+        window.toastSuccess = function(message, title = 'Başarılı!') {
+            return showToast({ type: 'success', title, message });
+        };
+
+        window.toastError = function(message, title = 'Hata!') {
+            return showToast({ type: 'error', title, message });
+        };
+
+        window.toastWarning = function(message, title = 'Uyarı!') {
+            return showToast({ type: 'warning', title, message });
+        };
+
+        window.toastInfo = function(message, title = 'Bilgi') {
+            return showToast({ type: 'info', title, message });
+        };
+
+        // ========================================
+        // GLOBAL SEARCH (Ctrl+K)
+        // ========================================
+        
+        let searchTimeout = null;
+        let currentSearchResults = [];
+        let selectedResultIndex = -1;
+
+        // Open search modal with Ctrl+K or Cmd+K
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                openSearchModal();
+            }
+        });
+
+        function openSearchModal() {
+            const modal = document.getElementById('searchModal');
+            const input = document.getElementById('searchInput');
+            modal.classList.add('active');
+            setTimeout(() => input.focus(), 100);
+        }
+
+        function closeSearchModal() {
+            const modal = document.getElementById('searchModal');
+            const input = document.getElementById('searchInput');
+            modal.classList.remove('active');
+            input.value = '';
+            currentSearchResults = [];
+            selectedResultIndex = -1;
+            showEmptyState();
+        }
+
+        // Close on backdrop click
+        document.getElementById('searchModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSearchModal();
+            }
+        });
+
+        // Close on ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('searchModal').classList.contains('active')) {
+                closeSearchModal();
+            }
+        });
+
+        // Search input handler
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = e.target.value.trim();
+            
+            // Clear previous timeout
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+
+            if (query.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            if (query.length < 2) {
+                return;
+            }
+
+            // Show loading state
+            showSearchLoading();
+
+            // Debounce search (wait 300ms after user stops typing)
+            searchTimeout = setTimeout(() => {
+                performSearch(query);
+            }, 300);
+        });
+
+        // Keyboard navigation (arrow keys and Enter)
+        document.getElementById('searchInput').addEventListener('keydown', function(e) {
+            if (currentSearchResults.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedResultIndex = Math.min(selectedResultIndex + 1, currentSearchResults.length - 1);
+                updateSelectedResult();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedResultIndex = Math.max(selectedResultIndex - 1, -1);
+                updateSelectedResult();
+            } else if (e.key === 'Enter' && selectedResultIndex >= 0) {
+                e.preventDefault();
+                const selectedResult = currentSearchResults[selectedResultIndex];
+                if (selectedResult && selectedResult.url) {
+                    window.location.href = selectedResult.url;
+                }
+            }
+        });
+
+        function performSearch(query) {
+            // Make AJAX request to search endpoint
+            fetch(`/corpus/search/?q=${encodeURIComponent(query)}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                currentSearchResults = data.results || [];
+                selectedResultIndex = -1;
+                displaySearchResults(data);
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                showSearchError();
+            });
+        }
+
+        function displaySearchResults(data) {
+            const resultsContainer = document.getElementById('searchResults');
+            
+            if (!data.results || data.results.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="search-modal-empty">
+                        <span class="material-icons">search_off</span>
+                        <p>Sonuç bulunamadı</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            // Group results by type
+            const documents = data.results.filter(r => r.type === 'document');
+            const collections = data.results.filter(r => r.type === 'collection');
+
+            if (documents.length > 0) {
+                html += '<div class="search-modal-section">';
+                html += '<div class="search-modal-section-title">Belgeler</div>';
+                documents.forEach((result, index) => {
+                    html += createResultItem(result, index);
+                });
+                html += '</div>';
+            }
+
+            if (collections.length > 0) {
+                html += '<div class="search-modal-section">';
+                html += '<div class="search-modal-section-title">Koleksiyonlar</div>';
+                collections.forEach((result, index) => {
+                    html += createResultItem(result, documents.length + index);
+                });
+                html += '</div>';
+            }
+
+            resultsContainer.innerHTML = html;
+        }
+
+        function createResultItem(result, index) {
+            const iconClass = result.type === 'document' ? 'document' : 'collection';
+            const icon = result.type === 'document' ? 'description' : 'collections_bookmark';
+            
+            return `
+                <a href="${result.url}" class="search-result-item" data-index="${index}">
+                    <div class="search-result-icon ${iconClass}">
+                        <span class="material-icons">${icon}</span>
+                    </div>
+                    <div class="search-result-content">
+                        <div class="search-result-title">${result.title}</div>
+                        <div class="search-result-meta">
+                            ${result.metadata || ''}
+                        </div>
+                    </div>
+                    ${result.badge ? `
+                        <div class="search-result-badge">
+                            <span class="material-icons">${result.badge_icon || 'label'}</span>
+                            <span>${result.badge}</span>
+                        </div>
+                    ` : ''}
+                </a>
+            `;
+        }
+
+        function updateSelectedResult() {
+            const items = document.querySelectorAll('.search-result-item');
+            items.forEach((item, index) => {
+                if (index === selectedResultIndex) {
+                    item.classList.add('active');
+                    item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        function showEmptyState() {
+            document.getElementById('searchResults').innerHTML = `
+                <div class="search-modal-empty">
+                    <span class="material-icons">search</span>
+                    <p>Aramaya başlamak için yazmaya başlayın</p>
+                </div>
+            `;
+        }
+
+        function showSearchLoading() {
+            document.getElementById('searchResults').innerHTML = `
+                <div class="search-loading">
+                    <div class="spinner-small"></div>
+                    <p>Aranıyor...</p>
+                </div>
+            `;
+        }
+
+        function showSearchError() {
+            document.getElementById('searchResults').innerHTML = `
+                <div class="search-modal-empty">
+                    <span class="material-icons">error_outline</span>
+                    <p>Arama sırasında bir hata oluştu</p>
+                </div>
+            `;
+        }
     </script>
 </body>
 

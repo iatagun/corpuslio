@@ -1,8 +1,23 @@
 {% extends "corpus/base.html" %}
 
-{% block title %}Yeni Belge Ekle - OCRchestra{% endblock %}
+{% block title %}Yeni Belge Ekle - CorpusIO{% endblock %}
 
 {% block content %}
+<!-- Loading Overlay -->
+<div id="uploadLoadingOverlay" class="loading-overlay hidden">
+    <div class="spinner-large"></div>
+    <div class="loading-text">Dosyalar yükleniyor...</div>
+    <div class="progress-container" style="margin-top: 1rem;">
+        <div class="progress-info">
+            <span id="uploadStatus">Hazırlanıyor...</span>
+            <span id="uploadPercent">0%</span>
+        </div>
+        <div style="width: 100%; max-width: 400px; background: var(--bg-surface); border-radius: 8px; overflow: hidden; height: 8px;">
+            <div id="uploadProgressBar" class="progress-bar" style="width: 0%;"></div>
+        </div>
+    </div>
+</div>
+
 <h2>📤 Yeni Belge İşle</h2>
 
 <div class="upload-container">
@@ -11,17 +26,27 @@
 
         <div class="file-upload-section">
             <div class="form-group">
-                <label for="{{ form.file.id_for_label }}" class="form-label">Dosya Seçin (Çoklu Yükleme
-                    Desteklenir)</label>
-                <div class="file-upload-area"
-                    onclick="document.getElementById('{{ form.file.id_for_label }}').click();">
-                    <p class="upload-icon">📁</p>
-                    <p class="upload-text">Dosya seçmek için tıklayın (birden fazla seçilebilir)</p>
-                    <p class="upload-hint">PDF, DOCX, TXT, PNG, JPG (Max 50MB her biri)</p>
+                <label class="form-label">Dosya Yükle</label>
+                
+                <!-- Drag & Drop Zone -->
+                <div class="drag-drop-zone" id="dragDropZone">
+                    <div class="drag-drop-icon">
+                        <span class="material-icons" style="font-size: 4rem; color: var(--accent-primary);">cloud_upload</span>
+                    </div>
+                    <div class="drag-drop-text">Dosyaları buraya sürükleyin</div>
+                    <div class="drag-drop-or">veya</div>
+                    <button type="button" class="btn btn-primary" onclick="document.getElementById('{{ form.file.id_for_label }}').click();">
+                        <span class="material-icons">folder_open</span> Dosya Seç
+                    </button>
+                    <div class="drag-drop-hint">PDF, DOCX, TXT, PNG, JPG (Maksimum 50MB)</div>
                 </div>
+
+                <!-- Hidden file input -->
                 <input type="file" name="files" id="{{ form.file.id_for_label }}" multiple class="form-control"
-                    accept="{{ form.file.field.widget.attrs.accept }}">
-                <div id="file-names" class="file-name"></div>
+                    accept="{{ form.file.field.widget.attrs.accept }}" style="display: none;">
+                
+                <!-- File Preview List -->
+                <div id="filePreviewList" class="file-preview-list"></div>
             </div>
 
             <h3 style="margin-top: 2rem;">📋 Metadata (MEB Standardı)</h3>
@@ -192,12 +217,199 @@
 </style>
 
 <script>
-    document.getElementById('{{ form.file.id_for_label }}').addEventListener('change', function (e) {
-        const files = e.target.files;
-        if (files.length > 0) {
-            const fileNames = Array.from(files).map(f => f.name).join(', ');
-            document.getElementById('file-names').innerHTML = `✅ Seçilen: <strong>${files.length} dosya</strong><br>${fileNames}`;
+    const fileInput = document.getElementById('{{ form.file.id_for_label }}');
+    const uploadForm = document.querySelector('.upload-form');
+    const loadingOverlay = document.getElementById('uploadLoadingOverlay');
+    const progressBar = document.getElementById('uploadProgressBar');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const uploadPercent = document.getElementById('uploadPercent');
+    const dragDropZone = document.getElementById('dragDropZone');
+    const filePreviewList = document.getElementById('filePreviewList');
+
+    // File management
+    let selectedFiles = [];
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+    const ALLOWED_TYPES = {
+        'application/pdf': { ext: 'pdf', icon: 'picture_as_pdf', class: 'pdf' },
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': { ext: 'docx', icon: 'description', class: 'docx' },
+        'application/msword': { ext: 'doc', icon: 'description', class: 'doc' },
+        'text/plain': { ext: 'txt', icon: 'article', class: 'txt' },
+        'image/png': { ext: 'png', icon: 'image', class: 'image' },
+        'image/jpeg': { ext: 'jpg', icon: 'image', class: 'image' },
+        'image/jpg': { ext: 'jpg', icon: 'image', class: 'image' }
+    };
+
+    // Drag & Drop Events
+    dragDropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dragDropZone.classList.add('drag-over');
+    });
+
+    dragDropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragDropZone.classList.remove('drag-over');
+    });
+
+    dragDropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dragDropZone.classList.remove('drag-over');
+        
+        const files = Array.from(e.dataTransfer.files);
+        handleFiles(files);
+    });
+
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        handleFiles(files);
+    });
+
+    // Handle files
+    function handleFiles(files) {
+        files.forEach(file => {
+            // Validate
+            const validation = validateFile(file);
+            
+            // Check if file already added
+            const exists = selectedFiles.find(f => f.name === file.name && f.size === file.size);
+            if (exists) {
+                toastWarning(`"${file.name}" zaten eklendi`, 'Tekrar dosya');
+                return;
+            }
+
+            // Add to list
+            selectedFiles.push({
+                file: file,
+                valid: validation.valid,
+                error: validation.error
+            });
+
+            // Show toast
+            if (validation.valid) {
+                toastSuccess(`"${file.name}" eklendi`, 'Dosya hazır');
+            } else {
+                toastError(validation.error, `"${file.name}" eklenemedi`);
+            }
+        });
+
+        updatePreview();
+        updateFileInput();
+    }
+
+    // Validate file
+    function validateFile(file) {
+        // Check file type
+        if (!ALLOWED_TYPES[file.type]) {
+            return { valid: false, error: 'Desteklenmeyen dosya türü' };
         }
+
+        // Check file size
+        if (file.size > MAX_FILE_SIZE) {
+            return { valid: false, error: `Dosya boyutu çok büyük (Max: 50MB)` };
+        }
+
+        return { valid: true };
+    }
+
+    // Format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    // Update preview
+    function updatePreview() {
+        filePreviewList.innerHTML = '';
+        
+        selectedFiles.forEach((item, index) => {
+            const fileInfo = ALLOWED_TYPES[item.file.type] || { icon: 'insert_drive_file', class: '' };
+            
+            const previewItem = document.createElement('div');
+            previewItem.className = 'file-preview-item';
+            previewItem.innerHTML = `
+                <div class="file-preview-icon ${fileInfo.class}">
+                    <span class="material-icons">${fileInfo.icon}</span>
+                </div>
+                <div class="file-preview-info">
+                    <div class="file-preview-name">${item.file.name}</div>
+                    <div class="file-preview-meta">
+                        <span class="file-preview-size">
+                            <span class="material-icons" style="font-size: 14px;">storage</span>
+                            ${formatFileSize(item.file.size)}
+                        </span>
+                        <span class="file-preview-status ${item.valid ? 'valid' : 'invalid'}">
+                            <span class="material-icons" style="font-size: 14px;">
+                                ${item.valid ? 'check_circle' : 'error'}
+                            </span>
+                            ${item.valid ? 'Geçerli' : item.error}
+                        </span>
+                    </div>
+                </div>
+                <button type="button" class="file-preview-remove" onclick="removeFile(${index})">
+                    <span class="material-icons">close</span>
+                </button>
+            `;
+            
+            filePreviewList.appendChild(previewItem);
+        });
+    }
+
+    // Remove file
+    window.removeFile = function(index) {
+        const fileName = selectedFiles[index].file.name;
+        selectedFiles.splice(index, 1);
+        updatePreview();
+        updateFileInput();
+        toastInfo(`"${fileName}" kaldırıldı`, 'Dosya silindi');
+    };
+
+    // Update file input
+    function updateFileInput() {
+        const dataTransfer = new DataTransfer();
+        selectedFiles.forEach(item => {
+            if (item.valid) {
+                dataTransfer.items.add(item.file);
+            }
+        });
+        fileInput.files = dataTransfer.files;
+    }
+
+    // Form submission with progress
+    uploadForm.addEventListener('submit', function(e) {
+        const validFiles = selectedFiles.filter(f => f.valid);
+        
+        if (validFiles.length === 0) {
+            toastError('Lütfen en az bir geçerli dosya seçin!', 'Dosya seçilmedi');
+            e.preventDefault();
+            return;
+        }
+
+        // Show loading overlay
+        loadingOverlay.classList.remove('hidden');
+        
+        // Simulate upload progress
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 95) {
+                progress = 95;
+                clearInterval(interval);
+                uploadStatus.textContent = 'İşleniyor...';
+            }
+            progressBar.style.width = progress + '%';
+            uploadPercent.textContent = Math.round(progress) + '%';
+            
+            if (progress < 30) {
+                uploadStatus.textContent = 'Dosyalar yükleniyor...';
+            } else if (progress < 60) {
+                uploadStatus.textContent = 'Metin çıkarılıyor...';
+            } else if (progress < 90) {
+                uploadStatus.textContent = 'Analiz ediliyor...';
+            }
+        }, 200);
     });
 </script>
 {% endblock %}

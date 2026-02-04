@@ -3,11 +3,28 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework import serializers
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 
 from corpus.models import Document
 from corpus.services import CorpusService
+
+
+# Serializers for request/response schemas
+class SearchRequestSerializer(serializers.Serializer):
+    """Serializer for search request."""
+    doc_id = serializers.IntegerField(required=True, help_text='Aranacak dökümanın ID\'si')
+    query = serializers.CharField(required=False, allow_blank=True, help_text='Arama sorgusu (opsiyonel)')
+
+
+class SearchResponseSerializer(serializers.Serializer):
+    """Serializer for search response."""
+    matches = serializers.IntegerField(help_text='Bulunan eşleşme sayısı')
+    concordance = serializers.ListField(
+        child=serializers.DictField(),
+        help_text='Concordance sonuçları'
+    )
 
 
 @extend_schema(
@@ -51,21 +68,8 @@ def documents_list(request):
 
 
 @extend_schema(
-    request={
-        'type': 'object',
-        'properties': {
-            'doc_id': {'type': 'integer'},
-            'query': {'type': 'string'}
-        },
-        'required': ['doc_id']
-    },
-    responses={200: {
-        'type': 'object',
-        'properties': {
-            'matches': {'type': 'integer'},
-            'concordance': {'type': 'array', 'items': {'type': 'object'}}
-        }
-    }},
+    request=SearchRequestSerializer,
+    responses={200: SearchResponseSerializer},
     description="Bir döküman içinde arama yapar"
 )
 @api_view(['POST'])

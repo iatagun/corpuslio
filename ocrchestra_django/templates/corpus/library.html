@@ -1,6 +1,6 @@
 {% extends "corpus/base.html" %}
 
-{% block title %}Kütüphane - OCRchestra{% endblock %}
+{% block title %}Kütüphane - CorpusIO{% endblock %}
 
 {% block content %}
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
@@ -52,7 +52,7 @@
 </div>
 
 {% if documents %}
-<div class="documents-grid">
+<div class="documents-grid" id="documentsGrid">
     {% for doc in documents %}
     <div class="card document-card">
         <h3>{{ doc.filename }}</h3>
@@ -99,32 +99,55 @@
     {% endfor %}
 </div>
 
-<!-- Pagination Controls -->
-{% if page_obj.has_other_pages %}
-<div class="pagination-container" style="display:flex; justify-content:center; margin-top:3rem;">
-    <div class="pagination" style="display:flex; gap:0.5rem; align-items:center;">
-        {% if page_obj.has_previous %}
-        <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.author %}&author={{ request.GET.author }}{% endif %}{% if request.GET.genre %}&genre={{ request.GET.genre }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}"
-            class="btn btn-outline btn-small">&laquo; İlk</a>
-        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.author %}&author={{ request.GET.author }}{% endif %}{% if request.GET.genre %}&genre={{ request.GET.genre }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}"
-            class="btn btn-outline btn-small">&lsaquo; Önceki</a>
-        {% endif %}
-
-        <span class="current" style="color:var(--text-secondary); font-size:0.9rem; margin:0 1rem;">
-            Sayfa {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
-        </span>
-
-        {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.author %}&author={{ request.GET.author }}{% endif %}{% if request.GET.genre %}&genre={{ request.GET.genre }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}"
-            class="btn btn-outline btn-small">Sonraki &rsaquo;</a>
-        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.author %}&author={{ request.GET.author }}{% endif %}{% if request.GET.genre %}&genre={{ request.GET.genre }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}"
-            class="btn btn-outline btn-small">Son &raquo;</a>
-        {% endif %}
-    </div>
+<!-- Loading indicator for infinite scroll -->
+<div id="infiniteScrollLoader" 
+     class="infinite-scroll-loader" 
+     style="display: none;"
+     data-current-page="{{ page_obj.number }}"
+     data-total-pages="{{ page_obj.paginator.num_pages }}"
+     data-has-more="{{ page_obj.has_next|yesno:'true,false' }}">
+    <div class="spinner-small"></div>
+    <p style="color: var(--text-secondary); margin-top: 0.5rem;">Daha fazla yükleniyor...</p>
 </div>
-{% endif %}
+
+<!-- End of results indicator -->
+<div id="endOfResults" class="end-of-results" style="display: none;">
+    <span class="material-icons" style="font-size: 2rem; color: var(--text-tertiary);">check_circle</span>
+    <p style="color: var(--text-secondary); margin-top: 0.5rem;">Tüm dokümanlar yüklendi</p>
+</div>
 
 {% else %}
+<!-- Skeleton Loading (initially hidden, shown via JS when loading) -->
+<div class="documents-grid" id="skeletonGrid" style="display: none;">
+    <div class="skeleton-card">
+        <div class="skeleton skeleton-text-lg" style="width: 70%; margin-bottom: 1rem;"></div>
+        <div class="skeleton skeleton-text" style="width: 30%; margin-bottom: 0.5rem;"></div>
+        <div class="skeleton skeleton-text" style="width: 50%; margin-bottom: 1rem;"></div>
+        <div style="display: flex; gap: 0.5rem;">
+            <div class="skeleton skeleton-text" style="width: 80px; height: 36px;"></div>
+            <div class="skeleton skeleton-text" style="width: 80px; height: 36px;"></div>
+        </div>
+    </div>
+    <div class="skeleton-card">
+        <div class="skeleton skeleton-text-lg" style="width: 60%; margin-bottom: 1rem;"></div>
+        <div class="skeleton skeleton-text" style="width: 40%; margin-bottom: 0.5rem;"></div>
+        <div class="skeleton skeleton-text" style="width: 45%; margin-bottom: 1rem;"></div>
+        <div style="display: flex; gap: 0.5rem;">
+            <div class="skeleton skeleton-text" style="width: 80px; height: 36px;"></div>
+            <div class="skeleton skeleton-text" style="width: 80px; height: 36px;"></div>
+        </div>
+    </div>
+    <div class="skeleton-card">
+        <div class="skeleton skeleton-text-lg" style="width: 75%; margin-bottom: 1rem;"></div>
+        <div class="skeleton skeleton-text" style="width: 35%; margin-bottom: 0.5rem;"></div>
+        <div class="skeleton skeleton-text" style="width: 55%; margin-bottom: 1rem;"></div>
+        <div style="display: flex; gap: 0.5rem;">
+            <div class="skeleton skeleton-text" style="width: 80px; height: 36px;"></div>
+            <div class="skeleton skeleton-text" style="width: 80px; height: 36px;"></div>
+        </div>
+    </div>
+</div>
+
 <div class="alert alert-info" style="display:flex; align-items:center; gap:0.5rem;">
     <span class="material-icons">info</span>
     <p>Kütüphane boş. 'Yeni Ekle' sekmesinden kitap ekleyebilirsiniz.</p>
@@ -144,8 +167,179 @@
         gap: 1rem;
         align-items: center;
     }
+
+    .infinite-scroll-loader,
+    .end-of-results {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        margin: 2rem 0;
+    }
 </style>
 <script>
+    // ========================================
+    // INFINITE SCROLL IMPLEMENTATION
+    // ========================================
+    
+    // Get initial values from data attributes
+    const loaderElement = document.getElementById('infiniteScrollLoader');
+    let currentPage = parseInt(loaderElement.dataset.currentPage);
+    let totalPages = parseInt(loaderElement.dataset.totalPages);
+    let isLoading = false;
+    let hasMore = loaderElement.dataset.hasMore === 'true';
+
+    // Get current filter parameters
+    function getCurrentFilters() {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            q: params.get('q') || '',
+            author: params.get('author') || '',
+            genre: params.get('genre') || '',
+            date: params.get('date') || ''
+        };
+    }
+
+    // Build query string from filters
+    function buildQueryString(page) {
+        const filters = getCurrentFilters();
+        const params = new URLSearchParams();
+        
+        params.append('page', page);
+        if (filters.q) params.append('q', filters.q);
+        if (filters.author) params.append('author', filters.author);
+        if (filters.genre) params.append('genre', filters.genre);
+        if (filters.date) params.append('date', filters.date);
+        
+        return params.toString();
+    }
+
+    // Load more documents
+    function loadMoreDocuments() {
+        if (isLoading || !hasMore) return;
+        
+        isLoading = true;
+        const loader = document.getElementById('infiniteScrollLoader');
+        loader.style.display = 'flex';
+        
+        const nextPage = currentPage + 1;
+        const queryString = buildQueryString(nextPage);
+        
+        fetch(`/corpus/library/?${queryString}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.documents && data.documents.length > 0) {
+                appendDocuments(data.documents);
+                currentPage = data.page;
+                hasMore = data.has_next;
+                
+                if (!hasMore) {
+                    showEndOfResults();
+                }
+            } else {
+                hasMore = false;
+                showEndOfResults();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading documents:', error);
+            toastError('Dokümanlar yüklenirken bir hata oluştu');
+        })
+        .finally(() => {
+            loader.style.display = 'none';
+            isLoading = false;
+        });
+    }
+
+    // Append documents to grid
+    function appendDocuments(documents) {
+        const grid = document.getElementById('documentsGrid');
+        
+        documents.forEach(doc => {
+            const card = createDocumentCard(doc);
+            grid.appendChild(card);
+        });
+    }
+
+    // Create document card element
+    function createDocumentCard(doc) {
+        const card = document.createElement('div');
+        card.className = 'card document-card';
+        
+        const processedBadge = doc.processed
+            ? `<span style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-success); font-weight:500; font-size:0.85rem;">
+                   <span class="material-icons" style="font-size:16px;">check_circle</span> İşlendi
+               </span>
+               <span class="word-count">${doc.word_count} kelime</span>`
+            : `<span style="display:flex; align-items:center; gap:0.25rem; color:var(--text-secondary); font-size:0.85rem;">
+                   <span class="material-icons" style="font-size:16px;">hourglass_empty</span> Bekliyor
+               </span>`;
+        
+        const actions = doc.processed
+            ? `<a href="${doc.url}" class="btn btn-secondary btn-small">İncele</a>
+               <a href="${doc.export_url}?format=vrt" class="btn btn-outline btn-small">VRT</a>`
+            : '';
+        
+        card.innerHTML = `
+            <h3>${doc.title}</h3>
+            <p class="meta">
+                <span class="format-badge">${doc.filename.split('.').pop().toUpperCase()}</span>
+                <span class="date" style="display:flex; align-items:center; gap:0.25rem;">
+                    <span class="material-icons" style="font-size:14px;">calendar_today</span>
+                    ${doc.upload_date}
+                </span>
+            </p>
+            <p class="status">
+                ${processedBadge}
+            </p>
+            <div class="actions">
+                ${actions}
+            </div>
+        `;
+        
+        return card;
+    }
+
+    // Show end of results message
+    function showEndOfResults() {
+        const endMessage = document.getElementById('endOfResults');
+        endMessage.style.display = 'flex';
+    }
+
+    // Intersection Observer for infinite scroll
+    function setupInfiniteScroll() {
+        const loader = document.getElementById('infiniteScrollLoader');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && hasMore && !isLoading) {
+                    loadMoreDocuments();
+                }
+            });
+        }, {
+            root: null,
+            rootMargin: '200px', // Start loading 200px before reaching the bottom
+            threshold: 0
+        });
+        
+        observer.observe(loader);
+    }
+
+    // Initialize infinite scroll on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        if (hasMore) {
+            setupInfiniteScroll();
+        } else {
+            showEndOfResults();
+        }
+    });
+
     // Auto-submit form when select changes (optional)
     document.querySelector('select[name="genre"]').addEventListener('change', function () {
         this.form.submit();

@@ -61,7 +61,7 @@ def home_view(request):
 @ensure_csrf_cookie
 def library_view(request):
     """Display all documents in library with filtering."""
-    documents = Document.objects.all()
+    documents = Document.objects.all().order_by('-upload_date')
     
     # Metadata filters
     author_filter = request.GET.get('author')
@@ -86,9 +86,9 @@ def library_view(request):
             Q(metadata__source__icontains=search_query)
         )
     
-    # Pagination
+    # Pagination (Infinite scroll - 20 items per page)
     from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-    paginator = Paginator(documents, 50)  # Show 50 documents per page
+    paginator = Paginator(documents, 20)  # Reduced from 50 for smooth infinite scroll
     
     page_number = request.GET.get('page')
     try:
@@ -97,6 +97,32 @@ def library_view(request):
         page_obj = paginator.page(1)
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
+    
+    # Check if this is an AJAX request for infinite scroll
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Return JSON data for AJAX infinite scroll
+        documents_data = []
+        for doc in page_obj:
+            documents_data.append({
+                'id': doc.id,
+                'title': doc.title,
+                'filename': doc.filename,
+                'upload_date': doc.upload_date.strftime('%d.%m.%Y %H:%M'),
+                'author': doc.author or 'Bilinmeyen',
+                'word_count': doc.get_word_count() if doc.processed else 0,
+                'processed': doc.processed,
+                'url': f'/corpus/analysis/{doc.id}/',
+                'delete_url': f'/corpus/delete/{doc.id}/',
+                'export_url': f'/corpus/export/{doc.id}/'
+            })
+        
+        return JsonResponse({
+            'documents': documents_data,
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous(),
+            'page': page_obj.number,
+            'total_pages': paginator.num_pages
+        })
     
     # Get unique values for filter dropdowns (Optimized check)
     # Note: For 20k records, iterating all() is slow. Ideally this should be distinct()
@@ -497,3 +523,56 @@ def profile_view(request):
     return render(request, 'corpus/profile.html', {
         'active_tab': 'profile'
     })
+
+
+@login_required
+def global_search_view(request):
+    """Global search endpoint for documents and collections (AJAX)."""
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+    
+    query = request.GET.get('q', '').strip()
+    
+    if not query or len(query) < 2:
+        return JsonResponse({'results': []})
+    
+    results = []
+    
+    # Search in documents (title, author, content)
+    documents = Document.objects.filter(
+        title__icontains=query
+    ) | Document.objects.filter(
+        author__icontains=query
+    )
+    
+    for doc in documents[:10]:  # Limit to 10 results
+        metadata_parts = []
+        if doc.author:
+            metadata_parts.append(doc.author)
+        if doc.upload_date:
+            metadata_parts.append(doc.upload_date.strftime('%d.%m.%Y'))
+        
+        results.append({
+            'type': 'document',
+            'title': doc.title,
+            'url': f'/corpus/library/?doc={doc.id}',
+            'metadata': ' • '.join(metadata_parts),
+            'badge': f'{doc.get_word_count()} kelime' if doc.processed else 'İşleniyor',
+            'badge_icon': 'article' if doc.processed else 'hourglass_empty'
+        })
+    
+    # Search in collections
+    collections = Collection.objects.filter(name__icontains=query)
+    
+    for coll in collections[:5]:  # Limit to 5 results
+        doc_count = coll.get_document_count()
+        results.append({
+            'type': 'collection',
+            'title': coll.name,
+            'url': f'/corpus/collections/{coll.id}/',
+            'metadata': coll.description[:100] if coll.description else 'Açıklama yok',
+            'badge': f'{doc_count} belge',
+            'badge_icon': 'folder'
+        })
+    
+    return JsonResponse({'results': results})

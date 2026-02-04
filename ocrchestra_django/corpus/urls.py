@@ -15,6 +15,9 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
     
+    # Global search (AJAX endpoint)
+    path('search/', views.global_search_view, name='global_search'),
+    
     # Main pages
     path('', views.home_view, name='home'),
     path('library/', views.library_view, name='library'),

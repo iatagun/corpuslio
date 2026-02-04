@@ -1,13 +1,13 @@
 {% extends "corpus/base.html" %}
 
-{% block title %}OCRchestra - Modern Turkish Corpus Analysis{% endblock %}
+{% block title %}CorpusIO - Modern Türkçe Korpus Analizi{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
 <div class="hero-section">
     <div class="hero-content">
-        <h1 class="hero-title">OCRchestra</h1>
-        <p class="hero-subtitle">Modern Turkish Corpus Management & NLP Analysis Platform</p>
+        <h1 class="hero-title">CorpusIO</h1>
+        <p class="hero-subtitle">Modern Türkçe Korpus Yönetimi ve Doğal Dil İşleme Platformu</p>
         <p class="hero-description">
             Güçlü doğal dil işleme araçları ile Türkçe metin korpuslarınızı yönetin, analiz edin ve görselleştirin.
         </p>
@@ -45,8 +45,8 @@
     <div class="features-grid">
         <div class="feature-card">
             <span class="material-icons feature-icon">folder_special</span>
-            <h3>Corpus Yönetimi</h3>
-            <p>Çoklu dosya yükleme, metadata yönetimi, koleksiyonlar ve gelişmiş filtreleme özellikleri.</p>
+            <h3>Korpus Yönetimi</h3>
+            <p>Çoklu dosya yükleme, üstveri yönetimi, koleksiyonlar ve gelişmiş filtreleme özellikleri.</p>
         </div>
 
         <div class="feature-card">
@@ -58,7 +58,7 @@
         <div class="feature-card">
             <span class="material-icons feature-icon">bar_chart</span>
             <h3>Görselleştirme</h3>
-            <p>Interactive grafikler, frekans analizleri ve çoklu format export desteği.</p>
+            <p>Etkileşimli grafikler, frekans analizleri ve çoklu format dışa aktarma desteği.</p>
         </div>
     </div>
 </section>
@@ -133,7 +133,7 @@
 {% else %}
 <section class="cta-section">
     <h2>Platformumuza Katılın</h2>
-    <p>OCRchestra ile Türkçe metin korpuslarınızı yönetin, analiz edin ve güçlü NLP araçlarından faydalanın.</p>
+    <p>CorpusIO ile Türkçe metin korpuslarınızı yönetin, analiz edin ve güçlü doğal dil işleme araçlarından faydalanın.</p>
     <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
         <a href="{% url 'corpus:login' %}" class="btn btn-primary btn-large">
             <span class="material-icons">login</span> Giriş Yap
@@ -351,4 +351,32 @@
         font-size: 1.1rem;
     }
 </style>
+
+{% block extra_js %}
+<script>
+    // Demo: Toast notifications on page load (remove in production)
+    document.addEventListener('DOMContentLoaded', function() {
+        // Welcome toast for authenticated users
+        {% if user.is_authenticated %}
+        setTimeout(() => {
+            toastInfo('CorpusIO platformuna hoş geldiniz!', '👋 Merhaba {{ user.username }}');
+        }, 500);
+        {% endif %}
+    });
+
+    // Add toast demo to feature cards (click to test)
+    document.querySelectorAll('.feature-card').forEach((card, index) => {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', function() {
+            const messages = [
+                { type: 'success', title: 'Harika!', message: 'Korpus yönetimi özellikleri çok yakında!' },
+                { type: 'info', title: 'Bilgi', message: 'İleri seviye analiz araçları hazırlanıyor.' },
+                { type: 'warning', title: 'Not', message: 'Görselleştirme özellikleri beta aşamasında.' }
+            ];
+            const msg = messages[index] || messages[0];
+            showToast(msg);
+        });
+    });
+</script>
+{% endblock %}
 {% endblock %}
