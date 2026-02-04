@@ -21,3 +21,7 @@ groq
 pdfplumber==0.10.3
 pandas
 plotly
+
+# Export formats
+reportlab==4.0.7
+openpyxl==3.1.2

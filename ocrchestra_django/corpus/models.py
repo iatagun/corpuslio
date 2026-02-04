@@ -4,6 +4,44 @@ from django.db import models
 from django.utils import timezone
 
 
+class Tag(models.Model):
+    """Tag model for categorizing documents."""
+    
+    COLOR_CHOICES = [
+        ('blue', 'Mavi'),
+        ('green', 'Yeşil'),
+        ('red', 'Kırmızı'),
+        ('yellow', 'Sarı'),
+        ('purple', 'Mor'),
+        ('pink', 'Pembe'),
+        ('orange', 'Turuncu'),
+        ('teal', 'Turkuaz'),
+    ]
+    
+    name = models.CharField(max_length=50, unique=True, verbose_name="Etiket Adı")
+    slug = models.SlugField(max_length=50, unique=True, verbose_name="Slug")
+    color = models.CharField(
+        max_length=20, 
+        choices=COLOR_CHOICES, 
+        default='blue',
+        verbose_name="Renk"
+    )
+    description = models.TextField(blank=True, verbose_name="Açıklama")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Oluşturulma")
+    
+    class Meta:
+        ordering = ['name']
+        verbose_name = "Etiket"
+        verbose_name_plural = "Etiketler"
+    
+    def __str__(self):
+        return self.name
+    
+    def get_document_count(self):
+        """Get number of documents with this tag."""
+        return self.documents.count()
+
+
 class Document(models.Model):
     """Document model for uploaded files."""
     
@@ -55,6 +93,14 @@ class Document(models.Model):
         blank=True,
         verbose_name="Ek Metadata",
         help_text="Diğer detaylar (JSON)"
+    )
+    
+    # Tags (Many-to-Many relationship)
+    tags = models.ManyToManyField(
+        Tag,
+        related_name='documents',
+        blank=True,
+        verbose_name="Etiketler"
     )
     
     class Meta:
@@ -175,3 +221,40 @@ class ProcessingTask(models.Model):
     
     def __str__(self):
         return f"{self.document.filename} - {self.status}"
+
+
+class SearchHistory(models.Model):
+    """Search history tracking for users."""
+    
+    user = models.ForeignKey(
+        'auth.User',
+        on_delete=models.CASCADE,
+        related_name='search_history',
+        verbose_name="Kullanıcı"
+    )
+    query = models.CharField(max_length=500, verbose_name="Arama Sorgusu")
+    search_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('basic', 'Basit'),
+            ('fuzzy', 'Benzer'),
+            ('regex', 'Regex'),
+            ('advanced', 'Gelişmiş'),
+        ],
+        default='basic',
+        verbose_name="Arama Tipi"
+    )
+    filters = models.JSONField(default=dict, blank=True, verbose_name="Filtreler")
+    result_count = models.IntegerField(default=0, verbose_name="Sonuç Sayısı")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Tarih")
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Arama Geçmişi"
+        verbose_name_plural = "Arama Geçmişleri"
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username}: {self.query} ({self.created_at.strftime('%d.%m.%Y %H:%M')})"

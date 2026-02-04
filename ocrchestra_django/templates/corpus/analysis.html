@@ -259,18 +259,74 @@
 {% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or request.user.is_superuser %}
 <!-- Export Options -->
 <div class="card">
-    <h3>📤 Export</h3>
-    <div class="export-buttons">
-        <a href="{% url 'corpus:export' document.id %}?format=json" class="btn btn-small">JSON</a>
-        <a href="{% url 'corpus:export' document.id %}?format=csv" class="btn btn-small">CSV</a>
-        <a href="{% url 'corpus:export' document.id %}?format=vrt" class="btn btn-small">VRT</a>
-        <a href="{% url 'corpus:export' document.id %}?format=conllu" class="btn btn-small">CoNLL-U</a>
+    <h3 style="display:flex; align-items:center; gap:0.5rem;">
+        <span class="material-icons">download</span>
+        Dışa Aktarma
+    </h3>
+    <p style="color:var(--text-secondary); font-size:0.875rem; margin-bottom:1rem;">
+        Analiz verilerini farklı formatlarda indirin
+    </p>
+    
+    <div style="display:flex; flex-direction:column; gap:1rem;">
+        <!-- Advanced Formats -->
+        <div>
+            <h4 style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:0.5rem;">
+                Gelişmiş Formatlar
+            </h4>
+            <div class="export-buttons">
+                <a href="{% url 'corpus:export_pdf' document.id %}" class="btn btn-primary btn-small">
+                    <span class="material-icons" style="font-size:16px;">picture_as_pdf</span>
+                    PDF Rapor
+                </a>
+                <a href="{% url 'corpus:export_excel' document.id %}" class="btn btn-success btn-small">
+                    <span class="material-icons" style="font-size:16px;">table_chart</span>
+                    Excel İstatistik
+                </a>
+                <a href="{% url 'corpus:export_csv' document.id %}?type=full" class="btn btn-small">
+                    <span class="material-icons" style="font-size:16px;">grid_on</span>
+                    CSV (Tam Veri)
+                </a>
+            </div>
+        </div>
+        
+        <!-- CSV Variants -->
+        <div>
+            <h4 style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:0.5rem;">
+                CSV Varyantları
+            </h4>
+            <div class="export-buttons">
+                <a href="{% url 'corpus:export_csv' document.id %}?type=words" class="btn btn-outline btn-small">
+                    Kelime Frekansları
+                </a>
+                <a href="{% url 'corpus:export_csv' document.id %}?type=lemmas" class="btn btn-outline btn-small">
+                    Kök Frekansları
+                </a>
+                <a href="{% url 'corpus:export_csv' document.id %}?type=pos" class="btn btn-outline btn-small">
+                    POS Dağılımı
+                </a>
+            </div>
+        </div>
+        
+        <!-- Corpus Formats -->
+        <div>
+            <h4 style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:0.5rem;">
+                Korpus Formatları
+            </h4>
+            <div class="export-buttons">
+                <a href="{% url 'corpus:export' document.id %}?format=json" class="btn btn-outline btn-small">JSON</a>
+                <a href="{% url 'corpus:export' document.id %}?format=vrt" class="btn btn-outline btn-small">VRT</a>
+                <a href="{% url 'corpus:export' document.id %}?format=conllu" class="btn btn-outline btn-small">CoNLL-U</a>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Additional Analysis -->
 <div class="card">
-    <h3>🔬 Ek Analizler</h3>
+    <h3 style="display:flex; align-items:center; gap:0.5rem;">
+        <span class="material-icons">science</span>
+        Ek Analizler
+    </h3>
     <div class="export-buttons">
         <a href="{% url 'corpus:ngrams' document.id %}" class="btn">N-gram & Kolokasyon</a>
         <a href="{% url 'corpus:wordcloud' document.id %}" class="btn">Frekans Grafikleri</a>

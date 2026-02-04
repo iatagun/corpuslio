@@ -3,20 +3,32 @@
 {% block title %}İstatistikler - CorpusIO{% endblock %}
 
 {% block content %}
-<h2>📊 Derlem İstatistikleri</h2>
+<h2 style="color:var(--text-main); margin-bottom:2rem; text-align:center; font-size:1.75rem;">
+    <span class="material-icons" style="vertical-align:middle; font-size:2rem; margin-right:0.5rem;">analytics</span>
+    Derlem İstatistikleri
+</h2>
 
-<div class="metrics-row">
-    <div class="metric">
-        <span class="metric-value">{{ total_docs }}</span>
-        <span class="metric-label">Toplam Belge</span>
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <span class="material-icons">description</span>
+        </div>
+        <div class="stat-number">{{ total_docs|default:0 }}</div>
+        <div class="stat-label">Toplam Belge</div>
     </div>
-    <div class="metric">
-        <span class="metric-value">{{ total_words|default:"0" }}</span>
-        <span class="metric-label">Toplam Kelime</span>
+    <div class="stat-card">
+        <div class="stat-icon">
+            <span class="material-icons">text_fields</span>
+        </div>
+        <div class="stat-number">{{ total_words|floatformat:0|default:0 }}</div>
+        <div class="stat-label">Toplam Kelime</div>
     </div>
-    <div class="metric">
-        <span class="metric-value">{{ documents|length }}</span>
-        <span class="metric-label">İşlenmiş</span>
+    <div class="stat-card">
+        <div class="stat-icon">
+            <span class="material-icons">check_circle</span>
+        </div>
+        <div class="stat-number">{{ documents|length|default:0 }}</div>
+        <div class="stat-label">İşlenmiş Belge</div>
     </div>
 </div>
 
@@ -53,6 +65,56 @@
 {% endif %}
 
 <style>
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .stat-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 1rem;
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .stat-icon .material-icons {
+        font-size: 2rem;
+        color: white;
+    }
+
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 700;
+        color: var(--accent-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
     .format-badge {
         background: rgba(99, 102, 241, 0.2);
         color: #818cf8;

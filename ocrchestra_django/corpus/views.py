@@ -9,7 +9,7 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from .models import Document, ProcessingTask, Analysis
+from .models import Document, ProcessingTask, Analysis, Tag, Content
 from .forms import DocumentUploadForm
 from .tasks import process_document_task
 from .services import CorpusService
@@ -45,12 +45,19 @@ def home_view(request):
     
     total_collections = Collection.objects.count()
     
+    # Popular tags (top 10 by document count)
+    from django.db.models import Count
+    popular_tags = Tag.objects.annotate(
+        doc_count=Count('documents')
+    ).filter(doc_count__gt=0).order_by('-doc_count')[:10]
+    
     context = {
         'total_docs': total_docs,
         'processed_docs': processed_docs,
         'total_words': total_words,
         'total_collections': total_collections,
         'recent_documents': recent_documents,
+        'popular_tags': popular_tags,
         'active_tab': 'home'
     }
     return render(request, 'corpus/home.html', context)
@@ -68,6 +75,7 @@ def library_view(request):
     genre_filter = request.GET.get('genre')
     date_filter = request.GET.get('date')
     search_query = request.GET.get('q')
+    tag_filter = request.GET.get('tag')  # New: Tag filter
     
     if author_filter:
         documents = documents.filter(metadata__author__icontains=author_filter)
@@ -77,6 +85,9 @@ def library_view(request):
     
     if date_filter:
         documents = documents.filter(metadata__date__icontains=date_filter)
+    
+    if tag_filter:
+        documents = documents.filter(tags__slug=tag_filter)
     
     if search_query:
         from django.db.models import Q
@@ -113,7 +124,9 @@ def library_view(request):
                 'processed': doc.processed,
                 'url': f'/corpus/analysis/{doc.id}/',
                 'delete_url': f'/corpus/delete/{doc.id}/',
-                'export_url': f'/corpus/export/{doc.id}/'
+                'export_url': f'/corpus/export/{doc.id}/',
+                'tags': [{'name': tag.name, 'slug': tag.slug, 'color': tag.color} 
+                        for tag in doc.tags.all()]
             })
         
         return JsonResponse({
@@ -123,6 +136,10 @@ def library_view(request):
             'page': page_obj.number,
             'total_pages': paginator.num_pages
         })
+    
+    # Get all tags for filter dropdown
+    from .models import Tag
+    all_tags = Tag.objects.all().order_by('name')
     
     # Get unique values for filter dropdowns (Optimized check)
     # Note: For 20k records, iterating all() is slow. Ideally this should be distinct()
@@ -142,6 +159,7 @@ def library_view(request):
         'documents': page_obj, # Pass page_obj instead of full queryset
         'page_obj': page_obj,  # Explicit naming for template clarity
         'all_genres': sorted(all_genres),
+        'all_tags': all_tags,  # Add tags to context
         'active_tab': 'library'
     }
     return render(request, 'corpus/library.html', context)
@@ -532,20 +550,66 @@ def global_search_view(request):
         return JsonResponse({'error': 'Invalid request'}, status=400)
     
     query = request.GET.get('q', '').strip()
+    search_type = request.GET.get('type', 'basic')  # basic, fuzzy, regex, advanced
     
     if not query or len(query) < 2:
         return JsonResponse({'results': []})
     
     results = []
     
-    # Search in documents (title, author, content)
-    documents = Document.objects.filter(
-        title__icontains=query
-    ) | Document.objects.filter(
-        author__icontains=query
-    )
+    # Track search history for authenticated users
+    if request.user.is_authenticated:
+        from .models import SearchHistory
+        SearchHistory.objects.create(
+            user=request.user,
+            query=query,
+            search_type=search_type
+        )
     
-    for doc in documents[:10]:  # Limit to 10 results
+    # Search based on type
+    if search_type == 'regex':
+        # Regex search
+        try:
+            import re
+            from django.db.models import Q
+            pattern = re.compile(query, re.IGNORECASE)
+            documents = Document.objects.all()[:50]
+            
+            matching_docs = []
+            for doc in documents:
+                if pattern.search(doc.title) or (doc.author and pattern.search(doc.author)):
+                    matching_docs.append(doc)
+            
+            documents = matching_docs[:10]
+        except re.error:
+            return JsonResponse({'error': 'Invalid regex pattern'}, status=400)
+    
+    elif search_type == 'fuzzy':
+        # Fuzzy search using Django's trigram similarity (PostgreSQL)
+        try:
+            from django.contrib.postgres.search import TrigramSimilarity
+            documents = Document.objects.annotate(
+                similarity=TrigramSimilarity('title', query) + TrigramSimilarity('author', query)
+            ).filter(similarity__gt=0.1).order_by('-similarity')[:10]
+        except:
+            # Fallback to basic search if PostgreSQL not available
+            documents = Document.objects.filter(
+                title__icontains=query
+            ) | Document.objects.filter(
+                author__icontains=query
+            )
+            documents = documents[:10]
+    
+    else:
+        # Basic search
+        documents = Document.objects.filter(
+            title__icontains=query
+        ) | Document.objects.filter(
+            author__icontains=query
+        )
+        documents = documents[:10]
+    
+    for doc in documents:
         metadata_parts = []
         if doc.author:
             metadata_parts.append(doc.author)
@@ -562,9 +626,9 @@ def global_search_view(request):
         })
     
     # Search in collections
-    collections = Collection.objects.filter(name__icontains=query)
+    collections = Collection.objects.filter(name__icontains=query)[:5]
     
-    for coll in collections[:5]:  # Limit to 5 results
+    for coll in collections:
         doc_count = coll.get_document_count()
         results.append({
             'type': 'collection',
@@ -575,4 +639,163 @@ def global_search_view(request):
             'badge_icon': 'folder'
         })
     
+    # Update result count in search history
+    if request.user.is_authenticated:
+        try:
+            last_search = SearchHistory.objects.filter(user=request.user).first()
+            if last_search:
+                last_search.result_count = len(results)
+                last_search.save()
+        except:
+            pass
+    
     return JsonResponse({'results': results})
+
+
+def search_suggestions_view(request):
+    """Provide simple autocomplete suggestions for search input."""
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    q = request.GET.get('q', '').strip()
+    if not q:
+        return JsonResponse({'suggestions': []})
+
+    suggestions = []
+
+    # Recent searches for authenticated users
+    if request.user.is_authenticated:
+        from .models import SearchHistory
+        recent = SearchHistory.objects.filter(user=request.user).order_by('-created_at')[:5]
+        for r in recent:
+            if q.lower() in r.query.lower():
+                suggestions.append({'type': 'recent', 'value': r.query})
+
+    # Titles and authors matching prefix
+    from django.db.models import Q
+    docs = Document.objects.filter(Q(filename__icontains=q) | Q(author__icontains=q)).distinct()[:8]
+    for d in docs:
+        if q.lower() in (d.filename or '').lower():
+            suggestions.append({'type': 'title', 'value': d.filename})
+        elif d.author and q.lower() in d.author.lower():
+            suggestions.append({'type': 'author', 'value': d.author})
+
+    # Deduplicate while preserving order
+    seen = set()
+    unique = []
+    for s in suggestions:
+        key = f"{s['type']}:{s['value']}"
+        if key not in seen:
+            seen.add(key)
+            unique.append(s)
+
+    return JsonResponse({'suggestions': unique})
+
+
+# ============================================================================
+# Tag Management Views
+# ============================================================================
+
+@login_required
+@require_http_methods(["POST"])
+def add_tag_to_document(request, doc_id):
+    """Add a tag to a document (create if doesn't exist)."""
+    from .models import Tag
+    import json
+    
+    try:
+        data = json.loads(request.body)
+        tag_name = data.get('tag_name', '').strip()
+        tag_color = data.get('tag_color', 'blue')
+        
+        if not tag_name:
+            return JsonResponse({'success': False, 'error': 'Tag adı gerekli'}, status=400)
+        
+        document = Document.objects.get(id=doc_id)
+        
+        # Create or get tag
+        from django.utils.text import slugify
+        tag, created = Tag.objects.get_or_create(
+            name=tag_name,
+            defaults={'slug': slugify(tag_name), 'color': tag_color}
+        )
+        
+        # Add tag to document
+        document.tags.add(tag)
+        
+        return JsonResponse({
+            'success': True,
+            'tag': {
+                'name': tag.name,
+                'slug': tag.slug,
+                'color': tag.color
+            },
+            'created': created
+        })
+        
+    except Document.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Belge bulunamadı'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def remove_tag_from_document(request, doc_id, tag_slug):
+    """Remove a tag from a document."""
+    from .models import Tag
+    
+    try:
+        document = Document.objects.get(id=doc_id)
+        tag = Tag.objects.get(slug=tag_slug)
+        
+        document.tags.remove(tag)
+        
+        return JsonResponse({'success': True})
+        
+    except Document.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Belge bulunamadı'}, status=404)
+    except Tag.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Tag bulunamadı'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def bulk_add_tags(request):
+    """Add tags to multiple documents."""
+    from .models import Tag
+    import json
+    
+    try:
+        data = json.loads(request.body)
+        doc_ids = data.get('document_ids', [])
+        tag_names = data.get('tag_names', [])
+        
+        if not doc_ids or not tag_names:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Belge ID\'leri ve tag isimleri gerekli'
+            }, status=400)
+        
+        documents = Document.objects.filter(id__in=doc_ids)
+        
+        from django.utils.text import slugify
+        for tag_name in tag_names:
+            tag, created = Tag.objects.get_or_create(
+                name=tag_name.strip(),
+                defaults={'slug': slugify(tag_name.strip())}
+            )
+            
+            for doc in documents:
+                doc.tags.add(tag)
+        
+        return JsonResponse({
+            'success': True,
+            'count': len(doc_ids),
+            'message': f'{len(doc_ids)} belgeye {len(tag_names)} tag eklendi'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

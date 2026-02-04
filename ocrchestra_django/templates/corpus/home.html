@@ -66,26 +66,53 @@
 {% if user.is_authenticated %}
 <!-- Stats Section -->
 <section class="stats-section">
+    <h2 style="color:var(--text-main); margin-bottom:2rem; text-align:center; font-size:1.75rem;">
+        <span class="material-icons" style="vertical-align:middle; font-size:2rem; margin-right:0.5rem;">analytics</span>
+        Derlem İstatistikleri
+    </h2>
 
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-number">{{ total_docs }}</div>
+            <div class="stat-icon"><span class="material-icons">description</span></div>
+            <div class="stat-number">{{ total_docs|default:0 }}</div>
             <div class="stat-label">Toplam Belge</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number">{{ processed_docs }}</div>
-            <div class="stat-label">İşlenmiş</div>
+            <div class="stat-icon"><span class="material-icons">check_circle</span></div>
+            <div class="stat-number">{{ processed_docs|default:0 }}</div>
+            <div class="stat-label">İşlenmiş Belge</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number">{{ total_words|default:"0" }}</div>
+            <div class="stat-icon"><span class="material-icons">text_fields</span></div>
+            <div class="stat-number">{{ total_words|default:0|floatformat:0 }}</div>
             <div class="stat-label">Toplam Kelime</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number">{{ total_collections|default:"0" }}</div>
+            <div class="stat-icon"><span class="material-icons">collections_bookmark</span></div>
+            <div class="stat-number">{{ total_collections|default:0 }}</div>
             <div class="stat-label">Koleksiyon</div>
         </div>
     </div>
 </section>
+
+<!-- Popular Tags -->
+{% if popular_tags %}
+<section class="tags-section">
+    <h3 style="color:var(--text-main); margin-bottom:1.5rem; display:flex; align-items:center; gap:0.5rem;">
+        <span class="material-icons">local_offer</span>
+        Popüler Etiketler
+    </h3>
+    <div class="tags-cloud">
+        {% for tag in popular_tags %}
+        <a href="{% url 'corpus:library' %}?tag={{ tag.slug }}" 
+           class="tag-badge tag-{{ tag.color }}" 
+           style="text-decoration:none; font-size:{{ tag.doc_count|add:8 }}px;">
+            {{ tag.name }} <span style="opacity:0.7;">({{ tag.doc_count }})</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
 
 <!-- Recent Activity -->
 {% if recent_documents %}
@@ -282,6 +309,28 @@
         border-radius: 12px;
         padding: 2rem;
         text-align: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 1rem;
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .stat-icon .material-icons {
+        font-size: 2rem;
+        color: white;
     }
 
     .stat-number {
@@ -294,6 +343,31 @@
     .stat-label {
         color: var(--text-secondary);
         font-size: 0.9rem;
+    }
+
+    /* Tags Section */
+    .tags-section {
+        margin-bottom: 3rem;
+    }
+
+    .tags-cloud {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        justify-content: center;
+        padding: 1.5rem;
+        background: var(--bg-surface);
+        border-radius: 12px;
+        border: 1px solid var(--border-subtle);
+    }
+
+    .tags-cloud .tag-badge {
+        transition: all 0.3s ease;
+    }
+
+    .tags-cloud .tag-badge:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     /* Recent Activity */

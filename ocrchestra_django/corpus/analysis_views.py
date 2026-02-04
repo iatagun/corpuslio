@@ -77,3 +77,111 @@ def wordcloud_view(request, doc_id):
         'active_tab': 'analysis'
     }
     return render(request, 'corpus/wordcloud.html', context)
+
+
+@login_required
+def comparison_view(request):
+    """Compare two documents side by side."""
+    from collections import Counter
+    from django.http import JsonResponse
+    
+    # Get document IDs from query params
+    doc1_id = request.GET.get('doc1')
+    doc2_id = request.GET.get('doc2')
+    
+    # Get all processed documents for selection
+    documents = Document.objects.filter(processed=True).order_by('-upload_date')
+    
+    comparison_data = None
+    doc1 = None
+    doc2 = None
+    
+    if doc1_id and doc2_id:
+        doc1 = get_object_or_404(Document, id=doc1_id, processed=True)
+        doc2 = get_object_or_404(Document, id=doc2_id, processed=True)
+        
+        # Get analysis data
+        data1 = doc1.analysis.data if hasattr(doc1, 'analysis') else []
+        data2 = doc2.analysis.data if hasattr(doc2, 'analysis') else []
+        
+        # Extract words and lemmas
+        words1 = [item.get('word', '').lower() for item in data1 if isinstance(item, dict)]
+        words2 = [item.get('word', '').lower() for item in data2 if isinstance(item, dict)]
+        
+        lemmas1 = [item.get('lemma', '').lower() for item in data1 if isinstance(item, dict) and item.get('lemma')]
+        lemmas2 = [item.get('lemma', '').lower() for item in data2 if isinstance(item, dict) and item.get('lemma')]
+        
+        # POS tags
+        pos1 = [item.get('pos', '') for item in data1 if isinstance(item, dict) and item.get('pos')]
+        pos2 = [item.get('pos', '') for item in data2 if isinstance(item, dict) and item.get('pos')]
+        
+        # Calculate statistics
+        word_freq1 = Counter(words1)
+        word_freq2 = Counter(words2)
+        lemma_freq1 = Counter(lemmas1)
+        lemma_freq2 = Counter(lemmas2)
+        pos_freq1 = Counter(pos1)
+        pos_freq2 = Counter(pos2)
+        
+        # Find common and unique words
+        common_words = set(words1) & set(words2)
+        unique_words1 = set(words1) - set(words2)
+        unique_words2 = set(words2) - set(words1)
+        
+        # Find common and unique lemmas
+        common_lemmas = set(lemmas1) & set(lemmas2)
+        unique_lemmas1 = set(lemmas1) - set(lemmas2)
+        unique_lemmas2 = set(lemmas2) - set(lemmas1)
+        
+        # Top common words by total frequency
+        common_word_freq = {word: word_freq1[word] + word_freq2[word] 
+                           for word in common_words}
+        top_common_words = dict(Counter(common_word_freq).most_common(30))
+        
+        # Top unique words
+        top_unique_words1 = dict(Counter({w: word_freq1[w] for w in unique_words1}).most_common(20))
+        top_unique_words2 = dict(Counter({w: word_freq2[w] for w in unique_words2}).most_common(20))
+        
+        comparison_data = {
+            'basic_stats': {
+                'doc1': {
+                    'total_words': len(words1),
+                    'unique_words': len(set(words1)),
+                    'unique_lemmas': len(set(lemmas1)),
+                    'pos_tags': len(pos1)
+                },
+                'doc2': {
+                    'total_words': len(words2),
+                    'unique_words': len(set(words2)),
+                    'unique_lemmas': len(set(lemmas2)),
+                    'pos_tags': len(pos2)
+                }
+            },
+            'similarity': {
+                'common_words': len(common_words),
+                'common_lemmas': len(common_lemmas),
+                'jaccard_words': len(common_words) / len(set(words1) | set(words2)) if (set(words1) | set(words2)) else 0,
+                'jaccard_lemmas': len(common_lemmas) / len(set(lemmas1) | set(lemmas2)) if (set(lemmas1) | set(lemmas2)) else 0
+            },
+            'differences': {
+                'unique_words1': len(unique_words1),
+                'unique_words2': len(unique_words2),
+                'unique_lemmas1': len(unique_lemmas1),
+                'unique_lemmas2': len(unique_lemmas2)
+            },
+            'top_common_words': top_common_words,
+            'top_unique_words1': top_unique_words1,
+            'top_unique_words2': top_unique_words2,
+            'pos_distribution1': dict(pos_freq1.most_common(10)),
+            'pos_distribution2': dict(pos_freq2.most_common(10))
+        }
+    
+    context = {
+        'documents': documents,
+        'doc1': doc1,
+        'doc2': doc2,
+        'comparison_data': json.dumps(comparison_data) if comparison_data else None,
+        'active_tab': 'comparison'
+    }
+    
+    return render(request, 'corpus/comparison.html', context)

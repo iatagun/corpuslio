@@ -48,6 +48,10 @@
                 <span class="material-icons nav-icon">dashboard</span>
                 <span class="nav-text">Dashboard</span>
             </a>
+            <a href="{% url 'corpus:comparison' %}" class="nav-item {% if active_tab == 'comparison' %}active{% endif %}">
+                <span class="material-icons nav-icon">compare_arrows</span>
+                <span class="nav-text">Karşılaştırma</span>
+            </a>
             <a href="{% url 'corpus:statistics' %}"
                 class="nav-item {% if active_tab == 'statistics' %}active{% endif %}">
                 <span class="material-icons nav-icon">assessment</span>
@@ -152,34 +156,7 @@
                 {% endif %}                </div>            </div>
         </header>
 
-        <!-- Messages -->
-        {% if messages %}
-        <div class="messages-container">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                <div class="alert-icon">
-                    <span class="material-icons">
-                        {% if message.tags == 'success' %}
-                            check_circle
-                        {% elif message.tags == 'error' %}
-                            error
-                        {% elif message.tags == 'warning' %}
-                            warning
-                        {% else %}
-                            info
-                        {% endif %}
-                    </span>
-                </div>
-                <div class="alert-content">
-                    <div class="alert-message">{{ message }}</div>
-                </div>
-                <button class="alert-close" onclick="this.parentElement.remove()">
-                    <span class="material-icons">close</span>
-                </button>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
+        <!-- Messages are handled by Toast system below -->
 
         <!-- Page Content -->
         <main class="content-area">
@@ -204,6 +181,11 @@
                             placeholder="Belgeler ve koleksiyonlarda ara..."
                             autocomplete="off"
                         >
+                        <select id="searchType" class="search-type-select" title="Arama Tipi">
+                            <option value="basic">Basit</option>
+                            <option value="fuzzy">Benzer</option>
+                            <option value="regex">Regex</option>
+                        </select>
                         <div class="search-modal-shortcut">
                             <span>ESC</span>
                         </div>
@@ -212,6 +194,12 @@
                         <div class="search-modal-empty">
                             <span class="material-icons">search</span>
                             <p>Aramaya başlamak için yazmaya başlayın</p>
+                            <div style="font-size: 0.85rem; color: var(--text-tertiary); margin-top: 0.5rem;">
+                                <strong>İpuçları:</strong><br>
+                                • Basit: Kelime eşleştirme<br>
+                                • Benzer: Yakın eşleşmeler (fuzzy)<br>
+                                • Regex: Düzenli ifadeler (.*test.*)
+                            </div>
                         </div>
                     </div>
                     <div class="search-modal-footer">
@@ -315,17 +303,37 @@
 
         // Auto-dismiss alerts after 5 seconds
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('[Toast Debug] DOMContentLoaded fired');
             initTheme();
             
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function(alert) {
-                setTimeout(function() {
-                    alert.style.animation = 'slideOutRight 0.3s ease-out';
-                    setTimeout(function() {
-                        alert.remove();
-                    }, 300);
-                }, 5000);
-            });
+            // Convert Django messages to toast notifications (only once)
+            {% if messages %}
+            console.log('[Toast Debug] Messages block found');
+            if (!window._messagesProcessed) {
+                window._messagesProcessed = true;
+                console.log('[Toast Debug] Processing messages for first time');
+                const processedMessages = new Set();
+                {% for message in messages %}
+                const msgText = '{{ message|escapejs }}';
+                const msgType = '{{ message.tags }}';
+                const msgKey = msgType + ':' + msgText;
+                console.log('[Toast Debug] Message:', msgKey);
+                
+                if (!processedMessages.has(msgKey)) {
+                    processedMessages.add(msgKey);
+                    console.log('[Toast Debug] Showing toast for:', msgText);
+                    showToast({
+                        type: msgType,
+                        message: msgText
+                    });
+                } else {
+                    console.log('[Toast Debug] Duplicate message skipped:', msgText);
+                }
+                {% endfor %}
+            } else {
+                console.log('[Toast Debug] Messages already processed, skipping');
+            }
+            {% endif %}
         });
 
         // Global Loading Helper Functions
@@ -348,8 +356,10 @@
         // Toast Notification System
         let toastQueue = [];
         const MAX_TOASTS = 3;
+        const recentToasts = new Map(); // Track recent toasts to prevent duplicates
 
         window.showToast = function(options) {
+            console.log('[Toast] showToast called with:', options);
             // Options: { type, title, message, duration }
             const defaults = {
                 type: 'info', // success, error, warning, info
@@ -359,6 +369,22 @@
             };
             
             const config = { ...defaults, ...options };
+            console.log('[Toast] Config:', config);
+            
+            // Prevent duplicate toasts within 1 second
+            const toastKey = `${config.type}:${config.message}`;
+            const now = Date.now();
+            if (recentToasts.has(toastKey)) {
+                const lastShown = recentToasts.get(toastKey);
+                if (now - lastShown < 1000) {
+                    console.log('[Toast] Duplicate toast prevented:', toastKey);
+                    return null;
+                }
+            }
+            recentToasts.set(toastKey, now);
+            
+            // Clean up old entries
+            setTimeout(() => recentToasts.delete(toastKey), 2000);
             
             // Icon mapping
             const icons = {
@@ -494,17 +520,33 @@
                 return;
             }
 
-            if (query.length < 2) {
-                return;
-            }
-
-            // Show loading state
-            showSearchLoading();
-
-            // Debounce search (wait 300ms after user stops typing)
-            searchTimeout = setTimeout(() => {
-                performSearch(query);
-            }, 300);
+            // Request suggestions immediately
+            fetch(`/corpus/suggest/?q=${encodeURIComponent(query)}`, {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.json())
+            .then(s => {
+                if (s.suggestions && s.suggestions.length > 0) {
+                    displaySuggestions(s.suggestions);
+                } else {
+                    // If query long enough, perform full search
+                    if (query.length >= 2) {
+                        showSearchLoading();
+                        if (searchTimeout) clearTimeout(searchTimeout);
+                        searchTimeout = setTimeout(() => performSearch(query), 300);
+                    } else {
+                        showEmptyState();
+                    }
+                }
+            })
+            .catch(() => {
+                if (query.length >= 2) {
+                    showSearchLoading();
+                    if (searchTimeout) clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => performSearch(query), 300);
+                }
+            });
         });
 
         // Keyboard navigation (arrow keys and Enter)
@@ -529,8 +571,10 @@
         });
 
         function performSearch(query) {
+            const searchType = document.getElementById('searchType').value;
+            
             // Make AJAX request to search endpoint
-            fetch(`/corpus/search/?q=${encodeURIComponent(query)}`, {
+            fetch(`/corpus/search/?q=${encodeURIComponent(query)}&type=${searchType}`, {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
@@ -538,6 +582,10 @@
             })
             .then(response => response.json())
             .then(data => {
+                if (data.error) {
+                    showSearchError(data.error);
+                    return;
+                }
                 currentSearchResults = data.results || [];
                 selectedResultIndex = -1;
                 displaySearchResults(data);
@@ -643,13 +691,46 @@
             `;
         }
 
-        function showSearchError() {
+        function showSearchError(message = 'Arama sırasında bir hata oluştu') {
             document.getElementById('searchResults').innerHTML = `
                 <div class="search-modal-empty">
-                    <span class="material-icons">error_outline</span>
-                    <p>Arama sırasında bir hata oluştu</p>
+                    <span class="material-icons" style="color:var(--accent-danger);">error</span>
+                    <p>${message}</p>
                 </div>
             `;
+        }
+
+        function displaySuggestions(suggestions) {
+            const container = document.getElementById('searchResults');
+            if (!suggestions || suggestions.length === 0) {
+                showEmptyState();
+                return;
+            }
+            let html = '<div class="search-modal-section">';
+            html += '<div class="search-modal-section-title">Öneriler</div>';
+            suggestions.forEach((s, idx) => {
+                html += `
+                    <a href="#" class="search-suggestion-item" data-value="${s.value}" data-index="${idx}">
+                        <div class="search-result-icon suggestion"><span class="material-icons">lightbulb</span></div>
+                        <div class="search-result-content">
+                            <div class="search-result-title">${s.value}</div>
+                            <div class="search-result-meta">${s.type}</div>
+                        </div>
+                    </a>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+
+            // Attach click handlers
+            container.querySelectorAll('.search-suggestion-item').forEach(el => {
+                el.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const v = this.getAttribute('data-value');
+                    document.getElementById('searchInput').value = v;
+                    performSearch(v);
+                });
+            });
         }
     </script>
 </body>

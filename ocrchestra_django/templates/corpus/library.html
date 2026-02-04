@@ -40,8 +40,26 @@
                             }
                         }
                     }
+                    
+                    const tag = urlParams.get('tag');
+                    if (tag) {
+                        const select = document.getElementById('tagSelect');
+                        for (let i = 0; i < select.options.length; i++) {
+                            if (select.options[i].value === tag) {
+                                select.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
                 });
             </script>
+            
+            <select name="tag" id="tagSelect" class="form-control">
+                <option value="">Tüm Etiketler</option>
+                {% for tag in all_tags %}
+                <option value="{{ tag.slug }}">{{ tag.name }} ({{ tag.get_document_count }})</option>
+                {% endfor %}
+            </select>
 
             <input type="text" name="date" value="{{ request.GET.date }}" placeholder="Tarih" class="form-control">
 
@@ -78,11 +96,51 @@
             </span>
             {% endif %}
         </p>
+        
+        <!-- Document Tags -->
+        {% if doc.tags.all %}
+        <div class="document-tags" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;">
+            {% for tag in doc.tags.all %}
+            <span class="tag-badge tag-{{ tag.color }}" 
+                  data-tag-slug="{{ tag.slug }}" 
+                  style="cursor:pointer;"
+                  title="Tıklayarak filtrele">
+                {{ tag.name }}
+            </span>
+            {% endfor %}
+        </div>
+        {% endif %}
 
         <div class="actions">
             {% if doc.processed %}
             <a href="{% url 'corpus:analysis' doc.id %}" class="btn btn-secondary btn-small">İncele</a>
-            <a href="{% url 'corpus:export' doc.id %}?format=vrt" class="btn btn-outline btn-small">VRT</a>
+            
+            <!-- Export Dropdown -->
+            <div class="dropdown" style="display:inline-block; position:relative;">
+                <button class="btn btn-outline btn-small dropdown-toggle" type="button" 
+                        data-doc-id="{{ doc.id }}">
+                    <span class="material-icons" style="font-size:16px;">download</span>
+                    Export
+                </button>
+                <div class="export-menu" id="exportMenu{{ doc.id }}" style="display:none;">
+                    <a href="{% url 'corpus:export_pdf' doc.id %}" class="export-menu-item">
+                        <span class="material-icons">picture_as_pdf</span>
+                        PDF Rapor
+                    </a>
+                    <a href="{% url 'corpus:export_excel' doc.id %}" class="export-menu-item">
+                        <span class="material-icons">table_chart</span>
+                        Excel
+                    </a>
+                    <a href="{% url 'corpus:export_csv' doc.id %}?type=full" class="export-menu-item">
+                        <span class="material-icons">grid_on</span>
+                        CSV
+                    </a>
+                    <div class="export-menu-divider"></div>
+                    <a href="{% url 'corpus:export' doc.id %}?format=vrt" class="export-menu-item">VRT</a>
+                    <a href="{% url 'corpus:export' doc.id %}?format=json" class="export-menu-item">JSON</a>
+                    <a href="{% url 'corpus:export' doc.id %}?format=conllu" class="export-menu-item">CoNLL-U</a>
+                </div>
+            </div>
             {% endif %}
             {% load auth_extras %}
             {% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or request.user.is_superuser %}
@@ -177,8 +235,81 @@
         padding: 2rem;
         margin: 2rem 0;
     }
+    
+    /* Export Dropdown Menu */
+    .export-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 0.5rem;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        min-width: 180px;
+        z-index: 1000;
+        overflow: hidden;
+    }
+    
+    .export-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        color: var(--text-main);
+        text-decoration: none;
+        transition: background 0.2s;
+        font-size: 0.875rem;
+    }
+    
+    .export-menu-item:hover {
+        background: var(--bg-surface-hover);
+    }
+    
+    .export-menu-item .material-icons {
+        font-size: 18px;
+        color: var(--text-secondary);
+    }
+    
+    .export-menu-divider {
+        height: 1px;
+        background: var(--border-subtle);
+        margin: 0.25rem 0;
+    }
+    
+    .dropdown-toggle::after {
+        content: '▼';
+        margin-left: 0.25rem;
+        font-size: 0.75rem;
+    }
 </style>
 <script>
+    // ========================================
+    // EXPORT DROPDOWN
+    // ========================================
+    document.addEventListener('DOMContentLoaded', function() {
+        // Event delegation for export dropdown buttons
+        document.addEventListener('click', function(event) {
+            const dropdownBtn = event.target.closest('.dropdown-toggle');
+            
+            if (dropdownBtn) {
+                event.stopPropagation();
+                const docId = dropdownBtn.dataset.docId;
+                const menu = document.getElementById('exportMenu' + docId);
+                const isVisible = menu.style.display === 'block';
+                
+                // Close all menus
+                document.querySelectorAll('.export-menu').forEach(m => m.style.display = 'none');
+                
+                // Toggle current menu
+                menu.style.display = isVisible ? 'none' : 'block';
+            } else if (!event.target.closest('.dropdown')) {
+                // Close menus when clicking outside
+                document.querySelectorAll('.export-menu').forEach(m => m.style.display = 'none');
+            }
+        });
+    });
+    
     // ========================================
     // INFINITE SCROLL IMPLEMENTATION
     // ========================================
@@ -197,7 +328,8 @@
             q: params.get('q') || '',
             author: params.get('author') || '',
             genre: params.get('genre') || '',
-            date: params.get('date') || ''
+            date: params.get('date') || '',
+            tag: params.get('tag') || ''
         };
     }
 
@@ -211,6 +343,7 @@
         if (filters.author) params.append('author', filters.author);
         if (filters.genre) params.append('genre', filters.genre);
         if (filters.date) params.append('date', filters.date);
+        if (filters.tag) params.append('tag', filters.tag);
         
         return params.toString();
     }
@@ -281,9 +414,43 @@
                    <span class="material-icons" style="font-size:16px;">hourglass_empty</span> Bekliyor
                </span>`;
         
+        // Build tags HTML
+        let tagsHtml = '';
+        if (doc.tags && doc.tags.length > 0) {
+            tagsHtml = '<div class="document-tags" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;">';
+            doc.tags.forEach(tag => {
+                tagsHtml += `<span class="tag-badge tag-${tag.color}" data-tag-slug="${tag.slug}" style="cursor:pointer;" title="Tıklayarak filtrele">${tag.name}</span>`;
+            });
+            tagsHtml += '</div>';
+        }
+        
         const actions = doc.processed
             ? `<a href="${doc.url}" class="btn btn-secondary btn-small">İncele</a>
-               <a href="${doc.export_url}?format=vrt" class="btn btn-outline btn-small">VRT</a>`
+               <div class="dropdown" style="display:inline-block; position:relative;">
+                   <button class="btn btn-outline btn-small dropdown-toggle" type="button" 
+                           data-doc-id="${doc.id}">
+                       <span class="material-icons" style="font-size:16px;">download</span>
+                       Export
+                   </button>
+                   <div class="export-menu" id="exportMenu${doc.id}" style="display:none;">
+                       <a href="/corpus/export/pdf/${doc.id}/" class="export-menu-item">
+                           <span class="material-icons">picture_as_pdf</span>
+                           PDF Rapor
+                       </a>
+                       <a href="/corpus/export/excel/${doc.id}/" class="export-menu-item">
+                           <span class="material-icons">table_chart</span>
+                           Excel
+                       </a>
+                       <a href="/corpus/export/csv/${doc.id}/?type=full" class="export-menu-item">
+                           <span class="material-icons">grid_on</span>
+                           CSV
+                       </a>
+                       <div class="export-menu-divider"></div>
+                       <a href="${doc.export_url}?format=vrt" class="export-menu-item">VRT</a>
+                       <a href="${doc.export_url}?format=json" class="export-menu-item">JSON</a>
+                       <a href="${doc.export_url}?format=conllu" class="export-menu-item">CoNLL-U</a>
+                   </div>
+               </div>`
             : '';
         
         card.innerHTML = `
@@ -298,10 +465,19 @@
             <p class="status">
                 ${processedBadge}
             </p>
+            ${tagsHtml}
             <div class="actions">
                 ${actions}
             </div>
         `;
+        
+        // Add click event for tag badges
+        card.querySelectorAll('.tag-badge').forEach(badge => {
+            badge.addEventListener('click', function() {
+                const tagSlug = this.dataset.tagSlug;
+                window.location.href = `/corpus/library/?tag=${tagSlug}`;
+            });
+        });
         
         return card;
     }
@@ -338,11 +514,24 @@
         } else {
             showEndOfResults();
         }
+        
+        // Add click handlers to existing tag badges
+        document.querySelectorAll('.tag-badge').forEach(badge => {
+            badge.addEventListener('click', function() {
+                const tagSlug = this.dataset.tagSlug;
+                window.location.href = `/corpus/library/?tag=${tagSlug}`;
+            });
+        });
     });
 
     // Auto-submit form when select changes (optional)
     document.querySelector('select[name="genre"]').addEventListener('change', function () {
         this.form.submit();
     });
+    
+    document.querySelector('select[name="tag"]').addEventListener('change', function () {
+        this.form.submit();
+    });
+</script>
 </script>
 {% endblock %}

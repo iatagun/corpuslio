@@ -1,7 +1,22 @@
 """Admin panel configuration for corpus models."""
 
 from django.contrib import admin
-from .models import Document, Content, Analysis, ProcessingTask
+from .models import Document, Content, Analysis, ProcessingTask, Tag
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    """Admin interface for Tag model."""
+    
+    list_display = ['name', 'color', 'get_document_count', 'created_at']
+    list_filter = ['color', 'created_at']
+    search_fields = ['name', 'description']
+    prepopulated_fields = {'slug': ('name',)}
+    readonly_fields = ['created_at']
+    
+    def get_document_count(self, obj):
+        return obj.get_document_count()
+    get_document_count.short_description = 'Belge Sayısı'
 
 
 @admin.register(Document)
@@ -9,9 +24,10 @@ class DocumentAdmin(admin.ModelAdmin):
     """Admin interface for Document model."""
     
     list_display = ['filename', 'grade_level', 'subject', 'author', 'publisher', 'format', 'upload_date', 'processed']
-    list_filter = ['processed', 'format', 'grade_level', 'upload_date']
+    list_filter = ['processed', 'format', 'grade_level', 'upload_date', 'tags']
     search_fields = ['filename', 'author', 'subject', 'publisher']
     readonly_fields = ['upload_date']
+    filter_horizontal = ['tags']
     
     def get_word_count(self, obj):
         return obj.get_word_count()

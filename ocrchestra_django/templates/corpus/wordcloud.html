@@ -1,106 +1,330 @@
 {% extends "corpus/base.html" %}
 
-{% block title %}Frekans Analizi - {{ document.filename }}{% endblock %}
+{% block title %}Kelime Bulutu - {{ document.filename }}{% endblock %}
 
 {% block extra_css %}
-<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+<style>
+    .wordcloud-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .wordcloud-controls {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .wordcloud-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .wordcloud-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        position: relative;
+    }
+
+    .wordcloud-card h3 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 1.125rem;
+        color: var(--text-main);
+    }
+
+    .wordcloud-container {
+        position: relative;
+        width: 100%;
+        height: 400px;
+        background: var(--bg-main);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .export-buttons {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        z-index: 10;
+    }
+
+    .export-btn {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        color: var(--text-main);
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+    .export-btn:hover {
+        background: var(--bg-hover);
+        border-color: var(--accent-primary);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--accent-primary);
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    @media (max-width: 1024px) {
+        .wordcloud-grid {
+            grid-template-columns: 1fr;
+        }
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="analysis-header">
-    <h2>📊 Kelime Frekans Analizi</h2>
-    <p class="document-meta">{{ document.filename }}</p>
+<div class="wordcloud-header">
+    <div>
+        <h2><span class="material-icons" style="vertical-align: middle; margin-right: 0.5rem;">cloud</span> Kelime Bulutu</h2>
+        <p class="document-meta" style="color: var(--text-secondary); margin-top: 0.5rem;">{{ document.filename }}</p>
+    </div>
+    <div class="wordcloud-controls">
+        <a href="{% url 'corpus:analysis' document.id %}" class="btn btn-outline">
+            <span class="material-icons" style="font-size: 18px;">arrow_back</span>
+            Analize Dön
+        </a>
+        <a href="{% url 'corpus:ngrams' document.id %}" class="btn btn-secondary">
+            <span class="material-icons" style="font-size: 18px;">analytics</span>
+            N-gram Analizi
+        </a>
+    </div>
 </div>
 
-<!-- Word Frequency Chart -->
-<div class="card">
-    <h3>📈 En Sık Kullanılan Kelimeler (Top 50)</h3>
-    <div id="word-freq-chart"></div>
+<!-- Statistics Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-value" id="totalWords">0</span>
+        <span class="stat-label">Toplam Kelime</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-value" id="uniqueWords">0</span>
+        <span class="stat-label">Benzersiz Kelime</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-value" id="uniqueLemmas">0</span>
+        <span class="stat-label">Benzersiz Kök</span>
+    </div>
 </div>
 
-<!-- Lemma Frequency Chart -->
-<div class="card">
-    <h3>📈 En Sık Kökler / Lemmalar (Top 50)</h3>
-    <div id="lemma-freq-chart"></div>
+<!-- Word Clouds Grid -->
+<div class="wordcloud-grid">
+    <!-- Word Frequency Cloud -->
+    <div class="wordcloud-card">
+        <h3><span class="material-icons">text_fields</span> Kelime Frekansları (Top 100)</h3>
+        <div class="export-buttons">
+            <button class="export-btn" onclick="exportWordCloud('wordCanvas', 'kelime-bulutu.png')">
+                <span class="material-icons" style="font-size: 16px;">download</span>
+                PNG
+            </button>
+        </div>
+        <div class="wordcloud-container">
+            <canvas id="wordCanvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Lemma Frequency Cloud -->
+    <div class="wordcloud-card">
+        <h3><span class="material-icons">category</span> Kök/Lemma Frekansları (Top 100)</h3>
+        <div class="export-buttons">
+            <button class="export-btn" onclick="exportWordCloud('lemmaCanvas', 'lemma-bulutu.png')">
+                <span class="material-icons" style="font-size: 16px;">download</span>
+                PNG
+            </button>
+        </div>
+        <div class="wordcloud-container">
+            <canvas id="lemmaCanvas"></canvas>
+        </div>
+    </div>
 </div>
 
-<!-- Back to Analysis -->
-<div class="card">
-    <a href="{% url 'corpus:analysis' document.id %}" class="btn">← KWIC Ara'ya Dön</a>
-    <a href="{% url 'corpus:ngrams' document.id %}" class="btn btn-secondary">N-gram Analizi</a>
-</div>
+<!-- WordCloud2.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.min.js"></script>
 
 <script>
-    // Word frequency data from Django
-    const wordFreq = {{ word_freq| safe }};
-    const lemmaFreq = {{ lemma_freq| safe }};
+    // Data from Django backend
+    const wordFreqData = {{ word_freq|safe }};
+    const lemmaFreqData = {{ lemma_freq|safe }};
 
-    // Prepare data for Plotly
-    const wordData = Object.entries(wordFreq).slice(0, 50);
-    const lemmaData = Object.entries(lemmaFreq).slice(0, 50);
+    // Calculate statistics
+    const totalWords = Object.values(wordFreqData).reduce((a, b) => a + b, 0);
+    const uniqueWords = Object.keys(wordFreqData).length;
+    const uniqueLemmas = Object.keys(lemmaFreqData).length;
 
-    // Word Frequency Bar Chart
-    const wordTrace = {
-        x: wordData.map(d => d[1]),
-        y: wordData.map(d => d[0]),
-        type: 'bar',
-        orientation: 'h',
-        marker: {
-            color: 'rgba(99, 102, 241, 0.7)',
-            line: {
-                color: 'rgba(99, 102, 241, 1)',
-                width: 1
-            }
-        }
+    // Update stats
+    document.getElementById('totalWords').textContent = totalWords.toLocaleString('tr-TR');
+    document.getElementById('uniqueWords').textContent = uniqueWords.toLocaleString('tr-TR');
+    document.getElementById('uniqueLemmas').textContent = uniqueLemmas.toLocaleString('tr-TR');
+
+    // Convert frequency data to wordcloud format [[word, frequency], ...]
+    const wordList = Object.entries(wordFreqData).map(([word, freq]) => [word, freq]);
+    const lemmaList = Object.entries(lemmaFreqData).map(([word, freq]) => [word, freq]);
+
+    // Color palette based on theme
+    const getComputedTheme = () => {
+        const theme = document.documentElement.getAttribute('data-theme');
+        return theme === 'light' ? 'light' : 'dark';
     };
 
-    const wordLayout = {
-        margin: { l: 150, r: 50, t: 30, b: 50 },
-        paper_bgcolor: 'rgba(0,0,0,0)',
-        plot_bgcolor: 'rgba(30, 41, 59, 0.3)',
-        font: { color: '#f8fafc', family: 'Inter' },
-        xaxis: { gridcolor: '#334155' },
-        yaxis: { gridcolor: '#334155' },
-        height: 800
+    const colorPalettes = {
+        dark: [
+            '#3b82f6', // blue
+            '#8b5cf6', // purple
+            '#10b981', // green
+            '#f59e0b', // amber
+            '#ef4444', // red
+            '#14b8a6', // teal
+            '#a855f7', // violet
+            '#ec4899'  // pink
+        ],
+        light: [
+            '#2563eb', // blue-600
+            '#7c3aed', // purple-600
+            '#059669', // green-600
+            '#d97706', // amber-600
+            '#dc2626', // red-600
+            '#0d9488', // teal-600
+            '#9333ea', // violet-600
+            '#db2777'  // pink-600
+        ]
     };
 
-    Plotly.newPlot('word-freq-chart', [wordTrace], wordLayout, { responsive: true });
-
-    // Lemma Frequency Bar Chart
-    const lemmaTrace = {
-        x: lemmaData.map(d => d[1]),
-        y: lemmaData.map(d => d[0]),
-        type: 'bar',
-        orientation: 'h',
-        marker: {
-            color: 'rgba(20, 184, 166, 0.7)',
-            line: {
-                color: 'rgba(20, 184, 166, 1)',
-                width: 1
-            }
-        }
-    };
-
-    const lemmaLayout = {
-        margin: { l: 150, r: 50, t: 30, b: 50 },
-        paper_bgcolor: 'rgba(0,0,0,0)',
-        plot_bgcolor: 'rgba(30, 41, 59, 0.3)',
-        font: { color: '#f8fafc', family: 'Inter' },
-        xaxis: { gridcolor: '#334155' },
-        yaxis: { gridcolor: '#334155' },
-        height: 800
-    };
-
-    Plotly.newPlot('lemma-freq-chart', [lemmaTrace], lemmaLayout, { responsive: true });
-</script>
-
-<style>
-    #word-freq-chart,
-    #lemma-freq-chart {
-        min-height: 800px;
-        background: rgba(30, 41, 59, 0.3);
-        border-radius: 8px;
-        padding: 1rem;
+    // Random color function
+    function getRandomColor() {
+        const theme = getComputedTheme();
+        const palette = colorPalettes[theme];
+        return palette[Math.floor(Math.random() * palette.length)];
     }
-</style>
+
+    // WordCloud2.js options
+    const wordCloudOptions = {
+        list: wordList,
+        gridSize: 8,
+        weightFactor: function(size) {
+            return Math.pow(size, 0.7) * 3;
+        },
+        fontFamily: 'Inter, Arial, sans-serif',
+        color: getRandomColor,
+        rotateRatio: 0.3,
+        rotationSteps: 2,
+        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-main').trim(),
+        drawOutOfBound: false,
+        shrinkToFit: true,
+        hover: function(item, dimension, event) {
+            if (item) {
+                event.target.style.cursor = 'pointer';
+                // Show tooltip with frequency
+                const tooltip = `${item[0]}: ${item[1]} kez`;
+                event.target.title = tooltip;
+            } else {
+                event.target.style.cursor = 'default';
+            }
+        },
+        click: function(item) {
+            if (item) {
+                toastInfo(`"${item[0]}" kelimesi ${item[1]} kez geçiyor`);
+            }
+        }
+    };
+
+    const lemmaCloudOptions = {
+        ...wordCloudOptions,
+        list: lemmaList
+    };
+
+    // Generate word clouds
+    function generateWordClouds() {
+        const wordCanvas = document.getElementById('wordCanvas');
+        const lemmaCanvas = document.getElementById('lemmaCanvas');
+
+        // Set canvas size
+        const container = wordCanvas.parentElement;
+        wordCanvas.width = container.offsetWidth;
+        wordCanvas.height = container.offsetHeight;
+        lemmaCanvas.width = container.offsetWidth;
+        lemmaCanvas.height = container.offsetHeight;
+
+        // Generate clouds
+        WordCloud(wordCanvas, wordCloudOptions);
+        WordCloud(lemmaCanvas, lemmaCloudOptions);
+    }
+
+    // Export word cloud as PNG
+    function exportWordCloud(canvasId, filename) {
+        const canvas = document.getElementById(canvasId);
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        toastSuccess('Kelime bulutu indirildi!');
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', function() {
+        generateWordClouds();
+    });
+
+    // Regenerate on window resize
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(generateWordClouds, 500);
+    });
+
+    // Regenerate on theme change
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.attributeName === 'data-theme') {
+                generateWordClouds();
+            }
+        });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+</script>
 {% endblock %}

@@ -74,12 +74,16 @@
 - [x] Tema-uyumlu renkler ve animasyonlar
 - **Gerçek süre:** 2 saat
 
-### [ ] 7. Kelime Bulutu (Word Cloud)
-- [ ] Korpustan kelime bulutu oluşturma
-- [ ] Frekans bazlı boyutlandırma
-- [ ] Renk paleti
-- [ ] Export özelliği
-- [ ] **Tahmini süre:** 3-4 saat
+### [x] 7. Kelime Bulutu (Word Cloud) ✅ TAMAMLANDI
+- [x] WordCloud2.js entegrasyonu (Plotly yerine canvas-based)
+- [x] Kelime ve lemma frekanslarından bulut oluşturma
+- [x] Frekans bazlı dinamik boyutlandırma
+- [x] Tema-uyumlu renk paleti (8 renk, dark/light)
+- [x] PNG export özelliği (Canvas.toDataURL)
+- [x] İnteraktif hover ve click (tooltip + toast bildirimi)
+- [x] Responsive tasarım ve auto-resize
+- [x] İstatistik kartları (toplam/benzersiz kelime/kök)
+- **Gerçek süre:** 1.5 saat
 
 ### [ ] 8. Karşılaştırmalı Analiz
 - [ ] İki korpusu karşılaştırma arayüzü
