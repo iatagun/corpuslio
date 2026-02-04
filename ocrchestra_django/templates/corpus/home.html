@@ -1,0 +1,323 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}OCRchestra - Modern Turkish Corpus Analysis{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">OCRchestra</h1>
+        <p class="hero-subtitle">Modern Turkish Corpus Management & NLP Analysis Platform</p>
+        <p class="hero-description">
+            Güçlü doğal dil işleme araçları ile Türkçe metin korpuslarınızı yönetin, analiz edin ve görselleştirin.
+        </p>
+
+        <div class="hero-buttons">
+            <a href="{% url 'corpus:upload' %}" class="btn btn-primary btn-large">
+                <span class="material-icons">cloud_upload</span> Analiz Başlat
+            </a>
+            <a href="{% url 'corpus:library' %}" class="btn btn-secondary btn-large">
+                <span class="material-icons">library_books</span> Kütüphane
+            </a>
+            <a href="{% url 'corpus:dashboard' %}" class="btn btn-outline btn-large">
+                <span class="material-icons">dashboard</span> Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Features Grid -->
+<section class="features-section">
+    <h3 style="color:var(--text-main); margin-bottom:1.5rem;">Özellikler</h3>
+
+    <div class="features-grid">
+        <div class="feature-card">
+            <span class="material-icons feature-icon">folder_special</span>
+            <h3>Corpus Yönetimi</h3>
+            <p>Çoklu dosya yükleme, metadata yönetimi, koleksiyonlar ve gelişmiş filtreleme özellikleri.</p>
+        </div>
+
+        <div class="feature-card">
+            <span class="material-icons feature-icon">psychology</span>
+            <h3>İleri Seviye Analiz</h3>
+            <p>N-gram analizi, kolokasyon tespiti, KWIC araması ve morfololojik etiketleme.</p>
+        </div>
+
+        <div class="feature-card">
+            <span class="material-icons feature-icon">bar_chart</span>
+            <h3>Görselleştirme</h3>
+            <p>Interactive grafikler, frekans analizleri ve çoklu format export desteği.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="stats-section">
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_docs }}</div>
+            <div class="stat-label">Toplam Belge</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ processed_docs }}</div>
+            <div class="stat-label">İşlenmiş</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ total_words|default:"0" }}</div>
+            <div class="stat-label">Toplam Kelime</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ total_collections|default:"0" }}</div>
+            <div class="stat-label">Koleksiyon</div>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Activity -->
+{% if recent_documents %}
+<section class="recent-section">
+    <h3 style="color:var(--text-main); margin-bottom:1.5rem;">Son Yüklenenler</h3>
+
+    <div class="recent-grid">
+        {% for doc in recent_documents %}
+        <div class="recent-card">
+            <div class="recent-header">
+                <h4>{{ doc.filename }}</h4>
+                <span class="format-badge">{{ doc.format }}</span>
+            </div>
+            <div class="recent-meta">
+                <span>{{ doc.upload_date|date:"d.m.Y H:i" }}</span>
+                {% if doc.processed %}
+                <span style="color:var(--accent-success);">check_circle</span>
+                {% else %}
+                <span style="color:var(--text-secondary);">hourglass_empty</span>
+                {% endif %}
+            </div>
+            {% if doc.processed %}
+            <a href="{% url 'corpus:analysis' doc.id %}" class="btn btn-secondary btn-small">İncele</a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- CTA Section -->
+<section class="cta-section"
+    style="text-align:center; padding:3rem 0; border-top:1px solid var(--border-subtle); margin-top:2rem;">
+    <h2 style="color:var(--text-main); margin-bottom:1rem;">Hemen Başlayın</h2>
+    <p style="color:var(--text-secondary); margin-bottom:2rem;">Türkçe metin korpusunuzu yükleyin ve güçlü NLP araçları
+        ile analiz edin.</p>
+    <a href="{% url 'corpus:upload' %}" class="btn btn-primary btn-large">
+        <span class="material-icons">add_circle</span> Yeni Belge Yükle
+    </a>
+</section>
+
+<style>
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 4rem 2rem;
+        border-radius: 16px;
+        margin-bottom: 3rem;
+        text-align: center;
+    }
+
+    .hero-title {
+        font-size: 3.5rem;
+        color: white;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    .hero-subtitle {
+        font-size: 1.5rem;
+        color: rgba(255, 255, 255, 0.95);
+        margin-bottom: 1rem;
+    }
+
+    .hero-description {
+        font-size: 1.1rem;
+        color: rgba(255, 255, 255, 0.85);
+        max-width: 700px;
+        margin: 0 auto 2rem;
+        line-height: 1.6;
+    }
+
+    .hero-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-large {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+    }
+
+    .btn-primary {
+        background: #6366f1;
+        color: white;
+    }
+
+    .btn-outline {
+        background: transparent;
+        border: 2px solid white;
+        color: white;
+    }
+
+    /* Features Section */
+    .features-section,
+    .stats-section,
+    .recent-section {
+        margin-bottom: 3rem;
+    }
+
+    .section-title {
+        font-size: 2rem;
+        margin-bottom: 2rem;
+        color: #f8fafc;
+        text-align: center;
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+
+    .feature-card {
+        background: rgba(30, 41, 59, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(100, 116, 139, 0.3);
+        border-radius: 12px;
+        padding: 2rem;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+    }
+
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .feature-card h3 {
+        color: #f8fafc;
+        margin-bottom: 1rem;
+    }
+
+    .feature-card p {
+        color: #cbd5e1;
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+
+    .feature-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .feature-list li {
+        color: #94a3b8;
+        padding: 0.5rem 0;
+        padding-left: 1.5rem;
+        position: relative;
+    }
+
+    .feature-list li:before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: #14b8a6;
+        font-weight: bold;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .stat-card {
+        background: rgba(30, 41, 59, 0.6);
+        border: 1px solid rgba(100, 116, 139, 0.3);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 700;
+        color: #6366f1;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: #94a3b8;
+        font-size: 0.9rem;
+    }
+
+    /* Recent Activity */
+    .recent-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .recent-card {
+        background: rgba(30, 41, 59, 0.6);
+        border: 1px solid rgba(100, 116, 139, 0.3);
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .recent-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 1rem;
+    }
+
+    .recent-header h4 {
+        color: #f8fafc;
+        margin: 0;
+        font-size: 1rem;
+    }
+
+    .recent-meta {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        font-size: 0.85rem;
+        color: #94a3b8;
+    }
+
+    /* CTA Section */
+    .cta-section {
+        background: linear-gradient(135deg, #14b8a6 0%, #0891b2 100%);
+        padding: 3rem 2rem;
+        border-radius: 16px;
+        text-align: center;
+        margin-top: 3rem;
+    }
+
+    .cta-section h2 {
+        color: white;
+        margin-bottom: 1rem;
+    }
+
+    .cta-section p {
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}

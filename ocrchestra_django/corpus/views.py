@@ -6,10 +6,36 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from .models import Document, ProcessingTask
+from .models import Document, ProcessingTask, Analysis
 from .forms import DocumentUploadForm
 from .tasks import process_document_task
 from .services import CorpusService
+from .collections import Collection
+import os
+
+
+def home_view(request):
+    """Blog-style landing page."""
+    total_docs = Document.objects.count()
+    processed_docs = Document.objects.filter(processed=True).count()
+    recent_documents = Document.objects.all().order_by('-upload_date')[:4]
+    
+    # Total words calculation
+    total_words = 0
+    for doc in Document.objects.filter(processed=True):
+        total_words += doc.get_word_count()
+    
+    total_collections = Collection.objects.count()
+    
+    context = {
+        'total_docs': total_docs,
+        'processed_docs': processed_docs,
+        'total_words': total_words,
+        'total_collections': total_collections,
+        'recent_documents': recent_documents,
+        'active_tab': 'home'
+    }
+    return render(request, 'corpus/home.html', context)
 
 
 @ensure_csrf_cookie

@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="tr">
 
@@ -5,57 +6,105 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}OCRchestra{% endblock %}</title>
-
-    <!-- Google Fonts -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
-        rel="stylesheet">
-
-    <!-- Custom CSS -->
-    {% load static %}
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="container">
-            <h1 class="logo">📚 OCRchestra</h1>
-            <p class="subtitle">🎯 AI-Powered Morphological Tagging & Advanced Corpus Analysis</p>
-            </li>
-            </ul>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="{% url 'corpus:home' %}" class="logo-link">
+                <h2 class="sidebar-logo"><span class="material-icons">graphic_eq</span> OCRchestra</h2>
+            </a>
         </div>
-    </nav>
 
-    <!-- Messages -->
-    {% if messages %}
-    <div class="messages-container">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">
-            {% if 'safe' in message.tags %}
-            {{ message|safe }}
-            {% else %}
-            {{ message }}
-            {% endif %}
+        <nav class="sidebar-nav">
+            <a href="{% url 'corpus:home' %}" class="nav-item {% if active_tab == 'home' %}active{% endif %}">
+                <span class="material-icons nav-icon">home</span>
+                <span class="nav-text">Ana Sayfa</span>
+            </a>
+            <a href="{% url 'corpus:upload' %}" class="nav-item {% if active_tab == 'upload' %}active{% endif %}">
+                <span class="material-icons nav-icon">upload_file</span>
+                <span class="nav-text">Yükle</span>
+            </a>
+            <a href="{% url 'corpus:library' %}" class="nav-item {% if active_tab == 'library' %}active{% endif %}">
+                <span class="material-icons nav-icon">library_books</span>
+                <span class="nav-text">Kütüphane</span>
+            </a>
+            <a href="{% url 'corpus:collections' %}"
+                class="nav-item {% if active_tab == 'collections' %}active{% endif %}">
+                <span class="material-icons nav-icon">collections_bookmark</span>
+                <span class="nav-text">Koleksiyonlar</span>
+            </a>
+            <a href="{% url 'corpus:dashboard' %}" class="nav-item {% if active_tab == 'dashboard' %}active{% endif %}">
+                <span class="material-icons nav-icon">dashboard</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="{% url 'corpus:statistics' %}"
+                class="nav-item {% if active_tab == 'statistics' %}active{% endif %}">
+                <span class="material-icons nav-icon">assessment</span>
+                <span class="nav-text">İstatistikler</span>
+            </a>
+            <a href="/api/docs/" class="nav-item" target="_blank">
+                <span class="material-icons nav-icon">api</span>
+                <span class="nav-text">API Docs</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="breadcrumb">
+                {% block breadcrumb %}
+                <a href="{% url 'corpus:home' %}">Ana Sayfa</a>
+                {% endblock %}
+            </div>
+
+            <!-- Profile Section -->
+            <div class="profile-section">
+                <div class="profile-dropdown">
+                    <div class="profile-avatar">
+                        <span class="material-icons" style="font-size: 18px;">person</span>
+                    </div>
+                    <div class="profile-info">
+                        <span class="profile-name">Corpus Admin</span>
+                        <span class="profile-role">Researcher</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Messages -->
+        {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
+        {% endif %}
+
+        <!-- Page Content -->
+        <main class="content-area">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 OCRchestra - Modern Turkish Corpus Analysis Platform</p>
+            <div class="footer-links">
+                <a href="/api/docs/" target="_blank">API Docs</a>
+                <a href="https://github.com/iatagun/OCRchestra" target="_blank">GitHub</a>
+            </div>
+        </footer>
     </div>
-    {% endif %}
 
-    <!-- Main Content -->
-    <main class="container">
-        {% block content %}{% endblock %}
-    </main>
-
-    <!-- Footer -->
-    <footer>
-        <p>OCRchestra Django © 2026 | Modern Dark Theme</p>
-    </footer>
-
-    <!-- Scripts -->
-    <script src="{% static 'js/app.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 

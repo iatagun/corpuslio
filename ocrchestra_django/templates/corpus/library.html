@@ -3,13 +3,18 @@
 {% block title %}Kütüphane - OCRchestra{% endblock %}
 
 {% block content %}
-<h2>📚 Mevcut Kitaplar</h2>
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+    <h2><span class="material-icons" style="vertical-align:middle; margin-right:0.5rem;">library_books</span> Mevcut
+        Kitaplar</h2>
+    <span class="badge" style="background:var(--bg-surface); color:var(--text-secondary);">{{ documents.count }}
+        kaynak</span>
+</div>
 
 <!-- Search and Filters -->
 <div class="card filter-section">
     <form method="GET" class="filter-form">
         <div class="filter-grid">
-            <input type="text" name="q" value="{{ request.GET.q }}" placeholder="🔍 Dosya adı, yazar, kaynak ara..."
+            <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Dosya adı, yazar..."
                 class="form-control">
 
             <input type="text" name="author" value="{{ request.GET.author }}" placeholder="Yazar" class="form-control">
@@ -17,15 +22,15 @@
             <select name="genre" class="form-control">
                 <option value="">-- Tür --</option>
                 {% for genre in all_genres %}
-                <option value="{{ genre }}" {% if request.GET.genre == genre %}selected{% endif %}>{{ genre|title }}
+                <option value="{{ genre }}" {% if request.GET.genre==genre %}selected{% endif %}>{{ genre|title }}
                 </option>
                 {% endfor %}
             </select>
 
-            <input type="text" name="date" value="{{ request.GET.date }}" placeholder="Tarih/Yıl" class="form-control">
+            <input type="text" name="date" value="{{ request.GET.date }}" placeholder="Tarih" class="form-control">
 
-            <button type="submit" class="btn">Filtrele</button>
-            <a href="{% url 'corpus:library' %}" class="btn btn-secondary">Temizle</a>
+            <button type="submit" class="btn btn-primary">Filtrele</button>
+            <a href="{% url 'corpus:library' %}" class="btn btn-outline" style="text-align:center;">Temizle</a>
         </div>
     </form>
 </div>
@@ -37,35 +42,47 @@
         <h3>{{ doc.filename }}</h3>
         <p class="meta">
             <span class="format-badge">{{ doc.format }}</span>
-            <span class="date">{{ doc.upload_date|date:"d.m.Y H:i" }}</span>
+            <span class="date" style="display:flex; align-items:center; gap:0.25rem;">
+                <span class="material-icons" style="font-size:14px;">calendar_today</span>
+                {{ doc.upload_date|date:"d.m.Y" }}
+            </span>
         </p>
 
         <p class="status">
             {% if doc.processed %}
-            <span class="badge badge-success">✅ İşlendi</span>
+            <span
+                style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-success); font-weight:500; font-size:0.85rem;">
+                <span class="material-icons" style="font-size:16px;">check_circle</span> İşlendi
+            </span>
             <span class="word-count">{{ doc.get_word_count }} kelime</span>
             {% else %}
-            <span class="badge badge-pending">⏳ Bekliyor</span>
+            <span
+                style="display:flex; align-items:center; gap:0.25rem; color:var(--text-secondary); font-size:0.85rem;">
+                <span class="material-icons" style="font-size:16px;">hourglass_empty</span> Bekliyor
+            </span>
             {% endif %}
         </p>
 
         <div class="actions">
             {% if doc.processed %}
-            <a href="{% url 'corpus:analysis' doc.id %}" class="btn btn-small">İncele</a>
-            <a href="{% url 'corpus:export' doc.id %}?format=vrt" class="btn btn-small btn-secondary">VRT Export</a>
+            <a href="{% url 'corpus:analysis' doc.id %}" class="btn btn-secondary btn-small">İncele</a>
+            <a href="{% url 'corpus:export' doc.id %}?format=vrt" class="btn btn-outline btn-small">VRT</a>
             {% endif %}
             <form method="POST" action="{% url 'corpus:delete' doc.id %}" style="display:inline;"
                 onsubmit="return confirm('Silmek istediğinize emin misiniz?');">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-small btn-danger">Sil</button>
+                <button type="submit" class="btn btn-small btn-danger" style="border:none;">
+                    <span class="material-icons" style="font-size:16px;">delete</span>
+                </button>
             </form>
         </div>
     </div>
     {% endfor %}
 </div>
 {% else %}
-<div class="alert alert-info">
-    <p>📭 Kütüphane boş. 'Yeni Ekle' sekmesinden kitap ekleyebilirsiniz.</p>
+<div class="alert alert-info" style="display:flex; align-items:center; gap:0.5rem;">
+    <span class="material-icons">info</span>
+    <p>Kütüphane boş. 'Yeni Ekle' sekmesinden kitap ekleyebilirsiniz.</p>
 </div>
 {% endif %}
 

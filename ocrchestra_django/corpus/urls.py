@@ -9,7 +9,8 @@ from . import dashboard_views
 app_name = 'corpus'
 
 urlpatterns = [
-    path('', views.library_view, name='library'),
+    path('', views.home_view, name='home'),
+    path('library/', views.library_view, name='library'),
     path('upload/', views.upload_view, name='upload'),
     path('analysis/<int:doc_id>/', views.analysis_view, name='analysis'),
     path('analysis/<int:doc_id>/download/', views.download_search_results, name='download_results'),
