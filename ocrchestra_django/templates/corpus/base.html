@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}OCRchestra{% endblock %}</title>
+
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Custom CSS -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">📚 OCRchestra</h1>
+            <p class="subtitle">🎯 AI-Powered Morphological Tagging & Advanced Corpus Analysis</p>
+            </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {% if 'safe' in message.tags %}
+            {{ message|safe }}
+            {% else %}
+            {{ message }}
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>OCRchestra Django © 2026 | Modern Dark Theme</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="{% static 'js/app.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

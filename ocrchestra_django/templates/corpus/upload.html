@@ -1,0 +1,187 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}Yeni Belge Ekle - OCRchestra{% endblock %}
+
+{% block content %}
+<h2>📤 Yeni Belge İşle</h2>
+
+<div class="upload-container">
+    <form method="POST" enctype="multipart/form-data" class="upload-form">
+        {% csrf_token %}
+
+        <div class="file-upload-section">
+            <div class="form-group">
+                <label for="{{ form.file.id_for_label }}" class="form-label">Dosya Seçin (Çoklu Yükleme
+                    Desteklenir)</label>
+                <div class="file-upload-area"
+                    onclick="document.getElementById('{{ form.file.id_for_label }}').click();">
+                    <p class="upload-icon">📁</p>
+                    <p class="upload-text">Dosya seçmek için tıklayın (birden fazla seçilebilir)</p>
+                    <p class="upload-hint">PDF, DOCX, TXT, PNG, JPG (Max 50MB her biri)</p>
+                </div>
+                <input type="file" name="files" id="{{ form.file.id_for_label }}" multiple class="form-control"
+                    accept="{{ form.file.field.widget.attrs.accept }}">
+                <div id="file-names" class="file-name"></div>
+            </div>
+
+            <h3 style="margin-top: 2rem;">📋 Metadata (Opsiyonel)</h3>
+            <div class="metadata-grid">
+                <div class="form-group">
+                    <label for="{{ form.author.id_for_label }}" class="form-label">{{ form.author.label }}</label>
+                    {{ form.author }}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.date.id_for_label }}" class="form-label">{{ form.date.label }}</label>
+                    {{ form.date }}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.source.id_for_label }}" class="form-label">{{ form.source.label }}</label>
+                    {{ form.source }}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.genre.id_for_label }}" class="form-label">{{ form.genre.label }}</label>
+                    {{ form.genre }}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.language.id_for_label }}" class="form-label">{{ form.language.label }}</label>
+                    {{ form.language }}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.publisher.id_for_label }}" class="form-label">{{ form.publisher.label }}</label>
+                    {{ form.publisher }}
+                </div>
+            </div>
+
+            <h3 style="margin-top: 2rem;">⚙️ İşlem Seçenekleri</h3>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    {{ form.analyze }}
+                    Dilbilimsel Analiz Yap (POS/Lemma)
+                </label>
+                <p class="hint">Groq API kullanarak kelimelerin türlerini ve köklerini belirler</p>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    {{ form.label_studio_export }}
+                    Label Studio Formatında Kaydet
+                </label>
+                <p class="hint">Manuel düzeltme için JSON export</p>
+            </div>
+
+            <button type="submit" class="btn btn-large">
+                ⚡ İşlemi Başlat
+            </button>
+        </div>
+    </form>
+
+    <div class="info-section">
+        <div class="card">
+            <h3>ℹ️ Bilgi</h3>
+            <ul class="info-list">
+                <li><strong>PDF/DOCX:</strong> Metin otomatik çıkarılır</li>
+                <li><strong>Görsel (PNG/JPG):</strong> OCR ile metin alınır</li>
+                <li><strong>TXT:</strong> Doğrudan işlenir</li>
+                <li><strong>İşlem süresi:</strong> Dosya boyutuna göre 10sn - 2dk</li>
+                <li><strong>Analiz:</strong> Groq API (Türkçe NLP)</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+    .upload-container {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .upload-form {
+        background: rgba(30, 41, 59, 0.4);
+        padding: 2rem;
+        border-radius: 12px;
+    }
+
+    .file-upload-section input[type="file"] {
+        display: none;
+    }
+
+    .file-name {
+        margin-top: 1rem;
+        color: #14b8a6;
+        font-weight: 600;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #cbd5e1;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+    .hint {
+        font-size: 13px;
+        color: #64748b;
+        margin-top: 0.5rem;
+        margin-left: 1.5rem;
+    }
+
+    .btn-large {
+        width: 100%;
+        padding: 1rem 2rem;
+        font-size: 16px;
+        margin-top: 1.5rem;
+    }
+
+    .info-section h3 {
+        color: #f8fafc;
+        margin-top: 0;
+        margin-bottom: 1rem;
+    }
+
+    .info-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .info-list li {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #334155;
+        color: #cbd5e1;
+        font-size: 14px;
+    }
+
+    .info-list li:last-child {
+        border-bottom: none;
+    }
+
+    .info-list strong {
+        color: #818cf8;
+    }
+
+    @media (max-width: 968px) {
+        .upload-container {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    document.getElementById('{{ form.file.id_for_label }}').addEventListener('change', function (e) {
+        const files = e.target.files;
+        if (files.length > 0) {
+            const fileNames = Array.from(files).map(f => f.name).join(', ');
+            document.getElementById('file-names').innerHTML = `✅ Seçilen: <strong>${files.length} dosya</strong><br>${fileNames}`;
+        }
+    });
+</script>
+{% endblock %}

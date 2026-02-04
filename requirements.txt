@@ -1,9 +1,0 @@
-jsonschema
-pytest
-requests
-PyMuPDF
-python-docx
-Pillow
-streamlit
-sqlalchemy
-groq

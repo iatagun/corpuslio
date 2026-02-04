@@ -1,0 +1,150 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<h2>📊 Korpus Dashboard</h2>
+
+<!-- Summary Cards -->
+<div class="metrics-row">
+    <div class="metric">
+        <span class="metric-value">{{ total_docs }}</span>
+        <span class="metric-label">Toplam Belge</span>
+    </div>
+    <div class="metric">
+        <span class="metric-value">{{ processed_docs }}</span>
+        <span class="metric-label">İşlenmiş</span>
+    </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="charts-grid">
+    <!-- Genre Distribution -->
+    <div class="card">
+        <h3>📚 Tür Dağılımı</h3>
+        <div id="genre-chart"></div>
+    </div>
+
+    <!-- POS Distribution -->
+    <div class="card">
+        <h3>🏷️ En Sık POS Etiketleri</h3>
+        <div id="pos-chart"></div>
+    </div>
+
+    <!-- Word Counts -->
+    <div class="card">
+        <h3>📝 Belge Kelime Sayıları</h3>
+        <div id="wordcount-chart"></div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="card">
+        <h3>📅 Tarih Dağılımı</h3>
+        <div id="timeline-chart"></div>
+    </div>
+</div>
+
+<script>
+    const genreData = {{ genre_data| safe }};
+    const posData = {{ pos_data| safe }};
+    const wordCounts = {{ word_counts| safe }};
+    const docLabels = {{ doc_labels| safe }};
+    const dateData = {{ date_data| safe }};
+
+    // Genre Pie Chart
+    if (Object.keys(genreData).length > 0) {
+        Plotly.newPlot('genre-chart', [{
+            values: Object.values(genreData),
+            labels: Object.keys(genreData),
+            type: 'pie',
+            marker: {
+                colors: ['#6366f1', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6']
+            }
+        }], {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#f8fafc', family: 'Inter' },
+            height: 300
+        });
+    }
+
+    // POS Bar Chart
+    if (Object.keys(posData).length > 0) {
+        Plotly.newPlot('pos-chart', [{
+            x: Object.keys(posData),
+            y: Object.values(posData),
+            type: 'bar',
+            marker: { color: '#6366f1' }
+        }], {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(30, 41, 59, 0.3)',
+            font: { color: '#f8fafc', family: 'Inter' },
+            xaxis: { gridcolor: '#334155' },
+            yaxis: { gridcolor: '#334155' },
+            height: 300
+        });
+    }
+
+    // Word Count Chart
+    if (wordCounts.length > 0) {
+        Plotly.newPlot('wordcount-chart', [{
+            x: docLabels,
+            y: wordCounts,
+            type: 'bar',
+            marker: { color: '#14b8a6' }
+        }], {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(30, 41, 59, 0.3)',
+            font: { color: '#f8fafc', family: 'Inter' },
+            xaxis: { gridcolor: '#334155', tickangle: -45 },
+            yaxis: { gridcolor: '#334155' },
+            height: 300,
+            margin: { b: 120 }
+        });
+    }
+
+    // Timeline Chart
+    if (Object.keys(dateData).length > 0) {
+        Plotly.newPlot('timeline-chart', [{
+            x: Object.keys(dateData),
+            y: Object.values(dateData),
+            type: 'scatter',
+            mode: 'lines+markers',
+            marker: { color: '#f59e0b', size: 8 },
+            line: { color: '#f59e0b', width: 2 }
+        }], {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(30, 41, 59, 0.3)',
+            font: { color: '#f8fafc', family: 'Inter' },
+            xaxis: { gridcolor: '#334155' },
+            yaxis: { gridcolor: '#334155' },
+            height: 300
+        });
+    }
+</script>
+
+<style>
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    @media (max-width: 1024px) {
+        .charts-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    #genre-chart,
+    #pos-chart,
+    #wordcount-chart,
+    #timeline-chart {
+        min-height: 300px;
+    }
+</style>
+{% endblock %}

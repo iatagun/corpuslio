@@ -1,0 +1,162 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}Kütüphane - OCRchestra{% endblock %}
+
+{% block content %}
+<h2>📚 Mevcut Kitaplar</h2>
+
+<!-- Search and Filters -->
+<div class="card filter-section">
+    <form method="GET" class="filter-form">
+        <div class="filter-grid">
+            <input type="text" name="q" value="{{ request.GET.q }}" placeholder="🔍 Dosya adı, yazar, kaynak ara..."
+                class="form-control">
+
+            <input type="text" name="author" value="{{ request.GET.author }}" placeholder="Yazar" class="form-control">
+
+            <select name="genre" class="form-control">
+                <option value="">-- Tür --</option>
+                {% for genre in all_genres %}
+                <option value="{{ genre }}" {% if request.GET.genre == genre %}selected{% endif %}>{{ genre|title }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <input type="text" name="date" value="{{ request.GET.date }}" placeholder="Tarih/Yıl" class="form-control">
+
+            <button type="submit" class="btn">Filtrele</button>
+            <a href="{% url 'corpus:library' %}" class="btn btn-secondary">Temizle</a>
+        </div>
+    </form>
+</div>
+
+{% if documents %}
+<div class="documents-grid">
+    {% for doc in documents %}
+    <div class="card document-card">
+        <h3>{{ doc.filename }}</h3>
+        <p class="meta">
+            <span class="format-badge">{{ doc.format }}</span>
+            <span class="date">{{ doc.upload_date|date:"d.m.Y H:i" }}</span>
+        </p>
+
+        <p class="status">
+            {% if doc.processed %}
+            <span class="badge badge-success">✅ İşlendi</span>
+            <span class="word-count">{{ doc.get_word_count }} kelime</span>
+            {% else %}
+            <span class="badge badge-pending">⏳ Bekliyor</span>
+            {% endif %}
+        </p>
+
+        <div class="actions">
+            {% if doc.processed %}
+            <a href="{% url 'corpus:analysis' doc.id %}" class="btn btn-small">İncele</a>
+            <a href="{% url 'corpus:export' doc.id %}?format=vrt" class="btn btn-small btn-secondary">VRT Export</a>
+            {% endif %}
+            <form method="POST" action="{% url 'corpus:delete' doc.id %}" style="display:inline;"
+                onsubmit="return confirm('Silmek istediğinize emin misiniz?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-small btn-danger">Sil</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">
+    <p>📭 Kütüphane boş. 'Yeni Ekle' sekmesinden kitap ekleyebilirsiniz.</p>
+</div>
+{% endif %}
+
+<style>
+    .documents-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .document-card h3 {
+        color: #f8fafc;
+        font-size: 18px;
+        margin-bottom: 1rem;
+        word-break: break-word;
+    }
+
+    .meta {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 1rem;
+        font-size: 14px;
+        color: #94a3b8;
+    }
+
+    .format-badge {
+        background: rgba(99, 102, 241, 0.2);
+        color: #818cf8;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 11px;
+    }
+
+    .status {
+        margin-bottom: 1.5rem;
+    }
+
+    .badge {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-right: 1rem;
+    }
+
+    .badge-success {
+        background: rgba(20, 184, 166, 0.2);
+        color: #14b8a6;
+    }
+
+    .badge-pending {
+        background: rgba(245, 158, 11, 0.2);
+        color: #f59e0b;
+    }
+
+    .word-count {
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    .actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .export-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-section {
+        margin-bottom: 2rem;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr auto auto;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    @media (max-width: 1024px) {
+        .filter-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}İstatistikler - OCRchestra{% endblock %}
+
+{% block content %}
+<h2>📊 Derlem İstatistikleri</h2>
+
+<div class="metrics-row">
+    <div class="metric">
+        <span class="metric-value">{{ total_docs }}</span>
+        <span class="metric-label">Toplam Belge</span>
+    </div>
+    <div class="metric">
+        <span class="metric-value">{{ total_words|default:"0" }}</span>
+        <span class="metric-label">Toplam Kelime</span>
+    </div>
+    <div class="metric">
+        <span class="metric-value">{{ documents|length }}</span>
+        <span class="metric-label">İşlenmiş</span>
+    </div>
+</div>
+
+{% if documents %}
+<h3>Belgeler</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Dosya</th>
+            <th>Format</th>
+            <th>Tarih</th>
+            <th>Kelime Sayısı</th>
+            <th>İşlemler</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for doc in documents %}
+        <tr>
+            <td>{{ doc.filename }}</td>
+            <td><span class="format-badge">{{ doc.format }}</span></td>
+            <td>{{ doc.upload_date|date:"d.m.Y" }}</td>
+            <td>{{ doc.get_word_count }}</td>
+            <td>
+                <a href="{% url 'corpus:analysis' doc.id %}" class="btn btn-small">İncele</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-info">
+    <p>Henüz işlenmiş belge yok.</p>
+</div>
+{% endif %}
+
+<style>
+    .format-badge {
+        background: rgba(99, 102, 241, 0.2);
+        color: #818cf8;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 11px;
+    }
+</style>
+{% endblock %}

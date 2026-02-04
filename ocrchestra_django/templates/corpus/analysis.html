@@ -1,0 +1,234 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}{{ document.filename }} - Analiz{% endblock %}
+
+{% block content %}
+<div class="analysis-header">
+    <h2>📊 {{ document.filename }}</h2>
+    <div class="document-meta">
+        <span class="badge badge-success">{{ document.format }}</span>
+        <span>{{ document.upload_date|date:"d.m.Y H:i" }}</span>
+        <span>{{ document.get_word_count }} kelime</span>
+    </div>
+</div>
+
+<!-- Statistics Overview -->
+{% if stats %}
+<div class="metrics-row">
+    <div class="metric">
+        <span class="metric-value">{{ stats.token_count }}</span>
+        <span class="metric-label">Token</span>
+    </div>
+    <div class="metric">
+        <span class="metric-value">{{ stats.type_count }}</span>
+        <span class="metric-label">Benzersiz Kelime</span>
+    </div>
+    <div class="metric">
+        <span class="metric-value">{{ stats.ttr|floatformat:3 }}</span>
+        <span class="metric-label">TTR</span>
+    </div>
+</div>
+{% endif %}
+
+<!-- Search Form -->
+<div class="card search-card">
+    <h3>🔍 KWIC Concordance Arama</h3>
+
+    <form method="GET" class="search-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="search_type" class="form-label">Arama Tipi</label>
+                <select name="search_type" id="search_type" class="form-control">
+                    <option value="word">Kelime</option>
+                    <option value="lemma">Kök (Lemma)</option>
+                    <option value="pos">Kelime Türü (POS)</option>
+                    <option value="advanced">Gelişmiş</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="query-group">
+                <label for="query" class="form-label">Arama Terimi</label>
+                <input type="text" name="query" id="query" value="{{ request.GET.query }}" class="form-control"
+                    placeholder="arama...">
+            </div>
+
+            <div class="form-group">
+                <label for="context_size" class="form-label">Bağlam Boyutu</label>
+                <input type="number" name="context_size" id="context_size"
+                    value="{{ request.GET.context_size|default:5 }}" min="1" max="20" class="form-control">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-check">
+                <input type="checkbox" name="case_sensitive" id="case_sensitive" value="true">
+                <label for="case_sensitive">Büyük/küçük harf duyarlı</label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" name="regex" id="regex" value="true">
+                <label for="regex">RegEx kullan</label>
+            </div>
+        </div>
+
+        <button type="submit" class="btn">Ara</button>
+        <a href="{% url 'corpus:analysis' document.id %}" class="btn btn-secondary">Temizle</a>
+        {% if request.GET.query %}
+        <a href="{% url 'corpus:download_results' document.id %}?{{ request.GET.urlencode }}" class="btn btn-success">⬇️
+            CSV İndir</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Search Results -->
+{% if search_results %}
+<div class="card">
+    <h3>📝 Sonuçlar ({{ search_results|length }} eşleşme)</h3>
+
+    <div class="concordance-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Sol Bağlam</th>
+                    <th class="keyword-col">Anahtar Kelime</th>
+                    <th>Sağ Bağlam</th>
+                    <th>POS</th>
+                    <th>Lemma</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in search_results %}
+                <tr>
+                    <td class="left-context">{{ result.left_context }}</td>
+                    <td class="keyword"><strong>{{ result.keyword }}</strong></td>
+                    <td class="right-context">{{ result.right_context }}</td>
+                    <td><span class="pos-tag">{{ result.pos|default:"-" }}</span></td>
+                    <td>{{ result.lemma|default:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% elif request.GET.query %}
+<div class="alert alert-info">
+    <p>🔍 Eşleşme bulunamadı.</p>
+</div>
+{% endif %}
+
+<!-- Export Options -->
+<div class="card">
+    <h3>📤 Export</h3>
+    <div class="export-buttons">
+        <a href="{% url 'corpus:export' document.id %}?format=json" class="btn btn-small">JSON</a>
+        <a href="{% url 'corpus:export' document.id %}?format=csv" class="btn btn-small">CSV</a>
+        <a href="{% url 'corpus:export' document.id %}?format=vrt" class="btn btn-small">VRT</a>
+        <a href="{% url 'corpus:export' document.id %}?format=conllu" class="btn btn-small">CoNLL-U</a>
+    </div>
+</div>
+
+<!-- Additional Analysis -->
+<div class="card">
+    <h3>🔬 Ek Analizler</h3>
+    <div class="export-buttons">
+        <a href="{% url 'corpus:ngrams' document.id %}" class="btn">N-gram & Kolokasyon</a>
+        <a href="{% url 'corpus:wordcloud' document.id %}" class="btn">Frekans Grafikleri</a>
+    </div>
+</div>
+
+<style>
+    .analysis-header {
+        margin-bottom: 2rem;
+    }
+
+    .document-meta {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-top: 1rem;
+        color: #94a3b8;
+        font-size: 14px;
+    }
+
+    .search-card {
+        margin-bottom: 2rem;
+    }
+
+    .search-form .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #cbd5e1;
+    }
+
+    .form-check input[type="checkbox"] {
+        width: auto;
+    }
+
+    .concordance-table {
+        overflow-x: auto;
+    }
+
+    .concordance-table table {
+        width: 100%;
+        font-size: 14px;
+    }
+
+    .left-context {
+        text-align: right;
+        color: #94a3b8;
+    }
+
+    .keyword {
+        text-align: center;
+        color: #14b8a6;
+        font-weight: 700;
+        white-space: nowrap;
+        padding: 0 1rem;
+    }
+
+    .keyword-col {
+        text-align: center;
+    }
+
+    .right-context {
+        text-align: left;
+        color: #94a3b8;
+    }
+
+    .pos-tag {
+        background: rgba(99, 102, 241, 0.2);
+        color: #818cf8;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .export-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+</style>
+
+<script>
+    // Show/hide query field based on search type
+    document.getElementById('search_type').addEventListener('change', function (e) {
+        const queryGroup = document.getElementById('query-group');
+        if (e.target.value === 'pos') {
+            queryGroup.style.display = 'none';
+        } else {
+            queryGroup.style.display = 'block';
+        }
+    });
+</script>
+{% endblock %}

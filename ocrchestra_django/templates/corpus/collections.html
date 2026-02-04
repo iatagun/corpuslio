@@ -1,0 +1,56 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}Koleksiyonlar{% endblock %}
+
+{% block content %}
+<div class="header-with-action">
+    <h2>📁 Koleksiyonlar</h2>
+    <a href="{% url 'corpus:create_collection' %}" class="btn">+ Yeni Koleksiyon</a>
+</div>
+
+{% if collections %}
+<div class="documents-grid">
+    {% for coll in collections %}
+    <div class="card collection-card">
+        <h3>{{ coll.name }}</h3>
+        <p class="collection-desc">{{ coll.description|default:"Açıklama yok" }}</p>
+        <div class="collection-meta">
+            <span>📄 {{ coll.get_document_count }} belge</span>
+            <span>💬 {{ coll.get_total_words }} kelime</span>
+        </div>
+        <a href="{% url 'corpus:collection_detail' coll.id %}" class="btn btn-small">Aç</a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <p>Henüz koleksiyon oluşturulmamış. Alt-korpuslar oluşturmak için "Yeni Koleksiyon" butonuna tıklayın.</p>
+</div>
+{% endif %}
+
+<style>
+    .header-with-action {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .collection-card {
+        position: relative;
+    }
+
+    .collection-desc {
+        color: #94a3b8;
+        margin: 0.5rem 0;
+    }
+
+    .collection-meta {
+        display: flex;
+        gap: 1rem;
+        margin: 1rem 0;
+        font-size: 14px;
+        color: #cbd5e1;
+    }
+</style>
+{% endblock %}

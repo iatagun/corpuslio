@@ -56,7 +56,7 @@ class CorpusExporter:
             return ""
         
         # Determine fields
-fields = ['word', 'lemma', 'pos', 'confidence']
+        fields = ['word', 'lemma', 'pos', 'confidence']
         
         # Check if morphology exists
         has_morph = any('morphology' in item and item['morphology'] for item in self.data)
@@ -127,40 +127,92 @@ fields = ['word', 'lemma', 'pos', 'confidence']
         
         return '\n'.join(output)
 
-    def to_vrt(self) -> str:
+    def to_vrt(self, include_structure: bool = True) -> str:
         """Export to VRT format (CWB/SketchEngine).
 
         Format:
-        <text id="...">
-        <s>
-        word    lemma    pos    ...
+        <doc id="..." filename="..." ...>
+        <p id="p1">
+        <s id="s1">
+        word    lemma    pos    morphology
         </s>
-        </text>
+        </p>
+        </doc>
+
+        Args:
+            include_structure: Include <p> and <s> tags
 
         Returns:
             VRT formatted string
         """
         output = []
         
-        # Text element with metadata
-        text_attrs = ' '.join(f'{k}="{v}"' for k, v in self.metadata.items())
-        output.append(f"<text {text_attrs}>")
-        output.append("<s>")
+        # Document element with metadata
+        doc_attrs = ' '.join(f'{k}="{v}"' for k, v in self.metadata.items() if v)
+        output.append(f"<doc {doc_attrs}>")
         
-        # Token lines
-        for item in self.data:
-            word = item.get('word', '')
-            lemma = item.get('lemma', '')
-            pos = item.get('pos', '')
-            morph = self._format_morphology_vrt(item.get('morphology', {}))
+        if include_structure and self.data:
+            # Try to detect sentence boundaries
+            from ocrchestra.sentence_detector import SentenceBoundaryDetector
             
-            line = f"{word}\t{lemma}\t{pos}\t{morph}"
-            output.append(line)
+            detector = SentenceBoundaryDetector()
+            
+            # Reconstruct text from tokens
+            text = ' '.join(item.get('word', '') for item in self.data)
+            
+            # Add sentence IDs to tokens
+            tokens_with_sent = detector.annotate_tokens(self.data.copy(), text)
+            
+            # Group by sentence
+            current_sent_id = None
+            current_para_id = 1  # Simple: one paragraph for now
+            
+            output.append(f"<p id=\"p{current_para_id}\">")
+            
+            for item in tokens_with_sent:
+                sent_id = item.get('sent_id', 1)
+                
+                # New sentence
+                if sent_id != current_sent_id:
+                    # Close previous sentence
+                    if current_sent_id is not None:
+                        output.append("</s>")
+                    
+                    # Open new sentence
+                    output.append(f"<s id=\"s{sent_id}\">")
+                    current_sent_id = sent_id
+                
+                # Token line
+                word = item.get('word', '')
+                lemma = item.get('lemma', '')
+                pos = item.get('pos', '')
+                morph = self._format_morphology_vrt(item.get('morphology', {}))
+                
+                line = f"{word}\t{lemma}\t{pos}\t{morph}"
+                output.append(line)
+            
+            # Close last sentence and paragraph
+            if current_sent_id is not None:
+                output.append("</s>")
+            output.append("</p>")
         
-        output.append("</s>")
-        output.append("</text>")
+        else:
+            # Simple mode: no structure tags
+            output.append("<s>")
+            for item in self.data:
+                word = item.get('word', '')
+                lemma = item.get('lemma', '')
+                pos = item.get('pos', '')
+                morph = self._format_morphology_vrt(item.get('morphology', {}))
+                
+                line = f"{word}\t{lemma}\t{pos}\t{morph}"
+                output.append(line)
+            output.append("</s>")
+        
+        output.append("</doc>")
         
         return '\n'.join(output)
+
 
     def _format_morphology(self, morph: Dict[str, str]) -> str:
         """Format morphology for CoNLL-U.

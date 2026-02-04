@@ -1,69 +1,75 @@
-# OCRchestra
+# OCRchestra - Turkish Corpus Platform
 
-OCRchestra is a modular, production-grade OCR orchestration system focused on
-evidence-based OCR, deterministic processing, and strict separation of
-responsibilities between an orchestrator and expert modules.
+Modern Django-based Turkish corpus platform with AI-powered linguistic analysis.
 
-**Core constraints**
-- All language models are loaded from local filesystem paths (HuggingFace format).
-- No network calls, no Hub downloads, and no remote inference APIs.
-- LLMs are used only for planning, routing, verification, and post-correction.
-- OCR extraction is evidence-based (confidence scores, bounding boxes).
+**⚠️ This project has been migrated from Streamlit to Django.**
 
-**Principles**
-- Deterministic behavior where possible.
-- JSON contracts between modules; expert modules are stateless and isolated.
-- Models loaded with `local_files_only=True` (transformers).
-
-**Quick Start**
-
-Prerequisites
-- Python 3.8+ (3.11 recommended)
-- A local HuggingFace-format model folder available on disk (do NOT rely on downloads)
-- Install dev/runtime dependencies (offline install if required):
+## 🚀 Quick Start
 
 ```bash
+cd ocrchestra_django
 pip install -r requirements.txt
+
+# Setup environment
+cp .env.example .env
+# Edit .env and add GROQ_API_KEY
+
+# Database
+python manage.py migrate
+
+# Create admin user
+python manage.py createsuperuser
+
+# Run server
+python manage.py runserver
 ```
 
-Run the orchestrator (example):
+Visit: **http://localhost:8000**
 
-```bash
-python scripts/run_orchestrator.py --model-path "C:\path\to\local\hf-model"
+## 📁 Project Structure
+
+```
+OCRchestra/
+├── ocrchestra_django/        # Django web application
+│   ├── manage.py
+│   ├── corpus/               # Main app
+│   ├── api/                  # REST API
+│   ├── templates/            # HTML templates
+│   └── static/               # CSS, JS
+│
+├── ocrchestra/               # Core NLP modules (shared)
+│   ├── orchestrator.py
+│   ├── groq_client.py
+│   ├── search_engine.py
+│   └── ...
+│
+├── scripts/                  # Utility scripts
+├── tests/                    # Tests
+└── README.md                 # This file
 ```
 
-Pass a metadata file (JSON) to `--metadata-file` to provide document metadata.
+## 🎨 Features
 
-**Testing**
+- ✅ Modern dark theme with glassmorphism
+- ✅ Document upload (PDF, DOCX, TXT, images)
+- ✅ AI-powered analysis (Groq API)
+- ✅ Async processing (Celery)
+- ✅ KWIC concordance search
+- ✅ REST API
+- ✅ Export to VRT, JSON, CSV, CoNLL-U
 
-Unit tests use lightweight mocks for `torch` and `transformers` so they do not
-require heavy model files. Run tests with:
+## 📖 Documentation
 
-```bash
-pytest -q
-```
+See [`ocrchestra_django/README.md`](ocrchestra_django/README.md) for detailed setup instructions.
 
-Real OCR expert
-- The repository includes a real OCR expert (`ocr_expert_real`) that uses the
-	Tesseract binary via `pytesseract` and `Pillow` to extract text, bounding
-	boxes, and per-word confidence scores.
-- Requirements: install system Tesseract (e.g., `apt install tesseract-ocr` on
-	Debian/Ubuntu, or download installer for Windows) and Python packages from
-	`requirements.txt`.
-- The OCR unit test is skipped when Tesseract or `pytesseract` is not available.
+## 🛠️ Technology Stack
 
+- **Backend**: Django 5.0
+- **API**: Django REST Framework
+- **Async**: Celery + Redis
+- **NLP**: Groq API
+- **Database**: SQLite (dev) / PostgreSQL (prod)
 
-**Repository layout**
-- `ocrchestra/orchestrator.py` — orchestrator skeleton, model loader, JSON-only plan generation
-- `ocrchestra/schemas/execution_plan_schema.json` — minimal execution plan JSON Schema
-- `scripts/run_orchestrator.py` — small CLI demonstrating orchestrator usage
-- `tests/test_orchestrator.py` — pytest unit tests (mocks HF and torch)
-- `requirements.txt` — minimal runtime and test dependencies
+## 📝 License
 
-Security & audit notes
-- The orchestrator intentionally does not read or modify document content.
-- TODO: add logging, signing of plans, and audit trails for production use.
-
-Contributing
-- Follow the modular contract: orchestrator emits JSON plans; experts accept JSON.
-- Add TODOs and tests when extending behavior.
+MIT

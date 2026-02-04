@@ -1,0 +1,106 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}Frekans Analizi - {{ document.filename }}{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+{% endblock %}
+
+{% block content %}
+<div class="analysis-header">
+    <h2>📊 Kelime Frekans Analizi</h2>
+    <p class="document-meta">{{ document.filename }}</p>
+</div>
+
+<!-- Word Frequency Chart -->
+<div class="card">
+    <h3>📈 En Sık Kullanılan Kelimeler (Top 50)</h3>
+    <div id="word-freq-chart"></div>
+</div>
+
+<!-- Lemma Frequency Chart -->
+<div class="card">
+    <h3>📈 En Sık Kökler / Lemmalar (Top 50)</h3>
+    <div id="lemma-freq-chart"></div>
+</div>
+
+<!-- Back to Analysis -->
+<div class="card">
+    <a href="{% url 'corpus:analysis' document.id %}" class="btn">← KWIC Ara'ya Dön</a>
+    <a href="{% url 'corpus:ngrams' document.id %}" class="btn btn-secondary">N-gram Analizi</a>
+</div>
+
+<script>
+    // Word frequency data from Django
+    const wordFreq = {{ word_freq| safe }};
+    const lemmaFreq = {{ lemma_freq| safe }};
+
+    // Prepare data for Plotly
+    const wordData = Object.entries(wordFreq).slice(0, 50);
+    const lemmaData = Object.entries(lemmaFreq).slice(0, 50);
+
+    // Word Frequency Bar Chart
+    const wordTrace = {
+        x: wordData.map(d => d[1]),
+        y: wordData.map(d => d[0]),
+        type: 'bar',
+        orientation: 'h',
+        marker: {
+            color: 'rgba(99, 102, 241, 0.7)',
+            line: {
+                color: 'rgba(99, 102, 241, 1)',
+                width: 1
+            }
+        }
+    };
+
+    const wordLayout = {
+        margin: { l: 150, r: 50, t: 30, b: 50 },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(30, 41, 59, 0.3)',
+        font: { color: '#f8fafc', family: 'Inter' },
+        xaxis: { gridcolor: '#334155' },
+        yaxis: { gridcolor: '#334155' },
+        height: 800
+    };
+
+    Plotly.newPlot('word-freq-chart', [wordTrace], wordLayout, { responsive: true });
+
+    // Lemma Frequency Bar Chart
+    const lemmaTrace = {
+        x: lemmaData.map(d => d[1]),
+        y: lemmaData.map(d => d[0]),
+        type: 'bar',
+        orientation: 'h',
+        marker: {
+            color: 'rgba(20, 184, 166, 0.7)',
+            line: {
+                color: 'rgba(20, 184, 166, 1)',
+                width: 1
+            }
+        }
+    };
+
+    const lemmaLayout = {
+        margin: { l: 150, r: 50, t: 30, b: 50 },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(30, 41, 59, 0.3)',
+        font: { color: '#f8fafc', family: 'Inter' },
+        xaxis: { gridcolor: '#334155' },
+        yaxis: { gridcolor: '#334155' },
+        height: 800
+    };
+
+    Plotly.newPlot('lemma-freq-chart', [lemmaTrace], lemmaLayout, { responsive: true });
+</script>
+
+<style>
+    #word-freq-chart,
+    #lemma-freq-chart {
+        min-height: 800px;
+        background: rgba(30, 41, 59, 0.3);
+        border-radius: 8px;
+        padding: 1rem;
+    }
+</style>
+{% endblock %}

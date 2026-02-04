@@ -1,0 +1,49 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}{{ collection.name }}{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="header-with-action">
+    <div>
+        <h2>📁 {{ collection.name }}</h2>
+        <p style="color: #94a3b8;">{{ collection.description }}</p>
+    </div>
+    <a href="{% url 'corpus:collections' %}" class="btn btn-secondary">← Koleksiyonlara Dön</a>
+</div>
+
+<!-- Collection Stats -->
+<div class="metrics-row">
+    <div class="metric">
+        <span class="metric-value">{{ collection.get_document_count }}</span>
+        <span class="metric-label">Belge</span>
+    </div>
+    <div class="metric">
+        <span class="metric-value">{{ collection.get_total_words }}</span>
+        <span class="metric-label">Toplam Kelime</span>
+    </div>
+</div>
+
+<!-- Documents in Collection -->
+<div class="card">
+    <h3>📚 Belgeler</h3>
+    <div class="documents-grid" style="margin-top: 1rem;">
+        {% for doc in documents %}
+        <div class="card document-card">
+            <h4>{{ doc.filename }}</h4>
+            <div class="document-meta">
+                <span>{{ doc.format }}</span>
+                <span>{{ doc.get_word_count }} kelime</span>
+                <span>{{ doc.upload_date|date:"d.m.Y" }}</span>
+            </div>
+            {% if doc.processed %}
+            <a href="{% url 'corpus:analysis' doc.id %}" class="btn btn-small">İncele</a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
