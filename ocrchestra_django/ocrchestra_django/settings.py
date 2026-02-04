@@ -9,6 +9,17 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+import mimetypes
+# Force CSS content type (Fix for Windows registry issues)
+mimetypes.add_type("text/css", ".css", True)
+
+# Additional fix for Windows 10/11 where registry entry might be missing/corrupt
+if os.name == 'nt':
+    import mimetypes
+    mimetypes.init()
+    if '.css' not in mimetypes.types_map or mimetypes.types_map['.css'] != 'text/css':
+        mimetypes.types_map['.css'] = 'text/css'
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -38,6 +49,12 @@ INSTALLED_APPS = [
     # Third party
     'rest_framework',
     'drf_spectacular',
+    # Authentication
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
     
     # Local apps
     'corpus',
@@ -50,6 +67,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -115,6 +133,31 @@ AUTH_PASSWORD_VALIDATORS = [
 LOGIN_URL = 'corpus:login'
 LOGIN_REDIRECT_URL = 'corpus:home'
 LOGOUT_REDIRECT_URL = 'corpus:login'
+
+# django-allauth settings
+SITE_ID = int(os.getenv('DJANGO_SITE_ID', '1'))
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# allauth behavior
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_AUTHENTICATION_METHOD = 'username'
+ACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_QUERY_EMAIL = True
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+    }
+}
+
+# Note: You must install `django-allauth` (pip install django-allauth)
+# and configure a Google OAuth2 app in Google Cloud Console.
+# Create a SocialApp in Django admin (Sites -> Social applications) with
+# the client id/secret and add the site (SITE_ID).
 
 
 # Internationalization
@@ -186,4 +229,8 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50 MB
 
 # Allowed file extensions
 ALLOWED_DOCUMENT_EXTENSIONS = ['.pdf', '.docx', '.txt', '.png', '.jpg', '.jpeg']
+
+# Google OAuth credentials (loaded from environment)
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 

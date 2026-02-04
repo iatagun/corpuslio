@@ -398,6 +398,103 @@ button,
     background-color: var(--accent-hover);
 }
 
+/* Centering for authentication pages (login/register/logout) */
+.auth-page .login-container,
+.auth-page .center-container {
+    min-height: 100vh !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+}
+
+.auth-page .login-box,
+.auth-page .message-card {
+    max-width: 520px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* Auth card visual style to match site theme */
+.auth-page .login-box {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    color: var(--text-main);
+}
+
+.auth-page .login-header h1 {
+    font-size: 22px;
+    color: var(--text-main);
+    margin-bottom: 6px;
+}
+.auth-page .login-header p {
+    color: var(--text-secondary);
+    margin-bottom: 18px;
+}
+
+.auth-page .form-group label { color: var(--text-main); font-weight:600; margin-bottom:8px; display:block }
+.auth-page .form-group input {
+    width:100%; padding:10px 12px; border-radius:6px; border:1px solid var(--border-subtle); background:var(--bg-base); color:var(--text-main);
+}
+.auth-page .form-group input:focus { outline:none; border-color:var(--border-focus); }
+
+.auth-page .login-actions { display:flex; gap:12px; align-items:center; justify-content:space-between; margin-top:14px }
+.auth-page .login-cta { flex: 1 }
+
+.auth-page .register-link { color: var(--text-secondary); margin-top:16px; text-align:center }
+.auth-page .register-link a { color: var(--accent-primary); font-weight:600 }
+
+/* Google sign-in button */
+.btn-google {
+.btn-google {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: white;
+    color: var(--text-main);
+    border: 1px solid rgba(16,24,40,0.08);
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 15px;
+    box-shadow: 0 4px 12px rgba(16,24,40,0.06);
+    text-decoration: none;
+}
+.btn-google .g-icon {
+    width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center;
+}
+.btn-google:hover {
+    background: #f5f6f7;
+    border-color: rgba(16,24,40,0.12);
+}
+.btn-google span { line-height:1 }
+
+.btn-google:focus {
+    outline: 3px solid rgba(99,102,241,0.12);
+    outline-offset: 2px;
+}
+
+/* Auth pages — scoped and non-invasive: only affect pages where the <body> has class="auth-page" */
+body.auth-page .login-container,
+body.auth-page .center-container,
+body.auth-page .login-box,
+body.auth-page .message-card {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    max-width: 760px;
+    box-sizing: border-box;
+    padding: 20px;
+}
+
+/* Keep the site's global layout intact; center only the auth card when on auth pages */
+body.auth-page {
+    background-color: var(--bg-base);
+}
+
 /* Theme Switcher */
 .theme-switcher {
     position: relative;
@@ -1813,6 +1910,15 @@ button,
     color: var(--text-tertiary);
 }
 
+.search-type-select {
+    margin-left: 0.5rem;
+    background: var(--bg-surface);
+    color: var(--text-main);
+    border: 1px solid var(--border-subtle);
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
 .search-modal-shortcut {
     display: flex;
     align-items: center;

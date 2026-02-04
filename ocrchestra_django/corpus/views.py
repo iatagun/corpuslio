@@ -529,10 +529,27 @@ def register_view(request):
 
 def logout_view(request):
     """User logout view."""
-    username = request.user.get_full_name() or request.user.username
+    # Safely get user display name — AnonymousUser may not have get_full_name
+    if request.user.is_authenticated:
+        try:
+            username = request.user.get_full_name() or request.user.username
+        except Exception:
+            username = getattr(request.user, 'username', None)
+    else:
+        username = None
+
     logout(request)
-    messages.success(request, f'👋 Görüşmek üzere, {username}! Başarıyla çıkış yaptınız.')
-    return redirect('corpus:login')
+
+    # Use a generic message if we don't have a username
+    if username:
+        messages.success(request, f'👋 Görüşmek üzere, {username}! Başarıyla çıkış yaptınız.')
+    else:
+        messages.success(request, '👋 Başarıyla çıkış yaptınız.')
+
+    # Show a centered logout confirmation page, then redirect to home shortly.
+    return render(request, 'corpus/logout.html', {
+        'username': username
+    })
 
 
 @login_required
@@ -573,14 +590,41 @@ def global_search_view(request):
             import re
             from django.db.models import Q
             pattern = re.compile(query, re.IGNORECASE)
-            documents = Document.objects.all()[:50]
-            
+
+            # Limit to processed documents that have extracted content for performance
+            documents_qs = Document.objects.filter(processed=True).select_related('content').order_by('-upload_date')[:200]
+
             matching_docs = []
-            for doc in documents:
-                if pattern.search(doc.title) or (doc.author and pattern.search(doc.author)):
+            for doc in documents_qs:
+                # Check title
+                if doc.title and pattern.search(doc.title):
                     matching_docs.append(doc)
-            
-            documents = matching_docs[:10]
+                    continue
+
+                # Check author
+                if doc.author and pattern.search(doc.author):
+                    matching_docs.append(doc)
+                    continue
+
+                # Check content (cleaned_text)
+                if hasattr(doc, 'content') and doc.content and doc.content.cleaned_text:
+                    try:
+                        if pattern.search(doc.content.cleaned_text):
+                            matching_docs.append(doc)
+                            continue
+                    except Exception:
+                        # If content is extremely large or pattern fails, skip safely
+                        pass
+
+                # Check metadata values (stringified)
+                if doc.metadata:
+                    meta_text = ' '.join([str(v) for v in doc.metadata.values() if v])
+                    if meta_text and pattern.search(meta_text):
+                        matching_docs.append(doc)
+                        continue
+
+            # Return top matches
+            documents = matching_docs[:30]
         except re.error:
             return JsonResponse({'error': 'Invalid regex pattern'}, status=400)
     
@@ -593,21 +637,26 @@ def global_search_view(request):
             ).filter(similarity__gt=0.1).order_by('-similarity')[:10]
         except:
             # Fallback to basic search if PostgreSQL not available
+            from django.db.models import Q
             documents = Document.objects.filter(
-                title__icontains=query
-            ) | Document.objects.filter(
-                author__icontains=query
+                Q(title__icontains=query) |
+                Q(author__icontains=query) |
+                Q(content__cleaned_text__icontains=query) |
+                Q(metadata__author__icontains=query) |
+                Q(metadata__source__icontains=query)
             )
-            documents = documents[:10]
+            documents = documents.distinct()[:10]
     
     else:
-        # Basic search
+        # Basic search across title, author, content and common metadata
+        from django.db.models import Q
         documents = Document.objects.filter(
-            title__icontains=query
-        ) | Document.objects.filter(
-            author__icontains=query
-        )
-        documents = documents[:10]
+            Q(title__icontains=query) |
+            Q(author__icontains=query) |
+            Q(content__cleaned_text__icontains=query) |
+            Q(metadata__author__icontains=query) |
+            Q(metadata__source__icontains=query)
+        ).distinct()[:10]
     
     for doc in documents:
         metadata_parts = []

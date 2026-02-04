@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}CorpusIO{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     {% block extra_css %}{% endblock %}
@@ -29,7 +29,7 @@
 
             {% if user.is_authenticated %}
             {% load auth_extras %}
-            {% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or request.user.is_superuser %}
+            {% if request.user|can_upload %}
             <a href="{% url 'corpus:upload' %}" class="nav-item {% if active_tab == 'upload' %}active{% endif %}">
                 <span class="material-icons nav-icon">upload_file</span>
                 <span class="nav-text">Yükle (Akademik)</span>
@@ -48,7 +48,8 @@
                 <span class="material-icons nav-icon">dashboard</span>
                 <span class="nav-text">Dashboard</span>
             </a>
-            <a href="{% url 'corpus:comparison' %}" class="nav-item {% if active_tab == 'comparison' %}active{% endif %}">
+            <a href="{% url 'corpus:comparison' %}"
+                class="nav-item {% if active_tab == 'comparison' %}active{% endif %}">
                 <span class="material-icons nav-icon">compare_arrows</span>
                 <span class="nav-text">Karşılaştırma</span>
             </a>
@@ -111,49 +112,52 @@
                 <!-- Profile Section -->
                 <div class="profile-section">
                     {% if user.is_authenticated %}
-                <div class="profile-dropdown" onclick="toggleDropdown()">
-                    <div class="profile-avatar">
-                        <span class="material-icons" style="font-size: 18px;">person</span>
-                    </div>
-                    <div class="profile-info">
-                        <span class="profile-name">{{ user.get_full_name|default:user.username }}</span>
-                        <span class="profile-role">
-                            {% if user.is_superuser %}
+                    <div class="profile-dropdown" onclick="toggleDropdown()">
+                        <div class="profile-avatar">
+                            <span class="material-icons" style="font-size: 18px;">person</span>
+                        </div>
+                        <div class="profile-info">
+                            <span class="profile-name">{{ user.get_full_name|default:user.username }}</span>
+                            <span class="profile-role">
+                                {% if user.is_superuser %}
                                 Süper Kullanıcı
-                            {% elif user.groups.all %}
+                                {% elif user.groups.all %}
                                 {{ user.groups.first.name }}
-                            {% else %}
+                                {% else %}
                                 Kullanıcı
-                            {% endif %}
-                        </span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <span class="material-icons dropdown-arrow"
+                            style="font-size: 18px; margin-left: 8px;">expand_more</span>
                     </div>
-                    <span class="material-icons dropdown-arrow" style="font-size: 18px; margin-left: 8px;">expand_more</span>
-                </div>
-                <div class="dropdown-menu" id="profileDropdown">
-                    <a href="{% url 'corpus:profile' %}" class="dropdown-item">
-                        <span class="material-icons">account_circle</span>
-                        <span>Profil</span>
-                    </a>
-                    {% if user.is_staff %}
-                    <a href="/admin/" class="dropdown-item" target="_blank">
-                        <span class="material-icons">admin_panel_settings</span>
-                        <span>Admin Paneli</span>
-                    </a>
+                    <div class="dropdown-menu" id="profileDropdown">
+                        <a href="{% url 'corpus:profile' %}" class="dropdown-item">
+                            <span class="material-icons">account_circle</span>
+                            <span>Profil</span>
+                        </a>
+                        {% if user.is_staff %}
+                        <a href="/admin/" class="dropdown-item" target="_blank">
+                            <span class="material-icons">admin_panel_settings</span>
+                            <span>Admin Paneli</span>
+                        </a>
+                        {% endif %}
+                        <div class="dropdown-divider"></div>
+                        <a href="{% url 'corpus:logout' %}" class="dropdown-item logout">
+                            <span class="material-icons">logout</span>
+                            <span>Çıkış Yap</span>
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="auth-buttons">
+                        <a href="{% url 'corpus:login' %}" class="btn-login">
+                            <span class="material-icons" style="font-size: 18px;">login</span>
+                            <span>Giriş Yap</span>
+                        </a>
+                    </div>
                     {% endif %}
-                    <div class="dropdown-divider"></div>
-                    <a href="{% url 'corpus:logout' %}" class="dropdown-item logout">
-                        <span class="material-icons">logout</span>
-                        <span>Çıkış Yap</span>
-                    </a>
                 </div>
-                {% else %}
-                <div class="auth-buttons">
-                    <a href="{% url 'corpus:login' %}" class="btn-login">
-                        <span class="material-icons" style="font-size: 18px;">login</span>
-                        <span>Giriş Yap</span>
-                    </a>
-                </div>
-                {% endif %}                </div>            </div>
+            </div>
         </header>
 
         <!-- Messages are handled by Toast system below -->
@@ -165,22 +169,17 @@
                 <div class="spinner-large"></div>
                 <div class="loading-text" id="globalLoadingText">Yükleniyor...</div>
             </div>
-            
+
             <!-- Toast Notification Container -->
             <div id="toastContainer" class="toast-container"></div>
-            
+
             <!-- Global Search Modal (Ctrl+K) -->
             <div id="searchModal" class="search-modal-backdrop">
                 <div class="search-modal">
                     <div class="search-modal-header">
                         <span class="material-icons">search</span>
-                        <input 
-                            type="text" 
-                            id="searchInput" 
-                            class="search-modal-input" 
-                            placeholder="Belgeler ve koleksiyonlarda ara..."
-                            autocomplete="off"
-                        >
+                        <input type="text" id="searchInput" class="search-modal-input"
+                            placeholder="Belgeler ve koleksiyonlarda ara..." autocomplete="off">
                         <select id="searchType" class="search-type-select" title="Arama Tipi">
                             <option value="basic">Basit</option>
                             <option value="fuzzy">Benzer</option>
@@ -219,7 +218,7 @@
                     </div>
                 </div>
             </div>
-            
+
             {% block content %}{% endblock %}
         </main>
 
@@ -234,7 +233,7 @@
     </div>
 
     {% block extra_js %}{% endblock %}
-    
+
     <script>
         // Theme Management
         function initTheme() {
@@ -286,7 +285,7 @@
         }
 
         // Close dropdowns when clicking outside
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             if (!event.target.closest('.profile-dropdown')) {
                 const dropdown = document.getElementById('profileDropdown');
                 if (dropdown && dropdown.classList.contains('show')) {
@@ -302,10 +301,10 @@
         }
 
         // Auto-dismiss alerts after 5 seconds
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             console.log('[Toast Debug] DOMContentLoaded fired');
             initTheme();
-            
+
             // Convert Django messages to toast notifications (only once)
             {% if messages %}
             console.log('[Toast Debug] Messages block found');
@@ -318,7 +317,7 @@
                 const msgType = '{{ message.tags }}';
                 const msgKey = msgType + ':' + msgText;
                 console.log('[Toast Debug] Message:', msgKey);
-                
+
                 if (!processedMessages.has(msgKey)) {
                     processedMessages.add(msgKey);
                     console.log('[Toast Debug] Showing toast for:', msgText);
@@ -337,7 +336,7 @@
         });
 
         // Global Loading Helper Functions
-        window.showLoading = function(message = 'Yükleniyor...') {
+        window.showLoading = function (message = 'Yükleniyor...') {
             const overlay = document.getElementById('globalLoading');
             const text = document.getElementById('globalLoadingText');
             if (overlay) {
@@ -346,7 +345,7 @@
             }
         };
 
-        window.hideLoading = function() {
+        window.hideLoading = function () {
             const overlay = document.getElementById('globalLoading');
             if (overlay) {
                 overlay.classList.add('hidden');
@@ -358,7 +357,7 @@
         const MAX_TOASTS = 3;
         const recentToasts = new Map(); // Track recent toasts to prevent duplicates
 
-        window.showToast = function(options) {
+        window.showToast = function (options) {
             console.log('[Toast] showToast called with:', options);
             // Options: { type, title, message, duration }
             const defaults = {
@@ -367,10 +366,10 @@
                 message: '',
                 duration: 5000
             };
-            
+
             const config = { ...defaults, ...options };
             console.log('[Toast] Config:', config);
-            
+
             // Prevent duplicate toasts within 1 second
             const toastKey = `${config.type}:${config.message}`;
             const now = Date.now();
@@ -382,10 +381,10 @@
                 }
             }
             recentToasts.set(toastKey, now);
-            
+
             // Clean up old entries
             setTimeout(() => recentToasts.delete(toastKey), 2000);
-            
+
             // Icon mapping
             const icons = {
                 success: 'check_circle',
@@ -397,7 +396,7 @@
             // Create toast element
             const toast = document.createElement('div');
             toast.className = `toast toast-${config.type}`;
-            
+
             toast.innerHTML = `
                 <div class="toast-icon">
                     <span class="material-icons">${icons[config.type]}</span>
@@ -413,7 +412,7 @@
             `;
 
             const container = document.getElementById('toastContainer');
-            
+
             // Remove oldest toast if max limit reached
             const existingToasts = container.querySelectorAll('.toast');
             if (existingToasts.length >= MAX_TOASTS) {
@@ -432,7 +431,7 @@
             return toast;
         };
 
-        window.closeToast = function(element) {
+        window.closeToast = function (element) {
             const toast = element.closest ? element.closest('.toast') : element;
             if (toast) {
                 toast.classList.add('removing');
@@ -443,32 +442,32 @@
         };
 
         // Convenience methods
-        window.toastSuccess = function(message, title = 'Başarılı!') {
+        window.toastSuccess = function (message, title = 'Başarılı!') {
             return showToast({ type: 'success', title, message });
         };
 
-        window.toastError = function(message, title = 'Hata!') {
+        window.toastError = function (message, title = 'Hata!') {
             return showToast({ type: 'error', title, message });
         };
 
-        window.toastWarning = function(message, title = 'Uyarı!') {
+        window.toastWarning = function (message, title = 'Uyarı!') {
             return showToast({ type: 'warning', title, message });
         };
 
-        window.toastInfo = function(message, title = 'Bilgi') {
+        window.toastInfo = function (message, title = 'Bilgi') {
             return showToast({ type: 'info', title, message });
         };
 
         // ========================================
         // GLOBAL SEARCH (Ctrl+K)
         // ========================================
-        
+
         let searchTimeout = null;
         let currentSearchResults = [];
         let selectedResultIndex = -1;
 
         // Open search modal with Ctrl+K or Cmd+K
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
                 openSearchModal();
@@ -493,23 +492,23 @@
         }
 
         // Close on backdrop click
-        document.getElementById('searchModal').addEventListener('click', function(e) {
+        document.getElementById('searchModal').addEventListener('click', function (e) {
             if (e.target === this) {
                 closeSearchModal();
             }
         });
 
         // Close on ESC key
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && document.getElementById('searchModal').classList.contains('active')) {
                 closeSearchModal();
             }
         });
 
         // Search input handler
-        document.getElementById('searchInput').addEventListener('input', function(e) {
+        document.getElementById('searchInput').addEventListener('input', function (e) {
             const query = e.target.value.trim();
-            
+
             // Clear previous timeout
             if (searchTimeout) {
                 clearTimeout(searchTimeout);
@@ -525,32 +524,32 @@
                 method: 'GET',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
-            .then(r => r.json())
-            .then(s => {
-                if (s.suggestions && s.suggestions.length > 0) {
-                    displaySuggestions(s.suggestions);
-                } else {
-                    // If query long enough, perform full search
+                .then(r => r.json())
+                .then(s => {
+                    if (s.suggestions && s.suggestions.length > 0) {
+                        displaySuggestions(s.suggestions);
+                    } else {
+                        // If query long enough, perform full search
+                        if (query.length >= 2) {
+                            showSearchLoading();
+                            if (searchTimeout) clearTimeout(searchTimeout);
+                            searchTimeout = setTimeout(() => performSearch(query), 300);
+                        } else {
+                            showEmptyState();
+                        }
+                    }
+                })
+                .catch(() => {
                     if (query.length >= 2) {
                         showSearchLoading();
                         if (searchTimeout) clearTimeout(searchTimeout);
                         searchTimeout = setTimeout(() => performSearch(query), 300);
-                    } else {
-                        showEmptyState();
                     }
-                }
-            })
-            .catch(() => {
-                if (query.length >= 2) {
-                    showSearchLoading();
-                    if (searchTimeout) clearTimeout(searchTimeout);
-                    searchTimeout = setTimeout(() => performSearch(query), 300);
-                }
-            });
+                });
         });
 
         // Keyboard navigation (arrow keys and Enter)
-        document.getElementById('searchInput').addEventListener('keydown', function(e) {
+        document.getElementById('searchInput').addEventListener('keydown', function (e) {
             if (currentSearchResults.length === 0) return;
 
             if (e.key === 'ArrowDown') {
@@ -572,7 +571,7 @@
 
         function performSearch(query) {
             const searchType = document.getElementById('searchType').value;
-            
+
             // Make AJAX request to search endpoint
             fetch(`/corpus/search/?q=${encodeURIComponent(query)}&type=${searchType}`, {
                 method: 'GET',
@@ -580,25 +579,25 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    showSearchError(data.error);
-                    return;
-                }
-                currentSearchResults = data.results || [];
-                selectedResultIndex = -1;
-                displaySearchResults(data);
-            })
-            .catch(error => {
-                console.error('Search error:', error);
-                showSearchError();
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showSearchError(data.error);
+                        return;
+                    }
+                    currentSearchResults = data.results || [];
+                    selectedResultIndex = -1;
+                    displaySearchResults(data);
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    showSearchError();
+                });
         }
 
         function displaySearchResults(data) {
             const resultsContainer = document.getElementById('searchResults');
-            
+
             if (!data.results || data.results.length === 0) {
                 resultsContainer.innerHTML = `
                     <div class="search-modal-empty">
@@ -639,7 +638,7 @@
         function createResultItem(result, index) {
             const iconClass = result.type === 'document' ? 'document' : 'collection';
             const icon = result.type === 'document' ? 'description' : 'collections_bookmark';
-            
+
             return `
                 <a href="${result.url}" class="search-result-item" data-index="${index}">
                     <div class="search-result-icon ${iconClass}">
@@ -724,7 +723,7 @@
 
             // Attach click handlers
             container.querySelectorAll('.search-suggestion-item').forEach(el => {
-                el.addEventListener('click', function(e) {
+                el.addEventListener('click', function (e) {
                     e.preventDefault();
                     const v = this.getAttribute('data-value');
                     document.getElementById('searchInput').value = v;

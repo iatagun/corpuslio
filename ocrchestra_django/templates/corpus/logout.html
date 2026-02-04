@@ -1,0 +1,22 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Çıkış Yapıldı - CorpusIO</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <!-- auth page layout handled via static/css/styles.css -->
+    <meta http-equiv="refresh" content="2;url={% url 'corpus:home' %}">
+</head>
+<body class="auth-page">
+    <div class="center-container">
+        <div class="message-card">
+            <h1>👋 Başarıyla çıkış yaptınız</h1>
+            <p>Görüşmek üzere! Anasayfaya yönlendiriliyorsunuz...</p>
+            <a class="btn btn-primary" href="{% url 'corpus:home' %}">Anasayfaya Git</a>
+            <div class="small-muted">Yönlendirilmeyi beklemiyorsanız butona tıklayın.</div>
+        </div>
+    </div>
+</body>
+</html>
