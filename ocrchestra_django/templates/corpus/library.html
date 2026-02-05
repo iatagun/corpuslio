@@ -4,7 +4,8 @@
 
 {% block content %}
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-    <h2><span class="material-icons" style="vertical-align:middle; margin-right:0.5rem;">library_books</span> Mevcut Kitaplar</h2>
+    <h2><span class="material-icons" style="vertical-align:middle; margin-right:0.5rem;">library_books</span> Mevcut
+        Kitaplar</h2>
     <span class="badge" style="background:var(--bg-surface); color:var(--text-secondary);">
         {{ page_obj.paginator.count }} doküman
     </span>
@@ -40,7 +41,7 @@
                             }
                         }
                     }
-                    
+
                     const tag = urlParams.get('tag');
                     if (tag) {
                         const select = document.getElementById('tagSelect');
@@ -53,7 +54,7 @@
                     }
                 });
             </script>
-            
+
             <select name="tag" id="tagSelect" class="form-control">
                 <option value="">Tüm Etiketler</option>
                 {% for tag in all_tags %}
@@ -96,15 +97,13 @@
             </span>
             {% endif %}
         </p>
-        
+
         <!-- Document Tags -->
         {% if doc.tags.all %}
         <div class="document-tags" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;">
             {% for tag in doc.tags.all %}
-            <span class="tag-badge tag-{{ tag.color }}" 
-                  data-tag-slug="{{ tag.slug }}" 
-                  style="cursor:pointer;"
-                  title="Tıklayarak filtrele">
+            <span class="tag-badge tag-{{ tag.color }}" data-tag-slug="{{ tag.slug }}" style="cursor:pointer;"
+                title="Tıklayarak filtrele">
                 {{ tag.name }}
             </span>
             {% endfor %}
@@ -114,11 +113,11 @@
         <div class="actions">
             {% if doc.processed %}
             <a href="{% url 'corpus:analysis' doc.id %}" class="btn btn-secondary btn-small">İncele</a>
-            
+
             <!-- Export Dropdown -->
+            {% if request.user|can_export %}
             <div class="dropdown" style="display:inline-block; position:relative;">
-                <button class="btn btn-outline btn-small dropdown-toggle" type="button" 
-                        data-doc-id="{{ doc.id }}">
+                <button class="btn btn-outline btn-small dropdown-toggle" type="button" data-doc-id="{{ doc.id }}">
                     <span class="material-icons" style="font-size:16px;">download</span>
                     Export
                 </button>
@@ -142,8 +141,10 @@
                 </div>
             </div>
             {% endif %}
+            {% endif %}
             {% load auth_extras %}
-            {% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or request.user.is_superuser %}
+            {% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or
+            request.user.is_superuser %}
             <form method="POST" action="{% url 'corpus:delete' doc.id %}" style="display:inline;"
                 onsubmit="return confirm('Silmek istediğinize emin misiniz?');">
                 {% csrf_token %}
@@ -158,12 +159,9 @@
 </div>
 
 <!-- Loading indicator for infinite scroll -->
-<div id="infiniteScrollLoader" 
-     class="infinite-scroll-loader" 
-     style="display: none;"
-     data-current-page="{{ page_obj.number }}"
-     data-total-pages="{{ page_obj.paginator.num_pages }}"
-     data-has-more="{{ page_obj.has_next|yesno:'true,false' }}">
+<div id="infiniteScrollLoader" class="infinite-scroll-loader" style="display: none;"
+    data-current-page="{{ page_obj.number }}" data-total-pages="{{ page_obj.paginator.num_pages }}"
+    data-has-more="{{ page_obj.has_next|yesno:'true,false' }}">
     <div class="spinner-small"></div>
     <p style="color: var(--text-secondary); margin-top: 0.5rem;">Daha fazla yükleniyor...</p>
 </div>
@@ -235,7 +233,7 @@
         padding: 2rem;
         margin: 2rem 0;
     }
-    
+
     /* Export Dropdown Menu */
     .export-menu {
         position: absolute;
@@ -250,7 +248,7 @@
         z-index: 1000;
         overflow: hidden;
     }
-    
+
     .export-menu-item {
         display: flex;
         align-items: center;
@@ -261,22 +259,22 @@
         transition: background 0.2s;
         font-size: 0.875rem;
     }
-    
+
     .export-menu-item:hover {
         background: var(--bg-surface-hover);
     }
-    
+
     .export-menu-item .material-icons {
         font-size: 18px;
         color: var(--text-secondary);
     }
-    
+
     .export-menu-divider {
         height: 1px;
         background: var(--border-subtle);
         margin: 0.25rem 0;
     }
-    
+
     .dropdown-toggle::after {
         content: '▼';
         margin-left: 0.25rem;
@@ -284,23 +282,26 @@
     }
 </style>
 <script>
+    // Permission check for JS
+    const userCanExport = {{ request.user| can_export | yesno: "true,false" }};
+
     // ========================================
     // EXPORT DROPDOWN
     // ========================================
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Event delegation for export dropdown buttons
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             const dropdownBtn = event.target.closest('.dropdown-toggle');
-            
+
             if (dropdownBtn) {
                 event.stopPropagation();
                 const docId = dropdownBtn.dataset.docId;
                 const menu = document.getElementById('exportMenu' + docId);
                 const isVisible = menu.style.display === 'block';
-                
+
                 // Close all menus
                 document.querySelectorAll('.export-menu').forEach(m => m.style.display = 'none');
-                
+
                 // Toggle current menu
                 menu.style.display = isVisible ? 'none' : 'block';
             } else if (!event.target.closest('.dropdown')) {
@@ -309,11 +310,11 @@
             }
         });
     });
-    
+
     // ========================================
     // INFINITE SCROLL IMPLEMENTATION
     // ========================================
-    
+
     // Get initial values from data attributes
     const loaderElement = document.getElementById('infiniteScrollLoader');
     let currentPage = parseInt(loaderElement.dataset.currentPage);
@@ -337,63 +338,63 @@
     function buildQueryString(page) {
         const filters = getCurrentFilters();
         const params = new URLSearchParams();
-        
+
         params.append('page', page);
         if (filters.q) params.append('q', filters.q);
         if (filters.author) params.append('author', filters.author);
         if (filters.genre) params.append('genre', filters.genre);
         if (filters.date) params.append('date', filters.date);
         if (filters.tag) params.append('tag', filters.tag);
-        
+
         return params.toString();
     }
 
     // Load more documents
     function loadMoreDocuments() {
         if (isLoading || !hasMore) return;
-        
+
         isLoading = true;
         const loader = document.getElementById('infiniteScrollLoader');
         loader.style.display = 'flex';
-        
+
         const nextPage = currentPage + 1;
         const queryString = buildQueryString(nextPage);
-        
+
         fetch(`/corpus/library/?${queryString}`, {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.documents && data.documents.length > 0) {
-                appendDocuments(data.documents);
-                currentPage = data.page;
-                hasMore = data.has_next;
-                
-                if (!hasMore) {
+            .then(response => response.json())
+            .then(data => {
+                if (data.documents && data.documents.length > 0) {
+                    appendDocuments(data.documents);
+                    currentPage = data.page;
+                    hasMore = data.has_next;
+
+                    if (!hasMore) {
+                        showEndOfResults();
+                    }
+                } else {
+                    hasMore = false;
                     showEndOfResults();
                 }
-            } else {
-                hasMore = false;
-                showEndOfResults();
-            }
-        })
-        .catch(error => {
-            console.error('Error loading documents:', error);
-            toastError('Dokümanlar yüklenirken bir hata oluştu');
-        })
-        .finally(() => {
-            loader.style.display = 'none';
-            isLoading = false;
-        });
+            })
+            .catch(error => {
+                console.error('Error loading documents:', error);
+                toastError('Dokümanlar yüklenirken bir hata oluştu');
+            })
+            .finally(() => {
+                loader.style.display = 'none';
+                isLoading = false;
+            });
     }
 
     // Append documents to grid
     function appendDocuments(documents) {
         const grid = document.getElementById('documentsGrid');
-        
+
         documents.forEach(doc => {
             const card = createDocumentCard(doc);
             grid.appendChild(card);
@@ -404,7 +405,7 @@
     function createDocumentCard(doc) {
         const card = document.createElement('div');
         card.className = 'card document-card';
-        
+
         const processedBadge = doc.processed
             ? `<span style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-success); font-weight:500; font-size:0.85rem;">
                    <span class="material-icons" style="font-size:16px;">check_circle</span> İşlendi
@@ -413,7 +414,7 @@
             : `<span style="display:flex; align-items:center; gap:0.25rem; color:var(--text-secondary); font-size:0.85rem;">
                    <span class="material-icons" style="font-size:16px;">hourglass_empty</span> Bekliyor
                </span>`;
-        
+
         // Build tags HTML
         let tagsHtml = '';
         if (doc.tags && doc.tags.length > 0) {
@@ -423,9 +424,11 @@
             });
             tagsHtml += '</div>';
         }
-        
-        const actions = doc.processed
-            ? `<a href="${doc.url}" class="btn btn-secondary btn-small">İncele</a>
+
+        // Conditional actions based on userCanExport
+        let exportActions = '';
+        if (userCanExport) {
+            exportActions = `
                <div class="dropdown" style="display:inline-block; position:relative;">
                    <button class="btn btn-outline btn-small dropdown-toggle" type="button" 
                            data-doc-id="${doc.id}">
@@ -450,9 +453,15 @@
                        <a href="${doc.export_url}?format=json" class="export-menu-item">JSON</a>
                        <a href="${doc.export_url}?format=conllu" class="export-menu-item">CoNLL-U</a>
                    </div>
-               </div>`
+               </div>`;
+        }
+
+        const actions = doc.processed
+            ? `<a href="${doc.url}" class="btn btn-secondary btn-small">İncele</a>
+               ${exportActions}`
             : '';
-        
+
+
         card.innerHTML = `
             <h3>${doc.title}</h3>
             <p class="meta">
@@ -470,15 +479,15 @@
                 ${actions}
             </div>
         `;
-        
+
         // Add click event for tag badges
         card.querySelectorAll('.tag-badge').forEach(badge => {
-            badge.addEventListener('click', function() {
+            badge.addEventListener('click', function () {
                 const tagSlug = this.dataset.tagSlug;
                 window.location.href = `/corpus/library/?tag=${tagSlug}`;
             });
         });
-        
+
         return card;
     }
 
@@ -491,7 +500,7 @@
     // Intersection Observer for infinite scroll
     function setupInfiniteScroll() {
         const loader = document.getElementById('infiniteScrollLoader');
-        
+
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting && hasMore && !isLoading) {
@@ -503,21 +512,21 @@
             rootMargin: '200px', // Start loading 200px before reaching the bottom
             threshold: 0
         });
-        
+
         observer.observe(loader);
     }
 
     // Initialize infinite scroll on page load
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         if (hasMore) {
             setupInfiniteScroll();
         } else {
             showEndOfResults();
         }
-        
+
         // Add click handlers to existing tag badges
         document.querySelectorAll('.tag-badge').forEach(badge => {
-            badge.addEventListener('click', function() {
+            badge.addEventListener('click', function () {
                 const tagSlug = this.dataset.tagSlug;
                 window.location.href = `/corpus/library/?tag=${tagSlug}`;
             });
@@ -528,7 +537,7 @@
     document.querySelector('select[name="genre"]').addEventListener('change', function () {
         this.form.submit();
     });
-    
+
     document.querySelector('select[name="tag"]').addEventListener('change', function () {
         this.form.submit();
     });

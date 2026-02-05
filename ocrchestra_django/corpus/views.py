@@ -64,7 +64,6 @@ def home_view(request):
 
 
 @login_required
-@login_required
 @ensure_csrf_cookie
 def library_view(request):
     """Display all documents in library with filtering."""
@@ -248,7 +247,6 @@ def upload_view(request):
     return render(request, 'corpus/upload.html', context)
 
 
-@login_required
 def analysis_view(request, doc_id):
     """Display corpus analysis and KWIC search."""
     document = get_object_or_404(Document, id=doc_id)
@@ -303,17 +301,38 @@ def analysis_view(request, doc_id):
         ))
         pos_tags.sort()
     
+    # Document Preview
+    from .permissions import get_document_preview_limit, user_can_view_full_document
+    preview_limit = get_document_preview_limit(request.user)
+    preview_text = ""
+    
+    if hasattr(document, 'content') and document.content and document.content.cleaned_text:
+        text = document.content.cleaned_text
+        if preview_limit:
+             # Simple word split for approximation
+            words = text.split()
+            if len(words) > preview_limit:
+                preview_text = " ".join(words[:preview_limit]) + "..."
+            else:
+                preview_text = text
+        else:
+            # Full text for authorized users (maybe limit to a reasonable first chunk for display performance anyway)
+            # But "view full document" rights imply they *can* see it. 
+            # For this view, we might still want to truncate if it's huge, but let's assume we show a generous amount or full.
+            preview_text = text[:10000] + "..." if len(text) > 10000 else text # Safety cap for rendering
+    
     context = {
         'document': document,
         'stats': stats,
         'search_results': search_results, # Now this is a Page object
         'pos_tags': pos_tags,
-        'active_tab': 'analysis'
+        'active_tab': 'analysis',
+        'preview_text': preview_text,
+        'is_preview_limited': preview_limit is not None
     }
     return render(request, 'corpus/analysis.html', context)
 
 
-@login_required
 def statistics_view(request):
     """Display corpus-wide statistics."""
     documents = Document.objects.filter(processed=True)
@@ -346,6 +365,11 @@ def delete_document(request, doc_id):
 @login_required
 def download_search_results(request, doc_id):
     """Download KWIC search results as CSV."""
+    from .permissions import user_can_export
+    if not user_can_export(request.user):
+        messages.error(request, 'Bu işlem için yetkiniz yok. (Öğrenci veya üstü üyelik gerektirir)')
+        return redirect('corpus:analysis', doc_id=doc_id)
+
     document = get_object_or_404(Document, id=doc_id)
     
     if not document.processed or not hasattr(document, 'analysis'):
@@ -395,6 +419,12 @@ def download_search_results(request, doc_id):
 @login_required
 def export_document(request, doc_id):
     """Export document in specified format."""
+    from .permissions import user_can_export
+    if not user_can_export(request.user):
+        messages.error(request, 'Bu işlem için yetkiniz yok.')
+        # Redirect based on user role/status
+        return redirect('corpus:analysis', doc_id=doc_id)
+
     document = get_object_or_404(Document, id=doc_id)
     
     if not document.processed:

@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}CorpusIO{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=3">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     {% block extra_css %}{% endblock %}
@@ -27,18 +27,20 @@
                 <span class="nav-text">Ana Sayfa</span>
             </a>
 
-            {% if user.is_authenticated %}
             {% load auth_extras %}
-            {% if request.user|can_upload %}
+            {% if request.user.is_authenticated and request.user|can_upload %}
             <a href="{% url 'corpus:upload' %}" class="nav-item {% if active_tab == 'upload' %}active{% endif %}">
                 <span class="material-icons nav-icon">upload_file</span>
                 <span class="nav-text">Yükle (Akademik)</span>
             </a>
             {% endif %}
+
             <a href="{% url 'corpus:library' %}" class="nav-item {% if active_tab == 'library' %}active{% endif %}">
                 <span class="material-icons nav-icon">library_books</span>
                 <span class="nav-text">Kütüphane</span>
             </a>
+
+            {% if user.is_authenticated %}
             <a href="{% url 'corpus:collections' %}"
                 class="nav-item {% if active_tab == 'collections' %}active{% endif %}">
                 <span class="material-icons nav-icon">collections_bookmark</span>
@@ -58,16 +60,28 @@
                 <span class="material-icons nav-icon">assessment</span>
                 <span class="nav-text">İstatistikler</span>
             </a>
+
+            {% if request.user|has_group:"Academician" %}
             <a href="/api/docs/" class="nav-item" target="_blank">
                 <span class="material-icons nav-icon">api</span>
                 <span class="nav-text">API Docs</span>
             </a>
+            {% endif %}
+
             {% else %}
-            <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
-                <p style="font-size: 0.85rem; margin-bottom: 15px;">Tüm özelliklere erişmek için giriş yapın</p>
-                <a href="{% url 'corpus:login' %}" class="btn btn-primary" style="width: 100%;">
-                    <span class="material-icons" style="font-size: 16px;">login</span>
-                    Giriş Yap
+            <!-- Public Access - Limited Menu -->
+            <div style="margin-top: 1rem; padding: 0 1rem;">
+                <p
+                    style="font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+                    Üyelik
+                </p>
+                <a href="{% url 'corpus:login' %}" class="nav-item">
+                    <span class="material-icons nav-icon">login</span>
+                    <span class="nav-text">Giriş Yap</span>
+                </a>
+                <a href="{% url 'corpus:register' %}" class="nav-item">
+                    <span class="material-icons nav-icon">person_add</span>
+                    <span class="nav-text">Kayıt Ol</span>
                 </a>
             </div>
             {% endif %}
@@ -112,25 +126,30 @@
                 <!-- Profile Section -->
                 <div class="profile-section">
                     {% if user.is_authenticated %}
+                    {% load auth_extras %}
                     <div class="profile-dropdown" onclick="toggleDropdown()">
                         <div class="profile-avatar">
                             <span class="material-icons" style="font-size: 18px;">person</span>
                         </div>
                         <div class="profile-info">
                             <span class="profile-name">{{ user.get_full_name|default:user.username }}</span>
-                            <span class="profile-role">
-                                {% if user.is_superuser %}
-                                Süper Kullanıcı
-                                {% elif user.groups.all %}
-                                {{ user.groups.first.name }}
-                                {% else %}
-                                Kullanıcı
-                                {% endif %}
-                            </span>
+                            <span class="profile-role">{{ request.user|access_level }}</span>
                         </div>
                         <span class="material-icons dropdown-arrow"
                             style="font-size: 18px; margin-left: 8px;">expand_more</span>
                     </div>
+                    {% else %}
+                    <div style="display: flex; gap: 10px;">
+                        <a href="{% url 'corpus:login' %}" class="btn btn-outline btn-small"
+                            style="padding: 0.4rem 0.8rem;">
+                            <span class="material-icons" style="font-size: 16px;">login</span> Giriş
+                        </a>
+                        <a href="{% url 'corpus:register' %}" class="btn btn-primary btn-small"
+                            style="padding: 0.4rem 0.8rem;">
+                            <span class="material-icons" style="font-size: 16px;">person_add</span> Kayıt
+                        </a>
+                    </div>
+                    {% endif %}
                     <div class="dropdown-menu" id="profileDropdown">
                         <a href="{% url 'corpus:profile' %}" class="dropdown-item">
                             <span class="material-icons">account_circle</span>

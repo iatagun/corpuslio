@@ -7,31 +7,30 @@
 <div class="hero-section">
     <div class="hero-content">
         <h1 class="hero-title">CorpusIO</h1>
-        <p class="hero-subtitle">Modern Türkçe Korpus Yönetimi ve Doğal Dil İşleme Platformu</p>
+        <p class="hero-subtitle">Türkçe Korpus Keşif ve Analiz Platformu</p>
         <p class="hero-description">
-            Güçlü doğal dil işleme araçları ile Türkçe metin korpuslarınızı yönetin, analiz edin ve görselleştirin.
+            Zengin Türkçe metin korpusunu keşfedin, gelişmiş arama ve analiz araçlarıyla dilinizi inceleyin.
         </p>
 
         <div class="hero-buttons">
-            {% if user.is_authenticated %}
             {% load auth_extras %}
+            <!-- Primary action for everyone: Explore the corpus -->
+            <a href="{% url 'corpus:library' %}" class="btn btn-primary btn-large">
+                <span class="material-icons">explore</span> Corpus'u Keşfet
+            </a>
+
+            {% if user.is_authenticated %}
             {% if request.user|can_upload %}
-            <a href="{% url 'corpus:upload' %}" class="btn btn-primary btn-large">
-                <span class="material-icons">cloud_upload</span> Analiz Başlat
+            <a href="{% url 'corpus:upload' %}" class="btn btn-secondary btn-large">
+                <span class="material-icons">cloud_upload</span> Belge Yükle
             </a>
             {% endif %}
-            <a href="{% url 'corpus:library' %}" class="btn btn-secondary btn-large">
-                <span class="material-icons">library_books</span> Kütüphane
-            </a>
             <a href="{% url 'corpus:dashboard' %}" class="btn btn-outline btn-large">
                 <span class="material-icons">dashboard</span> Dashboard
             </a>
             {% else %}
-            <a href="{% url 'corpus:login' %}" class="btn btn-primary btn-large">
-                <span class="material-icons">login</span> Giriş Yap
-            </a>
-            <a href="{% url 'corpus:register' %}" class="btn btn-secondary btn-large">
-                <span class="material-icons">person_add</span> Kayıt Ol
+            <a href="{% url 'corpus:register' %}" class="btn btn-outline btn-large">
+                <span class="material-icons">person_add</span> Üye Ol
             </a>
             {% endif %}
         </div>
@@ -44,21 +43,22 @@
 
     <div class="features-grid">
         <div class="feature-card">
-            <span class="material-icons feature-icon">folder_special</span>
-            <h3>Korpus Yönetimi</h3>
-            <p>Çoklu dosya yükleme, üstveri yönetimi, koleksiyonlar ve gelişmiş filtreleme özellikleri.</p>
+            <span class="material-icons feature-icon">cloud_upload</span>
+            <h3>Akıllı Dosya Yükleme</h3>
+            <p>Sürükle-bırak desteği, çoklu dosya yükleme, otomatik format tespiti ve gerçek zamanlı ilerleme gösterimi.
+            </p>
         </div>
 
         <div class="feature-card">
-            <span class="material-icons feature-icon">psychology</span>
-            <h3>İleri Seviye Analiz</h3>
-            <p>N-gram analizi, kolokasyon tespiti, KWIC araması ve morfololojik etiketleme.</p>
+            <span class="material-icons feature-icon">search</span>
+            <h3>Hızlı Arama (Ctrl+K)</h3>
+            <p>Gelişmiş global arama, klavye kısayolları, fuzzy ve regex arama desteği ile anında sonuç bulma.</p>
         </div>
 
         <div class="feature-card">
-            <span class="material-icons feature-icon">bar_chart</span>
-            <h3>Görselleştirme</h3>
-            <p>Etkileşimli grafikler, frekans analizleri ve çoklu format dışa aktarma desteği.</p>
+            <span class="material-icons feature-icon">palette</span>
+            <h3>Çoklu Tema Desteği</h3>
+            <p>Koyu, açık ve otomatik tema seçenekleri ile gözlerinizi yormayan modern arayüz tasarımı.</p>
         </div>
     </div>
 </section>
@@ -145,13 +145,13 @@
 {% endif %}
 
 <!-- CTA Section -->
-{% if user.is_authenticated %}
 {% load auth_extras %}
+{% if user.is_authenticated %}
 {% if request.user|can_upload %}
 <section class="cta-section">
-    <h2>Hemen Başlayın</h2>
-    <p>Türkçe metin korpusunuzu yükleyin ve güçlü NLP araçları
-        ile analiz edin.</p>
+    <h2>Corpusu Zenginleştirin</h2>
+    <p>Kendi belgelerinizi ekleyerek Türkçe corpus'a katkıda bulunun ve tüm gelişmiş analiz araçlarından istifade edin.
+    </p>
     <a href="{% url 'corpus:upload' %}" class="btn btn-primary btn-large">
         <span class="material-icons">add_circle</span> Yeni Belge Yükle
     </a>
@@ -159,20 +159,23 @@
 {% endif %}
 {% else %}
 <section class="cta-section">
-    <h2>Platformumuza Katılın</h2>
-    <p>CorpusIO ile Türkçe metin korpuslarınızı yönetin, analiz edin ve güçlü doğal dil işleme araçlarından faydalanın.
+    <h2>Daha Fazlasını Keşfedin</h2>
+    <p>Üye olun ve ileri istatistikler, export özellikleri ve daha fazlasına erişin.<br>
+        <strong>Öğrenci:</strong> N-gram, TTR, CSV export |
+        <strong>Akademisyen:</strong> Belge yükleme, koleksiyon yönetimi
     </p>
     <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
-        <a href="{% url 'corpus:login' %}" class="btn btn-primary btn-large">
-            <span class="material-icons">login</span> Giriş Yap
+        <a href="{% url 'corpus:register' %}" class="btn btn-primary btn-large">
+            <span class="material-icons">person_add</span> Ücretsiz Üye Ol
         </a>
-        <a href="{% url 'corpus:register' %}" class="btn btn-outline btn-large"
+        <a href="{% url 'corpus:library' %}" class="btn btn-outline btn-large"
             style="background: var(--bg-surface); color: var(--accent-primary); border-color: var(--accent-primary);">
-            <span class="material-icons">person_add</span> Kayıt Ol
+            <span class="material-icons">explore</span> Önce Keşfet
         </a>
     </div>
 </section>
 {% endif %}
+
 
 <style>
     /* Hero Section */
@@ -430,28 +433,13 @@
 
 {% block extra_js %}
 <script>
-    // Demo: Toast notifications on page load (remove in production)
+    // Welcome toast for authenticated users
     document.addEventListener('DOMContentLoaded', function () {
-        // Welcome toast for authenticated users
         {% if user.is_authenticated %}
         setTimeout(() => {
             toastInfo('CorpusIO platformuna hoş geldiniz!', '👋 Merhaba {{ user.username }}');
         }, 500);
         {% endif %}
-    });
-
-    // Add toast demo to feature cards (click to test)
-    document.querySelectorAll('.feature-card').forEach((card, index) => {
-        card.style.cursor = 'pointer';
-        card.addEventListener('click', function () {
-            const messages = [
-                { type: 'success', title: 'Harika!', message: 'Korpus yönetimi özellikleri çok yakında!' },
-                { type: 'info', title: 'Bilgi', message: 'İleri seviye analiz araçları hazırlanıyor.' },
-                { type: 'warning', title: 'Not', message: 'Görselleştirme özellikleri beta aşamasında.' }
-            ];
-            const msg = messages[index] || messages[0];
-            showToast(msg);
-        });
     });
 </script>
 {% endblock %}
