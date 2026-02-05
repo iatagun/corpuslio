@@ -7,6 +7,7 @@ Provides:
 - Context window control
 """
 import re
+import unicodedata
 from typing import List, Dict, Any, Optional, Tuple
 import logging
 
@@ -59,6 +60,16 @@ class CorpusSearchEngine:
         # Fallback: return empty
         return []
 
+    def _clean_text(self, s: str) -> str:
+        """Normalize unicode, strip punctuation and casefold for robust matching."""
+        if s is None:
+            return ''
+        # Normalize unicode (NFC), remove punctuation, and casefold
+        s_norm = unicodedata.normalize('NFC', s)
+        # remove punctuation (keep letters, numbers, underscore and whitespace)
+        s_clean = re.sub(r"[^\w\s]", "", s_norm, flags=re.UNICODE)
+        return s_clean.casefold().strip()
+
     def search_word(
         self,
         pattern: str,
@@ -90,16 +101,22 @@ class CorpusSearchEngine:
                 continue
 
             word = item.get('word', '')
-            
+
             # Apply pattern matching
             if regex:
                 flags = 0 if case_sensitive else re.IGNORECASE
                 if re.search(pattern, word, flags):
                     matches.append({**item, 'position': idx})
             else:
-                word_cmp = word if case_sensitive else word.lower()
-                pattern_cmp = pattern if case_sensitive else pattern.lower()
-                if pattern_cmp in word_cmp:
+                if case_sensitive:
+                    word_cmp = word
+                    pattern_cmp = pattern
+                else:
+                    word_cmp = self._clean_text(word)
+                    pattern_cmp = self._clean_text(pattern)
+
+                # substring match on cleaned forms
+                if pattern_cmp and pattern_cmp in word_cmp:
                     matches.append({**item, 'position': idx})
 
         return matches
@@ -223,9 +240,14 @@ class CorpusSearchEngine:
                     if not re.search(word_pattern, word, flags):
                         passed = False
                 else:
-                    word_cmp = word if case_sensitive else word.lower()
-                    pattern_cmp = word_pattern if case_sensitive else word_pattern.lower()
-                    if pattern_cmp not in word_cmp:
+                    if case_sensitive:
+                        word_cmp = word
+                        pattern_cmp = word_pattern
+                    else:
+                        word_cmp = self._clean_text(word)
+                        pattern_cmp = self._clean_text(word_pattern)
+
+                    if not pattern_cmp or pattern_cmp not in word_cmp:
                         passed = False
 
             # Lemma filter
@@ -274,7 +296,7 @@ class CorpusSearchEngine:
         if not doc or not doc.get('analysis'):
             return []
 
-        analysis = doc['analysis']
+        analysis = self._normalize_analysis(doc.get('analysis', []))
         concordance = []
 
         for match in matches:
@@ -288,12 +310,10 @@ class CorpusSearchEngine:
             center = analysis[pos:pos+1]
             right_ctx = analysis[pos+1:right_end]
 
-            # Extract words
-            left_words = [item.get('word', '') if isinstance(item, dict) else str(item) 
-                         for item in left_ctx]
-            center_word = center[0].get('word', '') if center and isinstance(center[0], dict) else ''
-            right_words = [item.get('word', '') if isinstance(item, dict) else str(item) 
-                          for item in right_ctx]
+            # Extract words (analysis items are normalized dicts)
+            left_words = [item.get('word', '') for item in left_ctx]
+            center_word = center[0].get('word', '') if center else ''
+            right_words = [item.get('word', '') for item in right_ctx]
 
             entry = {
                 # backward-compatible keys
