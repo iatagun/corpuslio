@@ -14,25 +14,25 @@
 
         <div class="hero-buttons">
             {% if user.is_authenticated %}
-                {% load auth_extras %}
-                {% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or request.user.is_superuser %}
-                    <a href="{% url 'corpus:upload' %}" class="btn btn-primary btn-large">
-                        <span class="material-icons">cloud_upload</span> Analiz Başlat
-                    </a>
-                {% endif %}
-                <a href="{% url 'corpus:library' %}" class="btn btn-secondary btn-large">
-                    <span class="material-icons">library_books</span> Kütüphane
-                </a>
-                <a href="{% url 'corpus:dashboard' %}" class="btn btn-outline btn-large">
-                    <span class="material-icons">dashboard</span> Dashboard
-                </a>
+            {% load auth_extras %}
+            {% if request.user|can_upload %}
+            <a href="{% url 'corpus:upload' %}" class="btn btn-primary btn-large">
+                <span class="material-icons">cloud_upload</span> Analiz Başlat
+            </a>
+            {% endif %}
+            <a href="{% url 'corpus:library' %}" class="btn btn-secondary btn-large">
+                <span class="material-icons">library_books</span> Kütüphane
+            </a>
+            <a href="{% url 'corpus:dashboard' %}" class="btn btn-outline btn-large">
+                <span class="material-icons">dashboard</span> Dashboard
+            </a>
             {% else %}
-                <a href="{% url 'corpus:login' %}" class="btn btn-primary btn-large">
-                    <span class="material-icons">login</span> Giriş Yap
-                </a>
-                <a href="{% url 'corpus:register' %}" class="btn btn-secondary btn-large">
-                    <span class="material-icons">person_add</span> Kayıt Ol
-                </a>
+            <a href="{% url 'corpus:login' %}" class="btn btn-primary btn-large">
+                <span class="material-icons">login</span> Giriş Yap
+            </a>
+            <a href="{% url 'corpus:register' %}" class="btn btn-secondary btn-large">
+                <span class="material-icons">person_add</span> Kayıt Ol
+            </a>
             {% endif %}
         </div>
     </div>
@@ -67,7 +67,8 @@
 <!-- Stats Section -->
 <section class="stats-section">
     <h2 style="color:var(--text-main); margin-bottom:2rem; text-align:center; font-size:1.75rem;">
-        <span class="material-icons" style="vertical-align:middle; font-size:2rem; margin-right:0.5rem;">analytics</span>
+        <span class="material-icons"
+            style="vertical-align:middle; font-size:2rem; margin-right:0.5rem;">analytics</span>
         Derlem İstatistikleri
     </h2>
 
@@ -104,9 +105,8 @@
     </h3>
     <div class="tags-cloud">
         {% for tag in popular_tags %}
-        <a href="{% url 'corpus:library' %}?tag={{ tag.slug }}" 
-           class="tag-badge tag-{{ tag.color }}" 
-           style="text-decoration:none; font-size:{{ tag.doc_count|add:8 }}px;">
+        <a href="{% url 'corpus:library' %}?tag={{ tag.slug }}" class="tag-badge tag-{{ tag.color }}"
+            style="text-decoration:none; font-size:{{ tag.doc_count|add:8 }}px;">
             {{ tag.name }} <span style="opacity:0.7;">({{ tag.doc_count }})</span>
         </a>
         {% endfor %}
@@ -129,9 +129,9 @@
             <div class="recent-meta">
                 <span>{{ doc.upload_date|date:"d.m.Y H:i" }}</span>
                 {% if doc.processed %}
-                <span style="color:var(--accent-success);">check_circle</span>
+                <span class="material-icons" style="color:var(--accent-success); font-size:1rem;">check_circle</span>
                 {% else %}
-                <span style="color:var(--text-secondary);">hourglass_empty</span>
+                <span class="material-icons" style="color:var(--text-secondary); font-size:1rem;">hourglass_empty</span>
                 {% endif %}
             </div>
             {% if doc.processed %}
@@ -147,7 +147,7 @@
 <!-- CTA Section -->
 {% if user.is_authenticated %}
 {% load auth_extras %}
-{% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or request.user.is_superuser %}
+{% if request.user|can_upload %}
 <section class="cta-section">
     <h2>Hemen Başlayın</h2>
     <p>Türkçe metin korpusunuzu yükleyin ve güçlü NLP araçları
@@ -160,12 +160,14 @@
 {% else %}
 <section class="cta-section">
     <h2>Platformumuza Katılın</h2>
-    <p>CorpusIO ile Türkçe metin korpuslarınızı yönetin, analiz edin ve güçlü doğal dil işleme araçlarından faydalanın.</p>
+    <p>CorpusIO ile Türkçe metin korpuslarınızı yönetin, analiz edin ve güçlü doğal dil işleme araçlarından faydalanın.
+    </p>
     <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
         <a href="{% url 'corpus:login' %}" class="btn btn-primary btn-large">
             <span class="material-icons">login</span> Giriş Yap
         </a>
-        <a href="{% url 'corpus:register' %}" class="btn btn-outline btn-large" style="background: var(--bg-surface); color: var(--accent-primary); border-color: var(--accent-primary);">
+        <a href="{% url 'corpus:register' %}" class="btn btn-outline btn-large"
+            style="background: var(--bg-surface); color: var(--accent-primary); border-color: var(--accent-primary);">
             <span class="material-icons">person_add</span> Kayıt Ol
         </a>
     </div>
@@ -429,7 +431,7 @@
 {% block extra_js %}
 <script>
     // Demo: Toast notifications on page load (remove in production)
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Welcome toast for authenticated users
         {% if user.is_authenticated %}
         setTimeout(() => {
@@ -441,7 +443,7 @@
     // Add toast demo to feature cards (click to test)
     document.querySelectorAll('.feature-card').forEach((card, index) => {
         card.style.cursor = 'pointer';
-        card.addEventListener('click', function() {
+        card.addEventListener('click', function () {
             const messages = [
                 { type: 'success', title: 'Harika!', message: 'Korpus yönetimi özellikleri çok yakında!' },
                 { type: 'info', title: 'Bilgi', message: 'İleri seviye analiz araçları hazırlanıyor.' },

@@ -218,6 +218,8 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Europe/Istanbul'
+CELERY_TASK_ALWAYS_EAGER = True  # Run tasks synchronously in development (no Redis needed)
+CELERY_TASK_EAGER_PROPAGATES = True
 
 
 # OCRchestra specific settings
