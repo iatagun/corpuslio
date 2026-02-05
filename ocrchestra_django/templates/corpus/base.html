@@ -138,18 +138,7 @@
                         <span class="material-icons dropdown-arrow"
                             style="font-size: 18px; margin-left: 8px;">expand_more</span>
                     </div>
-                    {% else %}
-                    <div style="display: flex; gap: 10px;">
-                        <a href="{% url 'corpus:login' %}" class="btn btn-outline btn-small"
-                            style="padding: 0.4rem 0.8rem;">
-                            <span class="material-icons" style="font-size: 16px;">login</span> Giriş
-                        </a>
-                        <a href="{% url 'corpus:register' %}" class="btn btn-primary btn-small"
-                            style="padding: 0.4rem 0.8rem;">
-                            <span class="material-icons" style="font-size: 16px;">person_add</span> Kayıt
-                        </a>
-                    </div>
-                    {% endif %}
+
                     <div class="dropdown-menu" id="profileDropdown">
                         <a href="{% url 'corpus:profile' %}" class="dropdown-item">
                             <span class="material-icons">account_circle</span>
@@ -167,11 +156,16 @@
                             <span>Çıkış Yap</span>
                         </a>
                     </div>
+
                     {% else %}
-                    <div class="auth-buttons">
-                        <a href="{% url 'corpus:login' %}" class="btn-login">
-                            <span class="material-icons" style="font-size: 18px;">login</span>
-                            <span>Giriş Yap</span>
+                    <div style="display: flex; gap: 10px;">
+                        <a href="{% url 'corpus:login' %}" class="btn btn-outline btn-small"
+                            style="padding: 0.4rem 0.8rem;">
+                            <span class="material-icons" style="font-size: 16px;">login</span> Giriş
+                        </a>
+                        <a href="{% url 'corpus:register' %}" class="btn btn-primary btn-small"
+                            style="padding: 0.4rem 0.8rem;">
+                            <span class="material-icons" style="font-size: 16px;">person_add</span> Kayıt
                         </a>
                     </div>
                     {% endif %}

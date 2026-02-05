@@ -63,10 +63,13 @@ def home_view(request):
     return render(request, 'corpus/home.html', context)
 
 
-@login_required
 @ensure_csrf_cookie
 def library_view(request):
-    """Display all documents in library with filtering."""
+    """Display all documents in library with filtering.
+
+    Anonymous users see a limited public view (only processed documents,
+    smaller page size) while authenticated users see the full library.
+    """
     documents = Document.objects.all().order_by('-upload_date')
     
     # Metadata filters
@@ -96,9 +99,15 @@ def library_view(request):
             Q(metadata__source__icontains=search_query)
         )
     
-    # Pagination (Infinite scroll - 20 items per page)
+    # If anonymous, limit to processed documents and smaller page size
+    is_limited_public_view = not request.user.is_authenticated
+    if is_limited_public_view:
+        documents = documents.filter(processed=True)
+
+    # Pagination (Infinite scroll)
     from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-    paginator = Paginator(documents, 20)  # Reduced from 50 for smooth infinite scroll
+    page_size = 12 if is_limited_public_view else 20
+    paginator = Paginator(documents, page_size)
     
     page_number = request.GET.get('page')
     try:
@@ -159,6 +168,7 @@ def library_view(request):
         'page_obj': page_obj,  # Explicit naming for template clarity
         'all_genres': sorted(all_genres),
         'all_tags': all_tags,  # Add tags to context
+        'is_limited_public_view': is_limited_public_view,
         'active_tab': 'library'
     }
     return render(request, 'corpus/library.html', context)
@@ -384,15 +394,16 @@ def download_search_results(request, doc_id):
         messages.error(request, 'Arama sorgusu gerekli.')
         return redirect('corpus:analysis', doc_id=doc_id)
     
-    # Perform search
+    # Perform search using CorpusService
     service = CorpusService()
-    search_results = service.search_kwic(
-        document.analysis.data,
-        query=search_query,
-        search_type=search_type,
-        context_size=int(request.GET.get('context_size', 5)),
-        case_sensitive=request.GET.get('case_sensitive') == 'true'
-    )
+    search_params = {
+        'search_type': search_type,
+        'keyword': search_query,
+        'context_size': int(request.GET.get('context_size', 5)),
+        'case_sensitive': request.GET.get('case_sensitive') == 'true',
+        'regex': request.GET.get('regex') == 'true'
+    }
+    search_results = service.search_in_document(document, search_params)
     
     # Create CSV response
     import csv

@@ -23,6 +23,41 @@ class CorpusSearchEngine:
             db_manager: DatabaseManager instance
         """
         self.db = db_manager
+        # Cache for normalized analyses to avoid repeated work
+        self._normalized_cache = {}
+
+    def _normalize_analysis(self, analysis):
+        """Normalize analysis into a list of token dicts.
+
+        Supports two formats seen in the project:
+        - List[dict]: each item already a dict with keys like 'word','lemma','pos'
+        - Flat List[str]: repeating groups (word, lemma, pos, word, lemma, pos...)
+
+        Returns a list of dicts with at least 'word', 'lemma', 'pos' keys.
+        """
+        if not analysis:
+            return []
+
+        # If already normalized (dicts), return as-is
+        if isinstance(analysis[0], dict):
+            return analysis
+
+        # If items are strings, try to group into triplets
+        if all(isinstance(x, str) for x in analysis):
+            tokens = []
+            i = 0
+            n = len(analysis)
+            # Attempt grouping by 3 (word, lemma, pos)
+            while i < n:
+                word = analysis[i] if i < n else ''
+                lemma = analysis[i+1] if i+1 < n else ''
+                pos = analysis[i+2] if i+2 < n else ''
+                tokens.append({'word': word, 'lemma': lemma, 'pos': pos, 'confidence': 1.0})
+                i += 3
+            return tokens
+
+        # Fallback: return empty
+        return []
 
     def search_word(
         self,
@@ -43,11 +78,11 @@ class CorpusSearchEngine:
             List of matching analysis items with positions
         """
         doc = self.db.get_document(doc_id) if doc_id else None
-        
+
         if not doc or not doc.get('analysis'):
             return []
 
-        analysis = doc['analysis']
+        analysis = self._normalize_analysis(doc['analysis'])
         matches = []
 
         for idx, item in enumerate(analysis):
@@ -86,11 +121,11 @@ class CorpusSearchEngine:
             Matching items
         """
         doc = self.db.get_document(doc_id) if doc_id else None
-        
+
         if not doc or not doc.get('analysis'):
             return []
 
-        analysis = doc['analysis']
+        analysis = self._normalize_analysis(doc['analysis'])
         matches = []
 
         lemma_cmp = lemma if case_sensitive else lemma.lower()
@@ -122,11 +157,11 @@ class CorpusSearchEngine:
             Matching items
         """
         doc = self.db.get_document(doc_id) if doc_id else None
-        
+
         if not doc or not doc.get('analysis'):
             return []
 
-        analysis = doc['analysis']
+        analysis = self._normalize_analysis(doc['analysis'])
         matches = []
 
         for idx, item in enumerate(analysis):
@@ -166,11 +201,11 @@ class CorpusSearchEngine:
             Filtered matches
         """
         doc = self.db.get_document(doc_id)
-        
+
         if not doc or not doc.get('analysis'):
             return []
 
-        analysis = doc['analysis']
+        analysis = self._normalize_analysis(doc['analysis'])
         matches = []
 
         for idx, item in enumerate(analysis):
@@ -260,15 +295,21 @@ class CorpusSearchEngine:
             right_words = [item.get('word', '') if isinstance(item, dict) else str(item) 
                           for item in right_ctx]
 
-            concordance.append({
+            entry = {
+                # backward-compatible keys
                 'left': ' '.join(left_words),
                 'center': center_word,
                 'right': ' '.join(right_words),
+                # template-friendly keys
+                'left_context': ' '.join(left_words),
+                'keyword': center_word,
+                'right_context': ' '.join(right_words),
                 'position': pos,
                 'lemma': match.get('lemma', ''),
                 'pos': match.get('pos', ''),
                 'confidence': match.get('confidence', 1.0),
                 'warning': match.get('warning', '')
-            })
+            }
+            concordance.append(entry)
 
         return concordance

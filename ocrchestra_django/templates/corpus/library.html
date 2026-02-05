@@ -1,4 +1,5 @@
 {% extends "corpus/base.html" %}
+{% load auth_extras %}
 
 {% block title %}Kütüphane - CorpusIO{% endblock %}
 
@@ -69,6 +70,13 @@
         </div>
     </form>
 </div>
+
+{% if is_limited_public_view %}
+<div class="alert alert-info" style="display:flex; align-items:center; gap:0.5rem; margin-top:1rem;">
+    <span class="material-icons">visibility</span>
+    <p>Anonim ziyaretçiler için görüntüleme sınırlıdır: sadece işlenmiş belgeler, özet önizleme ve sınırlı sayfa başına sonuç gösterilir. Tam erişim için lütfen <a href="{% url 'corpus:login' %}">giriş yapın</a> veya <a href="{% url 'corpus:register' %}">kayıt olun</a>.</p>
+</div>
+{% endif %}
 
 {% if documents %}
 <div class="documents-grid" id="documentsGrid">
@@ -142,9 +150,7 @@
             </div>
             {% endif %}
             {% endif %}
-            {% load auth_extras %}
-            {% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or
-            request.user.is_superuser %}
+            {% if request.user.is_superuser or request.user|has_group:"Academician" or request.user|has_group:"Developer" %}
             <form method="POST" action="{% url 'corpus:delete' doc.id %}" style="display:inline;"
                 onsubmit="return confirm('Silmek istediğinize emin misiniz?');">
                 {% csrf_token %}
@@ -283,7 +289,7 @@
 </style>
 <script>
     // Permission check for JS
-    const userCanExport = {{ request.user| can_export | yesno: "true,false" }};
+    const userCanExport = {{ request.user|can_export|yesno:"true,false" }};
 
     // ========================================
     // EXPORT DROPDOWN

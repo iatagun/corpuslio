@@ -1,4 +1,4 @@
-/* Professional Enterprise UI Styles - OCRchestra */
+/* Professional Enterprise UI Styles - CorpusIO */
 
 /* ========== RESET & BASE ========== */
 * {
@@ -398,115 +398,182 @@ button,
     background-color: var(--accent-hover);
 }
 
-/* Centering for authentication pages (login/register/logout) */
-.auth-page .login-container,
-.auth-page .center-container {
-    min-height: 100vh !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 20px !important;
-}
-
-.auth-page .login-box,
-.auth-page .message-card {
-    max-width: 520px;
-    width: 100%;
-    margin: 0 auto;
-}
-
-/* Auth card visual style to match site theme */
-.auth-page .login-box {
-    background: var(--bg-surface);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
-    padding: 32px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    color: var(--text-main);
-}
-
-.auth-page .login-header h1 {
-    font-size: 22px;
-    color: var(--text-main);
-    margin-bottom: 6px;
-}
-
-.auth-page .login-header p {
-    color: var(--text-secondary);
-    margin-bottom: 18px;
-}
-
-.auth-page .form-group label {
-    color: var(--text-main);
-    font-weight: 600;
-    margin-bottom: 8px;
-    display: block
-}
-
-.auth-page .form-group input {
-    width: 100%;
-    padding: 10px 12px;
+/* ========== POS TAG STYLES FOR KWIC ========== */
+.pos-tag {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
     border-radius: 6px;
-    border: 1px solid var(--border-subtle);
-    background: var(--bg-base);
-    color: var(--text-main);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #fff;
+    min-width: 44px;
+    text-align: center;
 }
 
-.auth-page .form-group input:focus {
-    outline: none;
-    border-color: var(--border-focus);
+/* Common POS colors (fallbacks) */
+.pos-noun { background: #2563eb; }
+.pos-verb { background: #16a34a; }
+.pos-adj, .pos-adjective { background: #d97706; }
+.pos-adv, .pos-adverb { background: #7c3aed; }
+.pos-pron { background: #0ea5e9; }
+.pos-det { background: #ef4444; }
+.pos-num { background: #ca8a04; }
+.pos-punct { background: #6b7280; }
+.pos-unknown { background: #475569; }
+
+/* Generic small-tag fallback using hashed hues for uncommon tags */
+.pos-tag[class*="pos-"] {
+    /* If a specific class exists above, it will override this. Otherwise use a mild border */
+    box-shadow: inset 0 -2px 0 rgba(0,0,0,0.08);
 }
 
-.auth-page .login-actions {
+/* Centered auth layout and modern card styles */
+.auth-page {
+    background: linear-gradient(180deg, rgba(59,130,246,0.04), transparent 60%);
+    min-height: 100vh;
     display: flex;
-    gap: 12px;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 14px
-}
-
-.auth-page .login-cta {
-    flex: 1
-}
-
-.auth-page .register-link {
-    color: var(--text-secondary);
-    margin-top: 16px;
-    text-align: center
-}
-
-.auth-page .register-link a {
-    color: var(--accent-primary);
-    font-weight: 600
-}
-
-/* Google sign-in button */
-.btn-google {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    background: white;
-    color: var(--text-main);
-    border: 1px solid rgba(16, 24, 40, 0.08);
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 15px;
-    box-shadow: 0 4px 12px rgba(16, 24, 40, 0.06);
-    text-decoration: none;
-}
-
-.btn-google .g-icon {
-    width: 20px;
-    height: 20px;
-    display: inline-flex;
     align-items: center;
     justify-content: center;
 }
 
-.btn-google:hover {
-    background: #f5f6f7;
-    border-color: rgba(16, 24, 40, 0.12);
+.auth-page .center-container,
+.auth-page .login-container {
+    width: 100%;
+    max-width: 920px;
+    padding: 28px;
+}
+
+.auth-page .login-box {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 20px;
+    align-items: start;
+    background: linear-gradient(180deg, var(--bg-surface), rgba(255,255,255,0.01));
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 28px;
+    box-shadow: 0 18px 40px rgba(2,6,23,0.35);
+    color: var(--text-main);
+}
+
+.auth-page .login-box .brand {
+    display:flex; flex-direction:column; gap:12px; align-items:flex-start;
+}
+.auth-page .login-box .brand h1 { font-size: 20px; margin:0; }
+.auth-page .login-box .brand p { color:var(--text-secondary); margin:0; }
+
+.auth-page .auth-panel { padding: 6px 4px; }
+
+.auth-social {
+    display:flex; flex-direction:column; gap:12px; width:100%;
+}
+.btn-google {
+    display: inline-flex; align-items:center; gap:12px; padding:12px 14px; width:100%;
+    background: white; color:var(--text-main); border-radius:10px; border:1px solid rgba(16,24,40,0.06);
+    font-weight:700; text-decoration:none; justify-content:center;
+}
+.btn-google .g-icon{ width:20px; height:20px; display:inline-flex; }
+.divider-or { display:flex; align-items:center; gap:12px; color:var(--text-tertiary); margin:6px 0 12px; }
+.divider-or::before, .divider-or::after{ content:''; flex:1; height:1px; background:var(--border-subtle); }
+
+.auth-form { display:flex; flex-direction:column; gap:12px; }
+.auth-form .form-group label{ font-weight:600; color:var(--text-main); }
+.auth-form .form-group input{ width:100%; padding:12px; border-radius:10px; border:1px solid var(--border-subtle); background:var(--bg-surface); color:var(--text-main); }
+.auth-form .form-group input:focus{ outline:none; border-color:var(--border-focus); box-shadow:0 6px 18px rgba(59,130,246,0.06); }
+
+.login-actions{ display:flex; gap:12px; align-items:center; margin-top:6px; }
+.login-actions .btn{ padding:12px 14px; border-radius:10px; }
+.btn-outline{ background:transparent; border:1px solid var(--border-subtle); color:var(--text-main); }
+.btn-primary{ background:var(--accent-primary); color:white; border:none; }
+
+.register-link{ margin-top:14px; text-align:center; color:var(--text-secondary);} 
+.register-link a{ color:var(--accent-primary); font-weight:600; }
+
+/* Message card (logout or status) */
+.message-card{ background:var(--bg-surface); border-radius:10px; padding:22px; border:1px solid var(--border-subtle); box-shadow:0 8px 30px rgba(2,6,23,0.24); }
+
+@media (max-width: 880px){
+    .auth-page .login-box{ grid-template-columns: 1fr; padding:20px; }
+    .auth-page .login-box .brand{ align-items:center; text-align:center; }
+}
+
+/* ===== CorpusIO Auth UI (dark theme) ===== */
+.auth-page { background: radial-gradient(ellipse at top left, rgba(30,41,59,0.6), transparent 30%), linear-gradient(180deg,#071026 0%, #0b1220 100%); }
+.auth-container { width:100%; max-width:940px; padding:28px; display:flex; justify-content:center; }
+.auth-card { width:100%; border-radius:12px; overflow:hidden; display:grid; grid-template-columns:360px 1fr; gap:20px; border:1px solid rgba(255,255,255,0.04); background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); box-shadow: 0 20px 60px rgba(2,6,23,0.6); }
+.auth-card .left { padding:28px 26px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); }
+.auth-card .right { padding:28px; }
+.auth-card h1 { font-size:32px; color:var(--text-main); margin-bottom:6px; }
+.auth-card p { color:var(--text-secondary); margin-bottom:16px; }
+.auth-card .muted { color:var(--text-tertiary); font-size:13px; }
+
+.auth-social { display:flex; gap:12px; align-items:center; justify-content:flex-end; }
+.btn-google { background: #ffffff; color:#111; padding:10px 14px; border-radius:10px; border:1px solid rgba(2,6,23,0.08); display:inline-flex; align-items:center; gap:10px; font-weight:700; box-shadow: 0 6px 18px rgba(2,6,23,0.12); }
+.btn-google .g-icon { width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; background:transparent; border-radius:4px; }
+.btn-google .g-text { color:#202124; font-weight:700; }
+.btn-google:hover { transform:translateY(-1px); box-shadow:0 12px 30px rgba(2,6,23,0.18); }
+
+/* Input focus and subtle highlights */
+.form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 8px 24px rgba(14,165,233,0.08); }
+
+/* Card subtle border and inner padding tweak */
+.auth-card { border:1px solid rgba(255,255,255,0.04); padding:6px; }
+.auth-card .left { padding:34px 30px; }
+.auth-card .right { padding:30px; }
+
+.auth-form { display:flex; flex-direction:column; gap:12px; }
+.form-row { display:flex; gap:12px; }
+.form-group label { display:block; margin-bottom:6px; color:var(--text-secondary); font-weight:600; }
+.form-group input, .form-group select { width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.01); color:var(--text-main); }
+.form-group .help-text { color:var(--text-tertiary); font-size:12px; margin-top:6px; }
+
+.actions { display:flex; gap:12px; align-items:center; margin-top:6px; }
+.btn { padding:10px 14px; border-radius:10px; cursor:pointer; border:1px solid rgba(255,255,255,0.04); }
+.btn-primary { background:var(--accent-primary); color:white; border:none; box-shadow:0 8px 20px rgba(14,165,233,0.12); }
+.btn-outline { background:transparent; color:var(--text-main); }
+
+/* Make action buttons share available space */
+.actions .btn { flex: 1 1 0; display: inline-flex; justify-content:center; align-items:center; }
+
+.small-muted { color:var(--text-tertiary); font-size:13px; margin-top:14px; }
+
+@media (max-width: 860px) {
+    .auth-card { grid-template-columns: 1fr; padding:18px; }
+    .auth-social { justify-content:center; }
+}
+
+/* Auth feedback messages */
+.error-message {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--accent-danger);
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(239, 68, 68, 0.18);
+}
+.success-message {
+    background: rgba(16, 185, 129, 0.08);
+    color: var(--accent-success);
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(16, 185, 129, 0.12);
+}
+
+/* Improve CTA and inputs on auth pages */
+.auth-page .login-cta {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 15px;
+}
+.auth-page .form-group input {
+    background: var(--bg-surface);
+}
+
+/* Small screens: make auth card comfortable */
+@media (max-width: 560px) {
+    .auth-page .login-box { padding: 20px; margin: 12px; }
+    .auth-page .login-header h1 { font-size: 20px; }
 }
 
 .btn-google span {

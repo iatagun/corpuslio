@@ -14,7 +14,7 @@
 
 <!-- Statistics Overview -->
 {% if stats %}
-{% load auth_extras %}
+{% load auth_extras pos_extras %}
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-icon"><span class="material-icons">text_fields</span></div>
@@ -256,7 +256,7 @@
                     <td class="left-context">{{ result.left_context }}</td>
                     <td class="keyword"><strong>{{ result.keyword }}</strong></td>
                     <td class="right-context">{{ result.right_context }}</td>
-                    <td><span class="pos-tag">{{ result.pos|default:"-" }}</span></td>
+                    <td><span class="pos-tag pos-{{ result.pos|pos_class }}" title="{{ result.pos|default:'-' }}">{{ result.pos|default:"-" }}</span></td>
                     <td>{{ result.lemma|default:"-" }}</td>
                 </tr>
                 {% endfor %}
