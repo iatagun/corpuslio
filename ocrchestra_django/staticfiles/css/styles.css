@@ -449,7 +449,6 @@ button,
 
 /* Google sign-in button */
 .btn-google {
-.btn-google {
     display: inline-flex;
     align-items: center;
     gap: 12px;
@@ -588,6 +587,38 @@ body.auth-page {
     margin: 0 auto;
     flex: 1;
 }
+
+/* ========== ICON VISIBILITY FIXES (Light Theme) ==========
+   Ensure card/stat icons remain visible when switching to light theme.
+*/
+[data-theme="light"] .stat-card .material-icons,
+[data-theme="light"] .stat-icon .material-icons,
+[data-theme="light"] .card .material-icons,
+[data-theme="light"] .comparison-icon .material-icons,
+[data-theme="light"] .alert-icon .material-icons,
+[data-theme="light"] .file-preview-icon .material-icons,
+[data-theme="light"] .search-result-icon .material-icons,
+[data-theme="light"] .dropdown-item .material-icons,
+[data-theme="light"] .theme-option .material-icons {
+    color: var(--text-main) !important;
+    opacity: 0.95;
+    filter: none !important;
+}
+
+[data-theme="light"] .stat-card .icon svg,
+[data-theme="light"] .card .icon svg,
+[data-theme="light"] .stat-icon svg,
+[data-theme="light"] .file-preview-icon svg,
+[data-theme="light"] .search-result-icon svg {
+    fill: var(--text-main) !important;
+}
+
+/* If card icons are on an accent circle, keep contrast in light theme */
+[data-theme="light"] .stat-icon,
+[data-theme="light"] .card .icon {
+    background: transparent;
+}
+
 
 /* ========== HERO SECTION (Enterprise Muted) ========== */
 .hero-section {
@@ -1397,13 +1428,13 @@ body.auth-page {
 /* ========== TOAST NOTIFICATIONS ========== */
 .toast-container {
     position: fixed;
-    top: 80px;
-    right: 20px;
+    top: 60px; /* azaltıldı */
+    right: 16px;
     z-index: 10000;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    max-width: 400px;
+    gap: 8px; /* sıkıştırıldı */
+    max-width: 360px;
     pointer-events: none;
 }
 
@@ -1411,15 +1442,15 @@ body.auth-page {
     background: var(--bg-surface);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
-    padding: 1rem 1.25rem;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    padding: 0.6rem 0.8rem; /* daha kısa */
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
     display: flex;
     align-items: flex-start;
-    gap: 0.75rem;
-    min-width: 320px;
-    max-width: 400px;
+    gap: 0.5rem; /* sıkıştırıldı */
+    min-width: 260px; /* küçültüldü */
+    max-width: 320px; /* küçültüldü */
     pointer-events: auto;
-    animation: slideInRight 0.3s ease-out;
+    animation: slideInRight 0.22s ease-out; /* hızlandırıldı */
     position: relative;
     overflow: hidden;
 }
@@ -1430,55 +1461,24 @@ body.auth-page {
     left: 0;
     top: 0;
     bottom: 0;
-    width: 4px;
+    width: 3px; /* inceleştirildi */
     background: var(--accent-primary);
 }
 
-.toast.toast-success::before {
-    background: var(--accent-success);
-}
-
-.toast.toast-error::before {
-    background: var(--accent-danger);
-}
-
-.toast.toast-warning::before {
-    background: #f59e0b;
-}
-
-.toast.toast-info::before {
-    background: var(--accent-primary);
-}
+.toast.toast-success::before { background: var(--accent-success); }
+.toast.toast-error::before   { background: var(--accent-danger); }
+.toast.toast-warning::before { background: #f59e0b; }
+.toast.toast-info::before    { background: var(--accent-primary); }
 
 .toast-icon {
     flex-shrink: 0;
-    width: 40px;
-    height: 40px;
+    width: 36px; /* küçültüldü */
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    font-size: 20px;
-}
-
-.toast-success .toast-icon {
-    background: rgba(16, 185, 129, 0.15);
-    color: var(--accent-success);
-}
-
-.toast-error .toast-icon {
-    background: rgba(239, 68, 68, 0.15);
-    color: var(--accent-danger);
-}
-
-.toast-warning .toast-icon {
-    background: rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
-}
-
-.toast-info .toast-icon {
-    background: rgba(59, 130, 246, 0.15);
-    color: var(--accent-primary);
+    font-size: 18px; /* ufaltıldı */
 }
 
 .toast-content {
@@ -1489,14 +1489,17 @@ body.auth-page {
 .toast-title {
     color: var(--text-main);
     font-weight: 600;
-    font-size: 0.95rem;
-    margin-bottom: 0.25rem;
+    font-size: 0.9rem; /* biraz küçültüldü */
+    margin-bottom: 0.125rem; /* kısaltıldı */
 }
 
 .toast-message {
     color: var(--text-secondary);
-    font-size: 0.875rem;
-    line-height: 1.5;
+    font-size: 0.78rem; /* küçültüldü */
+    line-height: 1.35;
+    max-height: 3.2rem; /* daha kısa görünüm için sınır */
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .toast-close {
@@ -1511,13 +1514,8 @@ body.auth-page {
     color: var(--text-tertiary);
     cursor: pointer;
     border-radius: 4px;
-    transition: all 0.2s;
+    transition: all 0.15s;
     padding: 0;
-}
-
-.toast-close:hover {
-    background: var(--bg-surface-hover);
-    color: var(--text-main);
 }
 
 .toast-progress {
@@ -1533,55 +1531,16 @@ body.auth-page {
 .toast-progress-bar {
     height: 100%;
     background: var(--accent-primary);
-    animation: toast-countdown 5s linear;
+    animation: toast-countdown 4s linear; /* süresi kısaltıldı */
     transform-origin: left;
 }
 
-.toast-success .toast-progress-bar {
-    background: var(--accent-success);
-}
-
-.toast-error .toast-progress-bar {
-    background: var(--accent-danger);
-}
-
-.toast-warning .toast-progress-bar {
-    background: #f59e0b;
-}
-
-@keyframes slideInRight {
-    from {
-        transform: translateX(120%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideOutRight {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(120%);
-        opacity: 0;
-    }
-}
-
-@keyframes toast-countdown {
-    from {
-        transform: scaleX(1);
-    }
-    to {
-        transform: scaleX(0);
-    }
-}
+.toast-success .toast-progress-bar { background: var(--accent-success); }
+.toast-error   .toast-progress-bar { background: var(--accent-danger); }
+.toast-warning .toast-progress-bar { background: #f59e0b; }
 
 .toast.removing {
-    animation: slideOutRight 0.3s ease-out forwards;
+    animation: slideOutRight 0.22s ease-out forwards; /* hızlandırıldı */
 }
 
 /* Mobile responsiveness */
@@ -1589,12 +1548,13 @@ body.auth-page {
     .toast-container {
         right: 10px;
         left: 10px;
-        top: 70px;
+        top: 60px;
     }
     
     .toast {
         min-width: auto;
         max-width: 100%;
+        padding: 0.5rem 0.6rem;
     }
 }
 

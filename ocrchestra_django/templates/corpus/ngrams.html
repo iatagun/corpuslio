@@ -4,8 +4,18 @@
 
 {% block content %}
 <div class="analysis-header">
-    <h2>🔤 N-gram & Kolokasyon Analizi</h2>
-    <p class="document-meta">{{ document.filename }}</p>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+        <div>
+            <h2>🔤 N-gram & Kolokasyon Analizi</h2>
+            <p class="document-meta">{{ document.filename }}</p>
+        </div>
+        <div class="analysis-controls">
+            <a href="{% url 'corpus:analysis' document.id %}" class="btn btn-outline">
+                <span class="material-icons" style="font-size:18px;vertical-align:middle;">arrow_back</span>
+                Analize Dön
+            </a>
+        </div>
+    </div>
 </div>
 
 <!-- N-gram Type Selector -->

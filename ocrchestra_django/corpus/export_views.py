@@ -20,8 +20,48 @@ def export_pdf_report(request, doc_id):
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
     from datetime import datetime
+    import os
+
+    # Try to register a TrueType font that supports Turkish characters
+    # Prefer DejaVu / Noto / Segoe UI / Arial families available on Windows
+    def _find_system_font():
+        candidates = [
+            (r"C:\Windows\Fonts\DejaVuSans.ttf", r"C:\Windows\Fonts\DejaVuSans-Bold.ttf"),
+            (r"C:\Windows\Fonts\NotoSans-Regular.ttf", r"C:\Windows\Fonts\NotoSans-Bold.ttf"),
+            (r"C:\Windows\Fonts\segoeui.ttf", r"C:\Windows\Fonts\seguisb.ttf"),
+            (r"C:\Windows\Fonts\arial.ttf", r"C:\Windows\Fonts\arialbd.ttf"),
+        ]
+        for reg, bold in candidates:
+            if os.path.exists(reg):
+                return reg, bold if bold and os.path.exists(bold) else None
+        return None, None
+
+    _reg_font, _bold_font_path = _find_system_font()
+    default_font = 'Helvetica'
+    bold_font = 'Helvetica-Bold'
+    if _reg_font:
+        try:
+            pdfmetrics.registerFont(TTFont('AppFont', _reg_font))
+            default_font = 'AppFont'
+            if _bold_font_path:
+                pdfmetrics.registerFont(TTFont('AppFont-Bold', _bold_font_path))
+                bold_font = 'AppFont-Bold'
+            else:
+                bold_font = 'AppFont'
+        except Exception:
+            # If registration fails, fall back to built-in fonts
+            default_font = 'Helvetica'
+            bold_font = 'Helvetica-Bold'
     
     document = get_object_or_404(Document, id=doc_id, processed=True)
+    # Ensure we have a printable title (older Document instances may lack `title`)
+    title_text = None
+    try:
+        title_text = document.metadata.get('title') if isinstance(document.metadata, dict) else None
+    except Exception:
+        title_text = None
+    if not title_text:
+        title_text = document.metadata.get('name') if isinstance(document.metadata, dict) and document.metadata.get('name') else document.filename
     
     # Create response
     response = HttpResponse(content_type='application/pdf')
@@ -40,6 +80,7 @@ def export_pdf_report(request, doc_id):
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
+        fontName=default_font,
         fontSize=24,
         textColor=colors.HexColor('#1e293b'),
         spaceAfter=30,
@@ -49,6 +90,7 @@ def export_pdf_report(request, doc_id):
     heading_style = ParagraphStyle(
         'CustomHeading',
         parent=styles['Heading2'],
+        fontName=default_font,
         fontSize=16,
         textColor=colors.HexColor('#334155'),
         spaceAfter=12,
@@ -61,7 +103,7 @@ def export_pdf_report(request, doc_id):
     
     # Document info
     info_data = [
-        ['Belge Adı:', document.title],
+        ['Belge Adı:', title_text],
         ['Format:', document.format],
         ['Yükleme Tarihi:', document.upload_date.strftime('%d.%m.%Y %H:%M')],
         ['Rapor Tarihi:', datetime.now().strftime('%d.%m.%Y %H:%M')],
@@ -72,10 +114,11 @@ def export_pdf_report(request, doc_id):
     
     info_table = Table(info_data, colWidths=[5*cm, 12*cm])
     info_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), default_font),
         ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f1f5f9')),
         ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#1e293b')),
         ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 0), (0, -1), bold_font),
         ('FONTSIZE', (0, 0), (-1, -1), 10),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -112,7 +155,8 @@ def export_pdf_report(request, doc_id):
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('ALIGN', (1, 1), (1, -1), 'RIGHT'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 0), (-1, 0), bold_font),
+        ('FONTNAME', (0, 1), (-1, -1), default_font),
         ('FONTSIZE', (0, 0), (-1, 0), 12),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
@@ -140,7 +184,8 @@ def export_pdf_report(request, doc_id):
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (0, -1), 'CENTER'),
         ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 0), (-1, 0), bold_font),
+        ('FONTNAME', (0, 1), (-1, -1), default_font),
         ('FONTSIZE', (0, 0), (-1, -1), 10),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -169,7 +214,8 @@ def export_pdf_report(request, doc_id):
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (0, -1), 'CENTER'),
         ('ALIGN', (2, 0), (3, -1), 'RIGHT'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 0), (-1, 0), bold_font),
+        ('FONTNAME', (0, 1), (-1, -1), default_font),
         ('FONTSIZE', (0, 0), (-1, -1), 10),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -229,8 +275,17 @@ def export_excel_statistics(request, doc_id):
     ws1['A1'].font = Font(bold=True, size=14)
     ws1.merge_cells('A1:B1')
     
+    # Ensure a printable title for Excel export too
+    title_text = None
+    try:
+        title_text = document.metadata.get('title') if isinstance(document.metadata, dict) else None
+    except Exception:
+        title_text = None
+    if not title_text:
+        title_text = document.metadata.get('name') if isinstance(document.metadata, dict) and document.metadata.get('name') else document.filename
+
     info_rows = [
-        ['Belge Adı', document.title],
+        ['Belge Adı', title_text],
         ['Format', document.format],
         ['Yükleme Tarihi', document.upload_date.strftime('%d.%m.%Y %H:%M')],
         ['Yazar', document.author or 'Bilinmiyor'],

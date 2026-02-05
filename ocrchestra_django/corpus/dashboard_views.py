@@ -62,8 +62,14 @@ def dashboard_view(request):
         word_count = doc.get_word_count()
         if word_count > 0:  # Only include processed docs with content
             word_counts.append(word_count)
-            # Truncate long filenames
-            label = doc.title[:25] + '...' if len(doc.title) > 25 else doc.title
+            # Use metadata title if present, otherwise fall back to filename
+            title_text = None
+            if getattr(doc, 'metadata', None):
+                title_text = doc.metadata.get('title') or doc.metadata.get('name')
+            if not title_text:
+                title_text = getattr(doc, 'filename', 'Untitled')
+            # Truncate long titles
+            label = title_text[:25] + '...' if len(title_text) > 25 else title_text
             doc_labels.append(label)
     
     # Timeline (if date metadata exists) - otherwise use upload dates
