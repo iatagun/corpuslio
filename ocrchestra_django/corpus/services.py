@@ -115,16 +115,21 @@ class CorpusService:
         keyword = search_params.get('keyword', '')
         context_size = search_params.get('context_size', 5)
         
-        matches = []
-        
-        if search_type == 'word':
-            matches = search_engine.search_word(
-                keyword,
+        # For simple word search, use text-based concordance (more reliable)
+        if search_type == 'word' and keyword:
+            concordance = search_engine.get_text_based_concordance(
                 doc_id=document.id,
+                pattern=keyword,
+                context_words=context_size,
                 regex=search_params.get('regex', False),
                 case_sensitive=search_params.get('case_sensitive', False)
             )
-        elif search_type == 'lemma':
+            return concordance
+        
+        # For other search types, use analysis-based approach
+        matches = []
+        
+        if search_type == 'lemma':
             matches = search_engine.search_lemma(
                 keyword,
                 doc_id=document.id,

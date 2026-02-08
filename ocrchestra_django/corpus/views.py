@@ -594,11 +594,33 @@ def logout_view(request):
 
 
 @login_required
+@login_required
 def profile_view(request):
-    """User profile view."""
-    return render(request, 'corpus/profile.html', {
-        'active_tab': 'profile'
-    })
+    """User profile view with role info and quota tracking."""
+    # Get or create UserProfile
+    from .models import UserProfile
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    # Calculate quota percentages
+    query_limit = profile.get_query_limit()
+    query_percentage = (profile.queries_today / query_limit * 100) if query_limit else 0
+    
+    export_percentage = (profile.export_used_mb / profile.export_quota_mb * 100) if profile.export_quota_mb > 0 else 0
+    
+    # Get recent search history
+    recent_searches = request.user.search_history.order_by('-created_at')[:10]
+    
+    context = {
+        'active_tab': 'profile',
+        'profile': profile,
+        'query_limit': query_limit,
+        'query_percentage': query_percentage,
+        'export_percentage': export_percentage,
+        'recent_searches': recent_searches,
+    }
+    
+    return render(request, 'corpus/profile.html', context)
+
 
 
 @login_required

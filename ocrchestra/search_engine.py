@@ -39,12 +39,19 @@ class CorpusSearchEngine:
         if not analysis:
             return []
 
+        # Log raw format for debugging
+        logger.debug(f"Normalizing analysis: type={type(analysis)}, len={len(analysis)}")
+        if len(analysis) > 0:
+            logger.debug(f"First item type: {type(analysis[0])}, value: {analysis[0]}")
+
         # If already normalized (dicts), return as-is
         if isinstance(analysis[0], dict):
+            logger.debug("Analysis already in dict format")
             return analysis
 
         # If items are strings, try to group into triplets
         if all(isinstance(x, str) for x in analysis):
+            logger.debug("Analysis in flat string format, grouping into triplets")
             tokens = []
             i = 0
             n = len(analysis)
@@ -55,9 +62,11 @@ class CorpusSearchEngine:
                 pos = analysis[i+2] if i+2 < n else ''
                 tokens.append({'word': word, 'lemma': lemma, 'pos': pos, 'confidence': 1.0})
                 i += 3
+            logger.debug(f"Grouped into {len(tokens)} tokens")
             return tokens
 
         # Fallback: return empty
+        logger.warning(f"Unknown analysis format: {type(analysis[0])}")
         return []
 
     def _clean_text(self, s: str) -> str:
@@ -91,9 +100,15 @@ class CorpusSearchEngine:
         doc = self.db.get_document(doc_id) if doc_id else None
 
         if not doc or not doc.get('analysis'):
+            logger.warning(f"No document or analysis found for doc_id={doc_id}")
             return []
 
         analysis = self._normalize_analysis(doc['analysis'])
+        logger.info(f"Search word '{pattern}': normalized {len(analysis)} tokens")
+        
+        if len(analysis) > 0:
+            logger.debug(f"First 3 tokens: {analysis[:3]}")
+        
         matches = []
 
         for idx, item in enumerate(analysis):
@@ -118,6 +133,20 @@ class CorpusSearchEngine:
                 # substring match on cleaned forms
                 if pattern_cmp and pattern_cmp in word_cmp:
                     matches.append({**item, 'position': idx})
+                    
+        logger.info(f"Search word '{pattern}': found {len(matches)} matches")
+        if len(matches) == 0 and len(analysis) > 0:
+            # Debug: show sample of original and cleaned words
+            sample_orig = [t.get('word', '') for t in analysis[:10]]
+            sample_cleaned = [self._clean_text(t.get('word', '')) for t in analysis[:10]]
+            logger.debug(f"Sample original words: {sample_orig}")
+            logger.debug(f"Sample cleaned words: {sample_cleaned}")
+            logger.debug(f"Pattern original: '{pattern}'")
+            logger.debug(f"Pattern cleaned: '{self._clean_text(pattern)}'")
+            
+            # Check if 'benzer' exists in original words
+            benzer_in_orig = any('benzer' in t.get('word', '').lower() for t in analysis)
+            logger.debug(f"'benzer' found in original words: {benzer_in_orig}")
 
         return matches
 
@@ -292,31 +321,71 @@ class CorpusSearchEngine:
             Concordance results with left/center/right context
         """
         doc = self.db.get_document(doc_id)
-        
-        if not doc or not doc.get('analysis'):
+
+        if not doc:
             return []
 
+        # Normalize analysis into list of token dicts
         analysis = self._normalize_analysis(doc.get('analysis', []))
+        if not analysis:
+            return []
+
         concordance = []
 
+        # Build a quick index of token positions by (word,lemma,pos) to help
+        # resolve matches that didn't include an explicit 'position'.
+        index_by_tuple = {}
+        for i, tok in enumerate(analysis):
+            key = (tok.get('word', ''), tok.get('lemma', ''), tok.get('pos', ''))
+            index_by_tuple.setdefault(key, []).append(i)
+
+        def resolve_position(m: Dict[str, Any]) -> Optional[int]:
+            # Prefer provided position
+            if isinstance(m.get('position'), int):
+                p = m['position']
+                if 0 <= p < len(analysis):
+                    return p
+
+            # Try to match by exact tuple
+            key = (m.get('word', ''), m.get('lemma', ''), m.get('pos', ''))
+            if key in index_by_tuple and index_by_tuple[key]:
+                return index_by_tuple[key][0]
+
+            # Fallback: search for word substring (cleaned)
+            word_search = m.get('word', '')
+            if word_search:
+                word_search_c = self._clean_text(word_search)
+                for i, tok in enumerate(analysis):
+                    if word_search_c and word_search_c in self._clean_text(tok.get('word', '')):
+                        return i
+
+            return None
+
         for match in matches:
-            pos = match.get('position', 0)
-            
-            # Extract context
+            pos = resolve_position(match)
+            if pos is None:
+                # skip matches we cannot locate
+                continue
+
+            # Extract context window
             left_start = max(0, pos - context_words)
             right_end = min(len(analysis), pos + context_words + 1)
 
             left_ctx = analysis[left_start:pos]
-            center = analysis[pos:pos+1]
+            center = analysis[pos]
             right_ctx = analysis[pos+1:right_end]
 
-            # Extract words (analysis items are normalized dicts)
-            left_words = [item.get('word', '') for item in left_ctx]
-            center_word = center[0].get('word', '') if center else ''
-            right_words = [item.get('word', '') for item in right_ctx]
+            # Build word lists and word;pos pairs
+            left_words = [t.get('word', '') for t in left_ctx]
+            right_words = [t.get('word', '') for t in right_ctx]
+            center_word = center.get('word', '')
+
+            left_pairs = [f"{t.get('word','')};{t.get('pos','')}" for t in left_ctx]
+            right_pairs = [f"{t.get('word','')};{t.get('pos','')}" for t in right_ctx]
+            center_pair = f"{center.get('word','')};{center.get('pos','')}"
 
             entry = {
-                # backward-compatible keys
+                # legacy keys
                 'left': ' '.join(left_words),
                 'center': center_word,
                 'right': ' '.join(right_words),
@@ -324,12 +393,180 @@ class CorpusSearchEngine:
                 'left_context': ' '.join(left_words),
                 'keyword': center_word,
                 'right_context': ' '.join(right_words),
+                # new pair-aware keys
+                'left_pairs': left_pairs,
+                'keyword_pair': center_pair,
+                'right_pairs': right_pairs,
                 'position': pos,
-                'lemma': match.get('lemma', ''),
-                'pos': match.get('pos', ''),
-                'confidence': match.get('confidence', 1.0),
+                'lemma': match.get('lemma', center.get('lemma', '')),
+                'pos': match.get('pos', center.get('pos', '')),
+                'confidence': match.get('confidence', center.get('confidence', 1.0)),
                 'warning': match.get('warning', '')
             }
+
             concordance.append(entry)
 
+        return concordance
+
+    def get_text_based_concordance(
+        self,
+        doc_id: int,
+        pattern: str,
+        context_words: int = 5,
+        regex: bool = False,
+        case_sensitive: bool = False
+    ) -> List[Dict[str, Any]]:
+        """Generate KWIC concordance directly from cleaned text.
+        
+        This method searches in the raw text rather than the analysis tokens,
+        ensuring that all words are found regardless of POS tagging.
+        
+        Args:
+            doc_id: Document ID
+            pattern: Search pattern
+            context_words: Number of words on each side
+            regex: Use regex matching
+            case_sensitive: Case-sensitive search
+            
+        Returns:
+            Concordance results with left/center/right context
+        """
+        doc = self.db.get_document(doc_id)
+        if not doc:
+            logger.warning(f"No document found for doc_id={doc_id}")
+            return []
+            
+        text = doc.get('cleaned_text', '')
+        if not text:
+            logger.warning(f"No cleaned text for doc_id={doc_id}")
+            return []
+            
+        # Build analysis lookup for POS/lemma enrichment
+        analysis = self._normalize_analysis(doc.get('analysis', []))
+        
+        # Create multiple lookup strategies for better matching
+        # 1. Exact match (original)
+        # 2. Cleaned match (normalized)
+        # 3. Position-based match
+        analysis_by_original = {}
+        analysis_by_cleaned = {}
+        
+        for idx, t in enumerate(analysis):
+            word_orig = t.get('word', '').strip()
+            word_clean = self._clean_text(word_orig)
+            
+            # Store by original (case-insensitive)
+            if word_orig:
+                key_orig = word_orig.lower()
+                if key_orig not in analysis_by_original:
+                    analysis_by_original[key_orig] = t
+            
+            # Store by cleaned
+            if word_clean:
+                if word_clean not in analysis_by_cleaned:
+                    analysis_by_cleaned[word_clean] = t
+        
+        logger.info(f"Built analysis lookup: {len(analysis_by_original)} original, {len(analysis_by_cleaned)} cleaned")
+        logger.debug(f"Sample analysis items: {list(analysis[:3])}")
+        logger.debug(f"Sample lookup keys (original): {list(analysis_by_original.keys())[:10]}")
+        logger.debug(f"Sample lookup keys (cleaned): {list(analysis_by_cleaned.keys())[:10]}")
+        
+        # Tokenize text into words
+        words = re.findall(r'\S+', text)  # Split on whitespace
+        logger.info(f"Text-based search: {len(words)} words in text")
+        
+        concordance = []
+        
+        # Search through words
+        for idx, word in enumerate(words):
+            matched = False
+            
+            if regex:
+                flags = 0 if case_sensitive else re.IGNORECASE
+                if re.search(pattern, word, flags):
+                    matched = True
+            else:
+                if case_sensitive:
+                    if pattern in word:
+                        matched = True
+                else:
+                    if pattern.lower() in word.lower():
+                        matched = True
+            
+            if matched:
+                # Extract context
+                left_start = max(0, idx - context_words)
+                right_end = min(len(words), idx + context_words + 1)
+                
+                left_words = words[left_start:idx]
+                keyword = words[idx]
+                right_words = words[idx+1:right_end]
+                
+                # Try to enrich with analysis data - multiple strategies
+                def get_analysis_data(w):
+                    """Get POS/lemma for a word using multiple lookup strategies."""
+                    w_strip = w.strip()
+                    
+                    # Strategy 1: Exact original match (case-insensitive)
+                    data = analysis_by_original.get(w_strip.lower())
+                    if data:
+                        logger.debug(f"Found '{w}' via original lookup: pos={data.get('pos')}")
+                        return data
+                    
+                    # Strategy 2: Cleaned match
+                    w_clean = self._clean_text(w_strip)
+                    data = analysis_by_cleaned.get(w_clean)
+                    if data:
+                        logger.debug(f"Found '{w}' via cleaned lookup: pos={data.get('pos')}")
+                        return data
+                    
+                    # Strategy 3: Partial cleaned match (for punctuation differences)
+                    for clean_key, analysis_item in analysis_by_cleaned.items():
+                        if w_clean in clean_key or clean_key in w_clean:
+                            logger.debug(f"Found '{w}' via partial match with '{clean_key}': pos={analysis_item.get('pos')}")
+                            return analysis_item
+                    
+                    logger.debug(f"No analysis data found for word '{w}' (cleaned: '{w_clean}')")
+                    return {}
+                
+                keyword_data = get_analysis_data(keyword)
+                
+                # Build pairs for context words
+                left_pairs = []
+                for w in left_words:
+                    w_data = get_analysis_data(w)
+                    pos_tag = w_data.get('pos', '')
+                    left_pairs.append(f"{w};{pos_tag}")
+                
+                right_pairs = []
+                for w in right_words:
+                    w_data = get_analysis_data(w)
+                    pos_tag = w_data.get('pos', '')
+                    right_pairs.append(f"{w};{pos_tag}")
+                
+                keyword_pos = keyword_data.get('pos', '')
+                keyword_lemma = keyword_data.get('lemma', '')
+                
+                entry = {
+                    'left_context': ' '.join(left_words),
+                    'keyword': keyword,
+                    'right_context': ' '.join(right_words),
+                    'left': ' '.join(left_words),
+                    'center': keyword,
+                    'right': ' '.join(right_words),
+                    'position': idx,
+                    'lemma': keyword_lemma,
+                    'pos': keyword_pos,
+                    'confidence': keyword_data.get('confidence', 1.0),
+                    'left_pairs': left_pairs,
+                    'keyword_pair': f"{keyword};{keyword_pos}",
+                    'right_pairs': right_pairs,
+                }
+                
+                concordance.append(entry)
+        
+        logger.info(f"Text-based search for '{pattern}': found {len(concordance)} matches")
+        if len(concordance) > 0:
+            logger.debug(f"Sample match POS: {concordance[0].get('pos')}, lemma: {concordance[0].get('lemma')}")
+        
         return concordance

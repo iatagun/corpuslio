@@ -190,12 +190,18 @@
         <div class="form-row">
             <div class="form-group">
                 <label for="search_type" class="form-label">Arama Tipi</label>
-                <select name="search_type" id="search_type" class="form-control">
-                    <option value="word">Kelime</option>
-                    <option value="lemma">Kök (Lemma)</option>
-                    <option value="pos">Kelime Türü (POS)</option>
-                    <option value="advanced">Gelişmiş</option>
-                </select>
+                <div class="custom-select" id="search_type_select" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                    {% with sel=request.GET.search_type|default:'word' %}
+                    <button type="button" class="custom-select-trigger" aria-label="Arama Tipi">{% if sel == 'word' %}Kelime{% elif sel == 'lemma' %}Kök (Lemma){% elif sel == 'pos' %}Kelime Türü (POS){% else %}Gelişmiş{% endif %}</button>
+                    <ul class="custom-select-options" role="listbox" tabindex="-1">
+                        <li role="option" data-value="word" {% if sel == 'word' %}aria-selected="true"{% endif %}>Kelime</li>
+                        <li role="option" data-value="lemma" {% if sel == 'lemma' %}aria-selected="true"{% endif %}>Kök (Lemma)</li>
+                        <li role="option" data-value="pos" {% if sel == 'pos' %}aria-selected="true"{% endif %}>Kelime Türü (POS)</li>
+                        <li role="option" data-value="advanced" {% if sel == 'advanced' %}aria-selected="true"{% endif %}>Gelişmiş</li>
+                    </ul>
+                    <input type="hidden" name="search_type" id="search_type_value" value="{{ sel }}">
+                    {% endwith %}
+                </div>
             </div>
 
             <div class="form-group" id="query-group">
@@ -232,6 +238,47 @@
         {% endif %}
         {% endif %}
     </form>
+    <script>
+        (function(){
+            var cs = document.getElementById('search_type_select');
+            if(!cs) return;
+            var trigger = cs.querySelector('.custom-select-trigger');
+            var list = cs.querySelector('.custom-select-options');
+            var hidden = document.getElementById('search_type_value');
+            var options = Array.from(list.querySelectorAll('li'));
+
+            function open(){ 
+                cs.classList.add('open'); 
+                cs.setAttribute('aria-expanded','true'); 
+                list.setAttribute('aria-hidden','false');
+            }
+            function close(){ 
+                cs.classList.remove('open'); 
+                cs.setAttribute('aria-expanded','false'); 
+                list.setAttribute('aria-hidden','true');
+            }
+
+            trigger.addEventListener('click', function(e){ 
+                e.stopPropagation();
+                if(cs.classList.contains('open')) close(); else open(); 
+            });
+
+            options.forEach(function(opt){
+                opt.addEventListener('click', function(e){
+                    e.stopPropagation();
+                    options.forEach(function(o){ o.removeAttribute('aria-selected'); });
+                    opt.setAttribute('aria-selected','true');
+                    hidden.value = opt.getAttribute('data-value');
+                    trigger.textContent = opt.textContent;
+                    close();
+                });
+            });
+
+            document.addEventListener('click', function(ev){ 
+                if(!cs.contains(ev.target)) close(); 
+            });
+        })();
+    </script>
 </div>
 
 <!-- Search Results -->

@@ -132,6 +132,12 @@ class CorpusExpert(ExpertBase):
             "You are a Turkish linguistics expert. Analyze the following text and return ONLY a valid JSON array. "
             "Do NOT include explanations, markdown, or any extra text.\n\n"
 
+            "CRITICAL - ANALYZE EVERY SINGLE WORD:\n"
+            "- You MUST analyze EVERY word in the text, including common words like 'bir', 'bu', 've', 'benzer', etc.\n"
+            "- DO NOT skip any words - even articles, conjunctions, or function words MUST be included\n"
+            "- The number of tokens in your output MUST match the number of words in the input\n"
+            "- If you're unsure about a word's POS, include it anyway with lower confidence\n\n"
+
             "For each token, return an object with:\n"
             "- 'word': surface form exactly as in the text\n"
             "- 'lemma': dictionary base form (sözlük biçimi, kök)\n"
@@ -141,6 +147,9 @@ class CorpusExpert(ExpertBase):
             "Turkish-specific rules:\n"
             "- 'O' is DET when modifying a noun (o kitap), PRON when standing alone (o geldi)\n"
             "- 'gibi', 'için', 'ile' are ADP (postpositions), not CONJ\n"
+            "- 've', 'veya', 'ama', 'fakat' are CONJ\n"
+            "- 'bir', 'bu', 'şu', 'her' are DET\n"
+            "- 'benzer', 'başka', 'diğer' are ADJ\n"
             "- Words ending with -me/-ma/-yen/-yan may be NOUN (deverbal) depending on usage\n"
             "- If a token could reasonably belong to more than one POS, choose the best one AND lower confidence\n\n"
 
@@ -152,6 +161,7 @@ class CorpusExpert(ExpertBase):
             "CRITICAL:\n"
             "- Output MUST be a raw JSON array only\n"
             "- Start with '[' and end with ']'\n"
+            "- EVERY word must have an entry\n"
             "- No comments, no explanations, no code blocks"
         )
 

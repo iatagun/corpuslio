@@ -1,0 +1,129 @@
+{% extends "corpus/base.html" %}
+{% load static %}
+
+{% block title %}Erişim Reddedildi - CorpusIO{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin-top: 60px;">
+    <div class="card">
+        <div class="card-body text-center" style="padding: 3rem;">
+            <!-- Lock icon -->
+            <div style="font-size: 4rem; color: #ef4444; margin-bottom: 1.5rem;">
+                🔒
+            </div>
+
+            <h1 style="color: var(--text-color); font-size: 2rem; margin-bottom: 1rem;">
+                Erişim Reddedildi
+            </h1>
+
+            <p style="color: var(--muted-color); font-size: 1.1rem; margin-bottom: 2rem;">
+                {{ message|default:"Bu sayfaya erişim yetkiniz bulunmamaktadır." }}
+            </p>
+
+            {% if required_role %}
+            <div style="background: var(--background-secondary); border-left: 4px solid #3b82f6; padding: 1rem 1.5rem; margin-bottom: 2rem; text-align: left;">
+                <p style="margin: 0; color: var(--text-color);">
+                    <strong>Gerekli Yetki Seviyesi:</strong>
+                    <span style="text-transform: capitalize; color: #3b82f6; font-weight: 600;">
+                        {% if required_role == 'verified' %}
+                            Doğrulanmış Araştırmacı
+                        {% elif required_role == 'developer' %}
+                            Geliştirici
+                        {% elif required_role == 'admin' %}
+                            Yönetici
+                        {% else %}
+                            {{ required_role }}
+                        {% endif %}
+                    </span>
+                </p>
+            </div>
+            {% endif %}
+
+            <!-- Role upgrade info -->
+            {% if user.is_authenticated %}
+            <div style="background: var(--background-secondary); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; text-align: left;">
+                <h3 style="color: var(--text-color); font-size: 1.2rem; margin-bottom: 1rem;">
+                    Yetki Seviyenizi Nasıl Yükseltebilirsiniz?
+                </h3>
+                <ul style="color: var(--muted-color); line-height: 1.8; margin: 0; padding-left: 1.5rem;">
+                    {% if required_role == 'verified' %}
+                    <li>Akademik kimlik doğrulama formunu doldurun</li>
+                    <li>Kurumsal e-posta adresinizi onaylayın</li>
+                    <li>ORCID bilgilerinizi ekleyin</li>
+                    <li>Araştırma amacınızı belirtin</li>
+                    {% elif required_role == 'developer' %}
+                    <li>Önce "Doğrulanmış Araştırmacı" olarak onaylanın</li>
+                    <li>API erişim başvurusu yapın</li>
+                    <li>Proje detaylarınızı paylaşın</li>
+                    <li>Geliştirici API anahtarınızı alın</li>
+                    {% elif required_role == 'admin' %}
+                    <li>Yönetici yetkisi için sistem yöneticisiyle iletişime geçin</li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Action buttons -->
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <a href="{% url 'corpus:library' %}" class="btn btn-primary">
+                    Ana Sayfaya Dön
+                </a>
+                
+                {% if user.is_authenticated %}
+                <a href="{% url 'account_profile' %}" class="btn btn-secondary">
+                    Profil Ayarları
+                </a>
+                {% else %}
+                <a href="{% url 'account_login' %}" class="btn btn-secondary">
+                    Giriş Yap
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Contact info -->
+            <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+                <p style="color: var(--muted-color); font-size: 0.9rem;">
+                    Yetki konusunda sorularınız için: 
+                    <a href="mailto:support@corpusio.org" style="color: #3b82f6; text-decoration: none;">
+                        support@corpusio.org
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-block;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-secondary {
+    background: var(--background-secondary);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--background-tertiary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+</style>
+{% endblock %}

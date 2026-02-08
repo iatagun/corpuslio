@@ -193,11 +193,15 @@
                         <span class="material-icons">search</span>
                         <input type="text" id="searchInput" class="search-modal-input"
                             placeholder="Belgeler ve koleksiyonlarda ara..." autocomplete="off">
-                        <select id="searchType" class="search-type-select" title="Arama Tipi">
-                            <option value="basic">Basit</option>
-                            <option value="fuzzy">Benzer</option>
-                            <option value="regex">Regex</option>
-                        </select>
+                        <div class="custom-select" id="searchType" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                            <button type="button" class="custom-select-trigger" aria-label="Arama Tipi">Basit</button>
+                            <ul class="custom-select-options" role="listbox" tabindex="-1">
+                                <li role="option" data-value="basic" aria-selected="true">Basit</li>
+                                <li role="option" data-value="fuzzy">Benzer</li>
+                                <li role="option" data-value="regex">Regex</li>
+                            </ul>
+                            <input type="hidden" name="search_type" id="searchTypeValue" value="basic">
+                        </div>
                         <div class="search-modal-shortcut">
                             <span>ESC</span>
                         </div>
@@ -229,6 +233,51 @@
                             <span>kapat</span>
                         </div>
                     </div>
+                    <script>
+                        (function(){
+                            // Custom select for search type
+                            var cs = document.getElementById('searchType');
+                            if(!cs) return;
+                            var trigger = cs.querySelector('.custom-select-trigger');
+                            var list = cs.querySelector('.custom-select-options');
+                            var hidden = document.getElementById('searchTypeValue');
+                            var options = Array.from(list.querySelectorAll('li'));
+
+                            function open(){ cs.classList.add('open'); cs.setAttribute('aria-expanded','true'); list.setAttribute('aria-hidden','false'); list.focus(); }
+                            function close(){ cs.classList.remove('open'); cs.setAttribute('aria-expanded','false'); list.setAttribute('aria-hidden','true'); trigger.focus(); }
+
+                            trigger.addEventListener('click', function(e){ if(cs.classList.contains('open')) close(); else open(); });
+
+                            options.forEach(function(opt){
+                                opt.addEventListener('click', function(){
+                                    options.forEach(function(o){ o.removeAttribute('aria-selected'); });
+                                    opt.setAttribute('aria-selected','true');
+                                    hidden.value = opt.getAttribute('data-value');
+                                    trigger.textContent = opt.textContent;
+                                    close();
+                                });
+                            });
+
+                            // keyboard support
+                            list.addEventListener('keydown', function(e){
+                                var idx = options.findIndex(function(o){ return o.getAttribute('aria-selected')==='true'; });
+                                if(e.key === 'ArrowDown'){
+                                    e.preventDefault();
+                                    var next = options[(idx+1) % options.length]; next.focus();
+                                } else if(e.key === 'ArrowUp'){
+                                    e.preventDefault();
+                                    var prev = options[(idx-1+options.length) % options.length]; prev.focus();
+                                } else if(e.key === 'Enter'){
+                                    e.preventDefault(); document.activeElement.click();
+                                } else if(e.key === 'Escape'){
+                                    e.preventDefault(); close();
+                                }
+                            });
+
+                            // close on outside click
+                            document.addEventListener('click', function(ev){ if(!cs.contains(ev.target)) close(); });
+                        })();
+                    </script>
                 </div>
             </div>
 

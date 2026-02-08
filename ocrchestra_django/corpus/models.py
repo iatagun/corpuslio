@@ -1,7 +1,256 @@
 """Django models for OCRchestra corpus management."""
 
+from decimal import Decimal
 from django.db import models
+from django.contrib.auth.models import User
 from django.utils import timezone
+from django.db.models.signals import post_save
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+
+class UserProfile(models.Model):
+    """Extended user profile for corpus platform access control.
+    
+    Implements 5-tier role system:
+    - ANONYMOUS: No account, limited public access
+    - REGISTERED: Email-verified, basic export rights
+    - VERIFIED: Academic researcher, full query + API access
+    - DEVELOPER: API integration projects
+    - ADMIN: Platform management
+    """
+    
+    ROLE_CHOICES = [
+        ('anonymous', 'Anonim Kullanıcı'),  # Not in DB, conceptual
+        ('registered', 'Kayıtlı Kullanıcı'),
+        ('verified', 'Doğrulanmış Araştırmacı'),
+        ('developer', 'Geliştirici (API Erişimi)'),
+        ('admin', 'Sistem Yöneticisi'),
+    ]
+    
+    VERIFICATION_STATUS_CHOICES = [
+        ('pending', 'Beklemede'),
+        ('approved', 'Onaylandı'),
+        ('rejected', 'Reddedildi'),
+    ]
+    
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='profile',
+        verbose_name="Kullanıcı"
+    )
+    
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='registered',
+        verbose_name="Rol"
+    )
+    
+    # Verification fields for VERIFIED role
+    institution = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Kurum"
+    )
+    orcid = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="ORCID ID",
+        help_text="ORCID kimliği (örn: 0000-0002-1234-5678)"
+    )
+    research_purpose = models.TextField(
+        blank=True,
+        verbose_name="Araştırma Amacı",
+        help_text="Korpusu neden kullanmak istiyorsunuz?"
+    )
+    verification_status = models.CharField(
+        max_length=20,
+        choices=VERIFICATION_STATUS_CHOICES,
+        default='pending',
+        verbose_name="Doğrulama Durumu"
+    )
+    verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Doğrulama Tarihi"
+    )
+    verified_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='verified_users',
+        verbose_name="Doğrulayan Admin"
+    )
+    
+    # API access for DEVELOPER role
+    api_key = models.CharField(
+        max_length=64,
+        blank=True,
+        unique=True,
+        null=True,
+        verbose_name="API Anahtarı"
+    )
+    api_quota_daily = models.IntegerField(
+        default=1000,
+        verbose_name="Günlük API Kotası"
+    )
+    api_calls_today = models.IntegerField(
+        default=0,
+        verbose_name="Bugünkü API Çağrıları"
+    )
+    api_last_reset = models.DateField(
+        auto_now_add=True,
+        verbose_name="API Sayacı Sıfırlama"
+    )
+    
+    # Export quotas
+    export_quota_mb = models.IntegerField(
+        default=5,
+        verbose_name="Aylık Export Kotası (MB)",
+        help_text="Registered: 5MB, Verified: 100MB"
+    )
+    export_used_mb = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        verbose_name="Kullanılan Export (MB)"
+    )
+    export_last_reset = models.DateField(
+        auto_now_add=True,
+        verbose_name="Export Sayacı Sıfırlama"
+    )
+    
+    # Query limits
+    queries_today = models.IntegerField(
+        default=0,
+        verbose_name="Bugünkü Sorgular"
+    )
+    query_last_reset = models.DateField(
+        auto_now_add=True,
+        verbose_name="Sorgu Sayacı Sıfırlama"
+    )
+    
+    # Terms acceptance
+    terms_accepted = models.BooleanField(
+        default=False,
+        verbose_name="Kullanım Koşulları Kabul Edildi"
+    )
+    terms_accepted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Koşulların Kabul Tarihi"
+    )
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Kayıt Tarihi")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Güncellenme")
+    
+    class Meta:
+        verbose_name = "Kullanıcı Profili"
+        verbose_name_plural = "Kullanıcı Profilleri"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} ({self.get_role_display()})"
+    
+    def get_query_limit(self):
+        """Get daily query limit based on role."""
+        # Superusers have unlimited queries
+        if self.user.is_superuser:
+            return 0  # unlimited
+        
+        limits = {
+            'registered': 100,
+            'verified': 1000,
+            'developer': 0,  # unlimited (rate-limited by API)
+            'admin': 0,      # unlimited
+        }
+        return limits.get(self.role, 10)  # Default 10 for others
+    
+    def can_query(self):
+        """Check if user can make more queries today."""
+        # Superusers always can query
+        if self.user.is_superuser:
+            return True
+        
+        limit = self.get_query_limit()
+        if limit == 0:  # unlimited
+            return True
+        return self.queries_today < limit
+    
+    def can_export(self, size_mb=0):
+        """Check if user has export quota left."""
+        # Superusers have unlimited export quota
+        if self.user.is_superuser:
+            return True
+        
+        return (self.export_used_mb + size_mb) <= self.export_quota_mb
+    
+def increment_query_count(self):
+    """Increment today's query count."""
+    from datetime import date
+    today = date.today()
+    
+    # Reset if new day
+    if self.query_last_reset < today:
+        self.queries_today = 0
+        self.query_last_reset = today
+    
+    self.queries_today += 1
+    self.save(update_fields=['queries_today', 'query_last_reset'])
+
+def use_export_quota(self, size_mb):
+    """Deduct from export quota."""
+    from datetime import date
+    from dateutil.relativedelta import relativedelta
+    
+    today = date.today()
+    
+    # Reset if new month
+    if self.export_last_reset.month != today.month or self.export_last_reset.year != today.year:
+        self.export_used_mb = 0
+        self.export_last_reset = today
+    
+    self.export_used_mb += size_mb
+    self.save(update_fields=['export_used_mb', 'export_last_reset'])
+
+def generate_api_key(self):
+    """Generate unique API key for developer role."""
+    import secrets
+    self.api_key = secrets.token_urlsafe(48)
+    self.save(update_fields=['api_key'])
+    return self.api_key
+
+def is_verified_researcher(self):
+    """Check if user is verified researcher or higher."""
+    return self.role in ['verified', 'developer', 'admin']
+
+def is_developer(self):
+    """Check if user has API access."""
+    return self.role in ['developer', 'admin']
+
+def is_admin(self):
+    """Check if user is admin."""
+    return self.role == 'admin' or self.user.is_staff
+
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Auto-create profile when user registers."""
+    if created:
+        # Determine initial role based on user status
+        initial_role = 'admin' if instance.is_superuser else 'registered'
+        UserProfile.objects.create(user=instance, role=initial_role)
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """Save profile when user is saved."""
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
 
 
 class Tag(models.Model):

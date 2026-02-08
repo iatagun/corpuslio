@@ -1,119 +1,331 @@
 {% extends "corpus/base.html" %}
 {% load static %}
 
-{% block title %}Profil - CorpusIO{% endblock %}
-
-{% block breadcrumb %}
-<a href="{% url 'corpus:home' %}">Ana Sayfa</a> / <span>Profil</span>
-{% endblock %}
+{% block title %}Profilim - CorpusIO{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 800px; margin: 0 auto;">
-    <div class="card">
-        <div style="display: flex; align-items: center; gap: 15px; padding: 20px; border-bottom: 1px solid var(--border-subtle);">
-            <div style="width: 48px; height: 48px; background: var(--accent-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                <span class="material-icons" style="font-size: 28px; color: white;">person</span>
+<div class="container" style="max-width: 1200px; margin-top: 40px;">
+    <div class="profile-header" style="margin-bottom: 2rem;">
+        <h1 style="color: var(--text-color); font-size: 2rem; margin-bottom: 0.5rem;">
+            👤 {{ user.get_full_name|default:user.username }}
+        </h1>
+        <p style="color: var(--muted-color); font-size: 1.1rem;">
+            {{ user.email }}
+        </p>
+    </div>
+
+    <div class="profile-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+        <!-- Role & Status Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-color);">
+                    🎯 Hesap Durumu
+                </h2>
             </div>
-            <div>
-                <h2 style="margin: 0; color: var(--text-main);">Kullanıcı Profili</h2>
-                <p style="margin: 5px 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">Hesap bilgilerinizi görüntüleyin</p>
+            <div class="card-body">
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="color: var(--muted-color); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
+                        Yetki Seviyesi
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        {% if user.is_superuser %}
+                        <span class="role-badge role-admin" style="padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            ⚡ Süper Yönetici (Sınırsız)
+                        </span>
+                        {% elif profile.role == 'registered' %}
+                            <span class="role-badge role-registered" style="padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 1rem;">
+                                📝 Kayıtlı Kullanıcı
+                            </span>
+                        {% elif profile.role == 'verified' %}
+                            <span class="role-badge role-verified" style="padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 1rem;">
+                                ✅ Doğrulanmış Araştırmacı
+                            </span>
+                        {% elif profile.role == 'developer' %}
+                            <span class="role-badge role-developer" style="padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 1rem;">
+                                💻 Geliştirici
+                            </span>
+                        {% elif profile.role == 'admin' %}
+                            <span class="role-badge role-admin" style="padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 1rem;">
+                                ⚡ Yönetici
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if profile.role == 'verified' or profile.role == 'developer' or profile.role == 'admin' %}
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="color: var(--muted-color); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
+                        Kurum
+                    </label>
+                    <p style="color: var(--text-color); margin: 0;">
+                        {{ profile.institution|default:"Belirtilmemiş" }}
+                    </p>
+                </div>
+
+                {% if profile.orcid %}
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="color: var(--muted-color); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
+                        ORCID
+                    </label>
+                    <a href="https://orcid.org/{{ profile.orcid }}" target="_blank" style="color: #3b82f6; text-decoration: none;">
+                        {{ profile.orcid }}
+                    </a>
+                </div>
+                {% endif %}
+                {% endif %}
+
+                <div style="margin-bottom: 0;">
+                    <label style="color: var(--muted-color); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
+                        Üyelik Tarihi
+                    </label>
+                    <p style="color: var(--text-color); margin: 0;">
+                        {{ user.date_joined|date:"d F Y" }}
+                    </p>
+                </div>
             </div>
         </div>
-        
-        <div style="padding: 30px;">
-            <div class="profile-section" style="margin-bottom: 30px;">
-                <h3 style="margin-bottom: 20px; color: var(--text-main); font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
-                    <span class="material-icons" style="font-size: 20px; color: var(--accent-primary);">info</span>
-                    Kişisel Bilgiler
-                </h3>
-                <div style="display: grid; grid-template-columns: 160px 1fr; gap: 16px; background: var(--bg-surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);">
-                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Kullanıcı Adı:</div>
-                    <div style="color: var(--text-main);">{{ user.username }}</div>
-                    
-                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Ad Soyad:</div>
-                    <div style="color: var(--text-main);">{{ user.get_full_name|default:"Belirtilmemiş" }}</div>
-                    
-                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">E-posta:</div>
-                    <div style="color: var(--text-main);">{{ user.email|default:"Belirtilmemiş" }}</div>
-                    
-                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Üyelik Tarihi:</div>
-                    <div style="color: var(--text-main);">{{ user.date_joined|date:"d F Y, H:i" }}</div>
-                    
-                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Son Giriş:</div>
-                    <div style="color: var(--text-main);">{{ user.last_login|date:"d F Y, H:i" }}</div>
-                </div>
+
+        <!-- Quota Tracking Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-color);">
+                    📊 Kullanım İstatistikleri
+                </h2>
             </div>
-
-            <div class="profile-section" style="margin-bottom: 30px;">
-                <h3 style="margin-bottom: 20px; color: var(--text-main); font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
-                    <span class="material-icons" style="font-size: 20px; color: var(--accent-primary);">verified_user</span>
-                    Yetkilendirme
-                </h3>
-                <div style="display: grid; grid-template-columns: 160px 1fr; gap: 16px; background: var(--bg-surface); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);">
-                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Rol:</div>
-                    <div>
-                        {% if user.is_superuser %}
-                            <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 5px 14px; border-radius: 14px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-                                <span class="material-icons" style="font-size: 14px;">admin_panel_settings</span>
-                                Süper Kullanıcı
-                            </span>
-                        {% elif user.groups.all %}
-                            {% for group in user.groups.all %}
-                                <span style="background: var(--accent-primary); color: white; padding: 5px 14px; border-radius: 14px; font-size: 0.8rem; font-weight: 600; margin-right: 5px; display: inline-flex; align-items: center; gap: 5px;">
-                                    <span class="material-icons" style="font-size: 14px;">
-                                        {% if group.name == "Academician" %}school{% elif group.name == "Developer" %}code{% else %}group{% endif %}
-                                    </span>
-                                    {{ group.name }}
-                                </span>
-                            {% endfor %}
-                        {% else %}
-                            <span style="background: var(--text-tertiary); color: white; padding: 5px 14px; border-radius: 14px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-                                <span class="material-icons" style="font-size: 14px;">person</span>
-                                Standart Kullanıcı
-                            </span>
-                        {% endif %}
-                    </div>
-                    
-                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Durum:</div>
-                    <div>
-                        {% if user.is_active %}
-                            <span style="color: var(--accent-success); display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
-                                <span class="material-icons" style="font-size: 18px;">check_circle</span>
-                                Aktif
-                            </span>
-                        {% else %}
-                            <span style="color: var(--accent-danger); display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
-                                <span class="material-icons" style="font-size: 18px;">cancel</span>
-                                Pasif
-                            </span>
-                        {% endif %}
-                    </div>
-
-                    {% if user.is_staff %}
-                    <div style="font-weight: 600; color: var(--text-secondary); font-size: 0.85rem;">Yetkiler:</div>
-                    <div>
-                        <span style="color: var(--accent-success); display: inline-flex; align-items: center; gap: 5px; font-size: 0.85rem;">
-                            <span class="material-icons" style="font-size: 16px;">admin_panel_settings</span>
-                            Admin Paneli Erişimi
+            <div class="card-body">
+                {% if user.is_superuser %}
+                <!-- Superuser unlimited notice -->
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">♾️</div>
+                    <h3 style="color: var(--text-color); margin-bottom: 0.5rem;">Sınırsız Erişim</h3>
+                    <p style="color: var(--muted-color); margin: 0;">
+                        Süper yönetici olarak tüm kotalardan muafsınız.
+                    </p>
+                </div>
+                {% else %}
+                <!-- Query Quota -->
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <label style="color: var(--muted-color); font-size: 0.9rem;">
+                            Günlük Sorgu Limiti
+                        </label>
+                        <span style="color: var(--text-color); font-weight: 600;">
+                            {{ profile.queries_today }} / {% if query_limit %}{{ query_limit }}{% else %}Sınırsız{% endif %}
                         </span>
                     </div>
+                    {% if query_limit %}
+                    <div class="progress-bar" style="background: var(--background-secondary); height: 8px; border-radius: 4px; overflow: hidden;">
+                        <div style="background: linear-gradient(90deg, #3b82f6, #2563eb); height: 100%; width: {{ query_percentage }}%; transition: width 0.3s;"></div>
+                    </div>
                     {% endif %}
+                    <p style="color: var(--muted-color); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 0;">
+                        Sıfırlanma: Yarın 00:00
+                    </p>
                 </div>
-            </div>
 
-            <div style="display: flex; gap: 10px; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
-                <a href="{% url 'corpus:home' %}" class="btn btn-outline">
-                    <span class="material-icons" style="font-size: 18px;">arrow_back</span>
-                    Ana Sayfaya Dön
-                </a>
-                {% if user.is_staff %}
-                <a href="/admin/" class="btn btn-secondary" target="_blank">
-                    <span class="material-icons" style="font-size: 18px;">admin_panel_settings</span>
-                    Admin Paneli
-                </a>
+                <!-- Export Quota -->
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <label style="color: var(--muted-color); font-size: 0.9rem;">
+                            Aylık Dışa Aktarma Kotası
+                        </label>
+                        <span style="color: var(--text-color); font-weight: 600;">
+                            {{ profile.export_used_mb|floatformat:2 }} MB / {{ profile.export_quota_mb }} MB
+                        </span>
+                    </div>
+                    <div class="progress-bar" style="background: var(--background-secondary); height: 8px; border-radius: 4px; overflow: hidden;">
+                        <div style="background: linear-gradient(90deg, #10b981, #059669); height: 100%; width: {{ export_percentage }}%; transition: width 0.3s;"></div>
+                    </div>
+                    <p style="color: var(--muted-color); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 0;">
+                        Sıfırlanma: {{ profile.export_last_reset|date:"d F Y" }}
+                    </p>
+                </div>
+
+                {% if profile.role == 'developer' or profile.role == 'admin' %}
+                <!-- API Calls -->
+                <div style="margin-bottom: 0;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <label style="color: var(--muted-color); font-size: 0.9rem;">
+                            API Çağrıları (Bugün)
+                        </label>
+                        <span style="color: var(--text-color); font-weight: 600;">
+                            {{ profile.api_calls_today }} / {{ profile.api_quota_daily }}
+                        </span>
+                    </div>
+                    <div class="progress-bar" style="background: var(--background-secondary); height: 8px; border-radius: 4px; overflow: hidden;">
+                        <div style="background: linear-gradient(90deg, #f59e0b, #d97706); height: 100%; width: {% widthratio profile.api_calls_today profile.api_quota_daily 100 %}%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+                {% endif %}
                 {% endif %}
             </div>
         </div>
     </div>
+
+    {% if user.is_superuser or profile.role == 'developer' or profile.role == 'admin' %}
+    <!-- API Key Card (Developer/Admin only) -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-header">
+            <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-color);">
+                🔑 API Erişim Anahtarı
+            </h2>
+        </div>
+        <div class="card-body">
+            {% if profile.api_key %}
+            <div style="background: var(--background-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 1rem; margin-bottom: 1rem; font-family: 'Courier New', monospace;">
+                <code id="api-key" style="color: var(--text-color); word-break: break-all;">{{ profile.api_key }}</code>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button onclick="copyApiKey()" class="btn btn-primary">
+                    📋 Kopyala
+                </button>
+            </div>
+            <p style="color: var(--muted-color); font-size: 0.9rem; margin-top: 1rem; margin-bottom: 0;">
+                ⚠️ API anahtarınızı güvenli tutun. Başkalarıyla paylaşmayın.
+            </p>
+            {% else %}
+            <p style="color: var(--muted-color); margin-bottom: 1rem;">
+                Henüz API anahtarınız oluşturulmamış.
+            </p>
+            <p style="color: var(--muted-color); font-size: 0.9rem;">
+                API anahtarı otoma tik olarak oluşturulacaktır. Lütfen yöneticiye başvurun.
+            </p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Activity -->
+    <div class="card">
+        <div class="card-header">
+            <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-color);">
+                📜 Son Aramalar
+            </h2>
+        </div>
+        <div class="card-body">
+            {% if recent_searches %}
+            <div class="table-responsive">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color);">
+                            <th style="padding: 0.75rem; text-align: left; color: var(--muted-color); font-weight: 600;">Sorgu</th>
+                            <th style="padding: 0.75rem; text-align: left; color: var(--muted-color); font-weight: 600;">Tip</th>
+                            <th style="padding: 0.75rem; text-align: left; color: var(--muted-color); font-weight: 600;">Sonuç</th>
+                            <th style="padding: 0.75rem; text-align: left; color: var(--muted-color); font-weight: 600;">Tarih</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for search in recent_searches %}
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 0.75rem; color: var(--text-color);">{{ search.query }}</td>
+                            <td style="padding: 0.75rem; color: var(--muted-color);">
+                                <span style="background: var(--background-secondary); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">
+                                    {{ search.search_type }}
+                                </span>
+                            </td>
+                            <td style="padding: 0.75rem; color: var(--text-color);">{{ search.result_count }}</td>
+                            <td style="padding: 0.75rem; color: var(--muted-color); font-size: 0.9rem;">
+                                {{ search.created_at|date:"d M Y H:i" }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p style="color: var(--muted-color); text-align: center; padding: 2rem 0; margin: 0;">
+                Henüz arama yapılmamış.
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Upgrade CTA (if not max role) -->
+    {% if not user.is_superuser and profile.role == 'registered' %}
+    <div class="card" style="margin-top: 2rem; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none;">
+        <div class="card-body" style="padding: 2rem; text-align: center;">
+            <h3 style="color: white; font-size: 1.5rem; margin-bottom: 1rem;">
+                ✨ Daha Fazla Erişim İçin Hesabınızı Yükseltin
+            </h3>
+            <p style="color: rgba(255,255,255,0.9); margin-bottom: 1.5rem;">
+                Doğrulanmış araştırmacı olarak günlük 1000 sorgu hakkı ve aylık 100MB dışa aktarma kotası kazanın.
+            </p>
+            <a href="mailto:support@corpusio.org?subject=Hesap Doğrulama Talebi" class="btn" style="background: white; color: #3b82f6; padding: 0.75rem 2rem; border-radius: 6px; text-decoration: none; font-weight: 600;">
+                Başvuru Yap →
+            </a>
+        </div>
+    </div>
+    {% endif %}
 </div>
+
+<style>
+.role-badge {
+    display: inline-block;
+}
+
+.role-registered {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.role-verified {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.role-developer {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.role-admin {
+    background: #fce7f3;
+    color: #9f1239;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--background-secondary);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--background-tertiary);
+}
+
+@media (max-width: 768px) {
+    .profile-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+
+<script>
+function copyApiKey() {
+    const apiKey = document.getElementById('api-key').textContent;
+    navigator.clipboard.writeText(apiKey).then(() => {
+        alert('API anahtarı panoya kopyalandı!');
+    });
+}
+</script>
 {% endblock %}
+
