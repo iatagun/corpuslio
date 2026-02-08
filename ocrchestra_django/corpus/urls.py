@@ -9,6 +9,7 @@ from . import export_views
 from . import dependency_views
 from . import statistics_views
 from . import privacy_views
+from . import advanced_search_views
 
 app_name = 'corpus'
 
@@ -22,6 +23,11 @@ urlpatterns = [
     # Global search (AJAX endpoint)
     path('search/', views.global_search_view, name='global_search'),
     path('suggest/', views.search_suggestions_view, name='search_suggest'),
+    
+    # Advanced search (Week 9)
+    path('advanced-search/', advanced_search_views.advanced_search_view, name='advanced_search'),
+    path('query-syntax-help/', advanced_search_views.query_syntax_help, name='query_syntax_help'),
+    path('validate-cqp/', advanced_search_views.validate_cqp_query, name='validate_cqp'),
     
     # Main pages
     path('', views.home_view, name='home'),
