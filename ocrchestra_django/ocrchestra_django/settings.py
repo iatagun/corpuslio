@@ -70,6 +70,10 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
+    # Custom middleware for query logging and export tracking
+    'corpus.middleware.QueryLogMiddleware',
+    'corpus.middleware.ExportLogMiddleware',
 ]
 
 ROOT_URLCONF = 'ocrchestra_django.urls'
@@ -236,3 +240,65 @@ ALLOWED_DOCUMENT_EXTENSIONS = ['.pdf', '.docx', '.txt', '.png', '.jpg', '.jpeg']
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 
+
+# ============================================================
+# RATE LIMITING CONFIGURATION (django-ratelimit)
+# ============================================================
+
+# Enable rate limiting globally
+RATELIMIT_ENABLE = True
+
+# Use default cache for rate limiting
+RATELIMIT_USE_CACHE = 'default'
+
+# Custom 429 error handler
+RATELIMIT_VIEW = 'corpus.views.rate_limit_exceeded'
+
+# Cache configuration for rate limiting
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'ocrchestra-ratelimit',
+    }
+}
+
+# ============================================================
+# LOGGING CONFIGURATION
+# ============================================================
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'corpus.middleware': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}

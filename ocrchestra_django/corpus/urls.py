@@ -43,6 +43,11 @@ urlpatterns = [
     path('export/excel/<int:doc_id>/', export_views.export_excel_statistics, name='export_excel'),
     path('export/csv/<int:doc_id>/', export_views.export_csv_data, name='export_csv'),
     
+    # Watermarked exports (Week 3)
+    path('export/concordance/<int:document_id>/', export_views.export_concordance_watermarked, name='export_concordance_watermarked'),
+    path('export/frequency/<int:document_id>/', export_views.export_frequency_watermarked, name='export_frequency_watermarked'),
+    path('export/history/', export_views.export_history_view, name='export_history'),
+    
     # Tag management
     path('tags/add/<int:doc_id>/', views.add_tag_to_document, name='add_tag'),
     path('tags/remove/<int:doc_id>/<slug:tag_slug>/', views.remove_tag_from_document, name='remove_tag'),

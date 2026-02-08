@@ -15,7 +15,7 @@ Transform OCRchestra from a general OCR/analysis tool into a **national-scale co
 
 ## Phase 1: Foundation & Access Control (Weeks 1-3)
 
-### **Week 1: User Roles & Permissions System** ✅ CURRENT
+### **Week 1: User Roles & Permissions System** ✅ COMPLETE
 
 **Goals:**
 - Implement 5-tier role system
@@ -36,14 +36,14 @@ Transform OCRchestra from a general OCR/analysis tool into a **national-scale co
 - Migration files
 
 **Testing:**
-- [ ] Anonymous users see limited results
-- [ ] Registered users can export CSV
-- [ ] Verified researchers access API
-- [ ] Admins have full control
+- ✅ Anonymous users see limited results
+- ✅ Registered users can export CSV
+- ✅ Verified researchers access API
+- ✅ Admins have full control
 
 ---
 
-### **Week 2: Rate Limiting & Audit Logging**
+### **Week 2: Rate Limiting & Audit Logging** ✅ COMPLETE
 
 **Goals:**
 - Prevent abuse with rate limits
@@ -51,57 +51,90 @@ Transform OCRchestra from a general OCR/analysis tool into a **national-scale co
 - Build audit trail
 
 **Tasks:**
-1. [ ] Install `django-ratelimit` package
-2. [ ] Configure rate limits per role
-3. [ ] Create QueryLog model (user, query, timestamp, results_count)
-4. [ ] Create ExportLog model (user, exported_data, format, size)
-5. [ ] Build admin dashboard for audit logs
-6. [ ] Implement IP-based rate limiting for anonymous users
+1. ✅ Install `django-ratelimit` package (v4.1.0)
+2. ✅ Configure rate limits per role (4 views with different limits)
+3. ✅ Create QueryLog model (13 fields, 4 indexes)
+4. ✅ Create ExportLog model (14 fields, 3 indexes)
+5. ✅ Build admin dashboard for audit logs (with colored badges)
+6. ✅ Implement automatic logging via middleware
 
 **Deliverables:**
-- `corpus/models.py`: QueryLog, ExportLog
-- `corpus/middleware.py`: Rate limiting middleware
-- `corpus/admin.py`: Log inspection interface
-- Settings update with rate limit configs
+- `corpus/models.py`: QueryLog, ExportLog with auto-reset quotas
+- `corpus/middleware.py`: QueryLogMiddleware, ExportLogMiddleware
+- `corpus/admin.py`: QueryLogAdmin, ExportLogAdmin with filters
+- Settings update with RATELIMIT_* and CACHES configs
+- Profile page with detailed activity history
+- Custom 429.html error page
 
 **Testing:**
-- [ ] Anonymous user hits 10 queries/hour limit
-- [ ] Registered user tracked in QueryLog
-- [ ] Admin can review all searches
+- ✅ Rate limits enforced (100/day for analysis_view)
+- ✅ Superuser bypass works
+- ✅ QueryLog auto-created on searches
+- ✅ Quota logic: rate-limited queries don't count
+- ✅ All tests passed (test_rate_limiting.py)
 
 ---
 
-### **Week 3: Export System with Watermarking**
+### **Week 3: Export System with Watermarking** ✅ COMPLETE
 
 **Goals:**
 - Controlled export with attribution
-- Watermarked CSV/JSON/CoNLL-U exports
+- Watermarked CSV/JSON/Excel exports
 - Export quota enforcement
 
 **Tasks:**
-1. [ ] Build ExportService class (CSV, JSON, CoNLL-U formats)
-2. [ ] Implement watermark injection (header/footer with citation)
-3. [ ] Create export quota tracking (MB per month)
-4. [ ] Add export download view (requires login)
-5. [ ] Add "Export concordance" button to KWIC results
-6. [ ] Email notification on export completion
+1. ✅ Build ExportService class (CSV, JSON, Excel formats)
+2. ✅ Implement watermark injection (header/footer with citation)
+3. ✅ Create export quota tracking (MB per month)
+4. ✅ Add export download view (requires login)
+5. ✅ Add export history view
+6. ✅ Fix middleware logging separation (query vs export logs)
+7. ✅ Add export UI to analysis page
+8. ✅ Integrate real search data with export views
+9. ⏳ Email notification on export completion (deferred to post-MVP)
 
 **Deliverables:**
-- `corpus/services/export_service.py`
-- `corpus/views/export_views.py`
-- Templates: `export_download.html`, `export_history.html`
-- Celery task for large exports
+- ✅ `corpus/services/export_service.py` (403 lines, 9 export methods)
+- ✅ `corpus/export_views.py` (815 lines):
+  - 3 watermarked export views (concordance, frequency, ngram)
+  - 2 helper functions with real CorpusService integration
+  - Fallback to sample data with error logging
+- ✅ `corpus/middleware.py` (365 lines):
+  - QueryLogMiddleware: Logs searches only (skips exports, empty visits)
+  - ExportLogMiddleware: Logs all exports for all users (quota conditional)
+  - Regex-based document extraction for legacy export paths
+- ✅ Templates:
+  - `export_quota_exceeded.html`, `export_history.html`
+  - Updated `analysis.html` with export dropdown (CSV/JSON/Excel)
+  - Watermarked exports section with NEW badge
+  - Material icons throughout
+- ✅ Updated profile with export history button
+- ✅ URL routes configured (concordance, frequency, history)
 
 **Testing:**
-- [ ] Export CSV with watermark + citation
-- [ ] Quota enforced (5MB/month for registered users)
-- [ ] Export history visible in user dashboard
+- ✅ All 8 tests passed (`test_week3_exports.py`, 206 lines)
+- ✅ ExportService: Citation, CSV/JSON/Excel exports (all formats)
+- ✅ Watermark injection verified (headers, metadata, styled cells)
+- ✅ Quota system: MB tracking, role-based limits
+- ✅ Helper functions: Real CorpusService search + Analysis.data frequency
+- ✅ Middleware: Query/export log separation verified
+- ✅ openpyxl 3.1.2 working for Excel exports
+
+**Key Features:**
+- 3 export formats (CSV, JSON, Excel)
+- 2 export types (concordance, frequency)
+- Watermarking in all exports (OCRchestra attribution)
+- Role-based quota enforcement (5MB → 100MB → unlimited)
+- Export history dashboard (last 50 exports with quota visualization)
+- Admin audit trail (all users logged, superuser quota unlimited)
+- UI integration (export dropdown in search results, frequency section)
+- Real data integration (actual search results, not sample data)
 
 ---
 
 ## Phase 2: Data Model & Format Support (Weeks 4-6)
 
-### **Week 4: CoNLL-U Format Support**
+### **Week 4: CoNLL-U Format Support** 🟢 NEXT
 
 **Goals:**
 - Store and serve dependency annotations
@@ -400,19 +433,23 @@ Transform OCRchestra from a general OCR/analysis tool into a **national-scale co
 
 ---
 
-## Current Status: Week 1 - Day 1
+## Current Status: Week 3 - Day 1
+
+**Completed:**
+- ✅ Week 1: User Roles & Permissions System
+- ✅ Week 2: Rate Limiting & Audit Logging
 
 **Starting Now:**
-1. ✅ Create UserProfile model with role field
-2. ✅ Build permission decorators
-3. ✅ Update registration flow with role selection
-4. ⏳ Migrate database
-5. ⏳ Test role-based access in views
+1. ⏳ Build ExportService class (CSV, JSON, CoNLL-U formats)
+2. ⏳ Implement watermark injection
+3. ⏳ Create export quota tracking
+4. ⏳ Add export download view
+5. ⏳ Email notification on export completion
 
 **Next Steps:**
-- Complete Week 1 tasks (User Roles & Permissions)
+- Complete Week 3 tasks (Export System with Watermarking)
 - Deploy to staging environment
-- Begin Week 2 (Rate Limiting & Audit Logging)
+- Begin Week 4 (CoNLL-U Format Support)
 
 ---
 

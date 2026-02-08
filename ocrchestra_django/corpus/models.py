@@ -189,52 +189,72 @@ class UserProfile(models.Model):
         
         return (self.export_used_mb + size_mb) <= self.export_quota_mb
     
-def increment_query_count(self):
-    """Increment today's query count."""
-    from datetime import date
-    today = date.today()
+    def increment_query_count(self):
+        """Increment today's query count with automatic daily reset."""
+        from datetime import date
+        today = date.today()
+        
+        # Reset if new day
+        if self.query_last_reset < today:
+            self.queries_today = 0
+            self.query_last_reset = today
+        
+        self.queries_today += 1
+        self.save(update_fields=['queries_today', 'query_last_reset'])
     
-    # Reset if new day
-    if self.query_last_reset < today:
-        self.queries_today = 0
-        self.query_last_reset = today
+    def reset_query_count_if_needed(self):
+        """Check and reset query count if it's a new day."""
+        from datetime import date
+        today = date.today()
+        
+        if self.query_last_reset < today:
+            self.queries_today = 0
+            self.query_last_reset = today
+            self.save(update_fields=['queries_today', 'query_last_reset'])
     
-    self.queries_today += 1
-    self.save(update_fields=['queries_today', 'query_last_reset'])
-
-def use_export_quota(self, size_mb):
-    """Deduct from export quota."""
-    from datetime import date
-    from dateutil.relativedelta import relativedelta
+    def use_export_quota(self, size_mb):
+        """Deduct from export quota with automatic monthly reset."""
+        from datetime import date
+        
+        today = date.today()
+        
+        # Reset if new month
+        if self.export_last_reset.month != today.month or self.export_last_reset.year != today.year:
+            self.export_used_mb = Decimal('0.00')
+            self.export_last_reset = today
+        
+        self.export_used_mb += Decimal(str(size_mb))
+        self.save(update_fields=['export_used_mb', 'export_last_reset'])
     
-    today = date.today()
+    def reset_export_quota_if_needed(self):
+        """Check and reset export quota if it's a new month."""
+        from datetime import date
+        
+        today = date.today()
+        
+        if self.export_last_reset.month != today.month or self.export_last_reset.year != today.year:
+            self.export_used_mb = Decimal('0.00')
+            self.export_last_reset = today
+            self.save(update_fields=['export_used_mb', 'export_last_reset'])
     
-    # Reset if new month
-    if self.export_last_reset.month != today.month or self.export_last_reset.year != today.year:
-        self.export_used_mb = 0
-        self.export_last_reset = today
+    def generate_api_key(self):
+        """Generate unique API key for developer role."""
+        import secrets
+        self.api_key = secrets.token_urlsafe(48)
+        self.save(update_fields=['api_key'])
+        return self.api_key
     
-    self.export_used_mb += size_mb
-    self.save(update_fields=['export_used_mb', 'export_last_reset'])
-
-def generate_api_key(self):
-    """Generate unique API key for developer role."""
-    import secrets
-    self.api_key = secrets.token_urlsafe(48)
-    self.save(update_fields=['api_key'])
-    return self.api_key
-
-def is_verified_researcher(self):
-    """Check if user is verified researcher or higher."""
-    return self.role in ['verified', 'developer', 'admin']
-
-def is_developer(self):
-    """Check if user has API access."""
-    return self.role in ['developer', 'admin']
-
-def is_admin(self):
-    """Check if user is admin."""
-    return self.role == 'admin' or self.user.is_staff
+    def is_verified_researcher(self):
+        """Check if user is verified researcher or higher."""
+        return self.role in ['verified', 'developer', 'admin']
+    
+    def is_developer(self):
+        """Check if user has API access."""
+        return self.role in ['developer', 'admin']
+    
+    def is_admin(self):
+        """Check if user is admin."""
+        return self.role == 'admin' or self.user.is_staff
 
 
 @receiver(post_save, sender=User)
@@ -507,3 +527,281 @@ class SearchHistory(models.Model):
     
     def __str__(self):
         return f"{self.user.username}: {self.query} ({self.created_at.strftime('%d.%m.%Y %H:%M')})"
+
+
+class QueryLog(models.Model):
+    """
+    Detailed query audit log for platform monitoring and analytics.
+    
+    Tracks all corpus queries with detailed metadata for:
+    - Abuse prevention (rate limiting enforcement)
+    - Usage analytics (popular queries, performance metrics)
+    - Research insights (query patterns, user behavior)
+    - Compliance (KVKK/GDPR audit trail)
+    """
+    
+    # User information
+    user = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='query_logs',
+        verbose_name="Kullanıcı",
+        help_text="Authenticated user (null for anonymous)"
+    )
+    session_key = models.CharField(
+        max_length=40,
+        null=True,
+        blank=True,
+        verbose_name="Oturum Anahtarı",
+        help_text="Django session key for anonymous user tracking"
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name="IP Adresi"
+    )
+    user_agent = models.CharField(
+        max_length=256,
+        blank=True,
+        verbose_name="User Agent"
+    )
+    
+    # Query details
+    query_text = models.TextField(verbose_name="Sorgu Metni")
+    query_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('word', 'Kelime'),
+            ('lemma', 'Kök'),
+            ('pos', 'POS Tag'),
+            ('advanced', 'Gelişmiş'),
+            ('concordance', 'Konkordans'),
+            ('frequency', 'Frekans'),
+            ('ngram', 'N-gram'),
+        ],
+        verbose_name="Sorgu Tipi"
+    )
+    document = models.ForeignKey(
+        'Document',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='query_logs',
+        verbose_name="Doküman"
+    )
+    filters_applied = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Uygulanan Filtreler",
+        help_text="Case sensitivity, regex, context size, etc."
+    )
+    
+    # Results
+    result_count = models.IntegerField(
+        default=0,
+        verbose_name="Sonuç Sayısı"
+    )
+    execution_time_ms = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="İşlem Süresi (ms)",
+        help_text="Query execution time in milliseconds"
+    )
+    is_cached = models.BooleanField(
+        default=False,
+        verbose_name="Önbellekten",
+        help_text="Whether results were served from cache"
+    )
+    
+    # Rate limiting
+    rate_limit_hit = models.BooleanField(
+        default=False,
+        verbose_name="Limit Aşıldı",
+        help_text="Query blocked due to rate limit"
+    )
+    daily_query_count = models.IntegerField(
+        default=1,
+        verbose_name="Günlük Sorgu Sayısı",
+        help_text="User's query count when this query was made"
+    )
+    
+    # Metadata
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Tarih",
+        db_index=True
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Sorgu Logu"
+        verbose_name_plural = "Sorgu Logları"
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['ip_address', '-created_at']),
+            models.Index(fields=['query_type', '-created_at']),
+            models.Index(fields=['-created_at']),
+        ]
+    
+    def __str__(self):
+        user_str = self.user.username if self.user else f"Anonymous ({self.ip_address})"
+        return f"{user_str}: {self.query_text[:50]} - {self.result_count} results"
+
+
+class ExportLog(models.Model):
+    """
+    Export activity audit log for quota enforcement and compliance.
+    
+    Tracks all data exports with:
+    - Export quota tracking (MB per month)
+    - Format and content verification
+    - Watermark injection record
+    - Download tracking
+    """
+    
+    # User information
+    user = models.ForeignKey(
+        'auth.User',
+        on_delete=models.PROTECT,  # Never delete export logs
+        related_name='export_logs',
+        verbose_name="Kullanıcı"
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name="IP Adresi"
+    )
+    
+    # Export details
+    export_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('concordance', 'Konkordans'),
+            ('frequency', 'Frekans Listesi'),
+            ('document', 'Tam Doküman'),
+            ('analysis', 'Analiz Sonuçları'),
+            ('statistics', 'İstatistikler'),
+        ],
+        verbose_name="Export Tipi"
+    )
+    format = models.CharField(
+        max_length=10,
+        choices=[
+            ('csv', 'CSV'),
+            ('json', 'JSON'),
+            ('conllu', 'CoNLL-U'),
+            ('txt', 'Text'),
+            ('xlsx', 'Excel'),
+            ('pdf', 'PDF'),
+        ],
+        verbose_name="Format"
+    )
+    
+    # Content metadata
+    document = models.ForeignKey(
+        'Document',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='export_logs',
+        verbose_name="Doküman"
+    )
+    query_text = models.TextField(
+        blank=True,
+        verbose_name="İlgili Sorgu",
+        help_text="Query that generated the exported data"
+    )
+    row_count = models.IntegerField(
+        default=0,
+        verbose_name="Satır Sayısı",
+        help_text="Number of rows/records exported"
+    )
+    file_size_bytes = models.BigIntegerField(
+        default=0,
+        verbose_name="Dosya Boyutu (byte)"
+    )
+    file_size_mb = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Dosya Boyutu (MB)"
+    )
+    
+    # Watermark & citation
+    watermark_applied = models.BooleanField(
+        default=True,
+        verbose_name="Filigran Eklendi",
+        help_text="Whether export includes platform watermark"
+    )
+    citation_text = models.TextField(
+        blank=True,
+        verbose_name="Atıf Metni",
+        help_text="Citation text included in export"
+    )
+    
+    # Download tracking
+    download_count = models.IntegerField(
+        default=0,
+        verbose_name="İndirme Sayısı",
+        help_text="How many times file was downloaded"
+    )
+    last_downloaded_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Son İndirme"
+    )
+    file_path = models.CharField(
+        max_length=512,
+        blank=True,
+        verbose_name="Dosya Yolu",
+        help_text="Storage path for generated file"
+    )
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Geçerlilik Süresi",
+        help_text="Export file auto-delete date (30 days default)"
+    )
+    
+    # Quota tracking
+    quota_before_mb = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Önceki Kota (MB)"
+    )
+    quota_after_mb = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Sonraki Kota (MB)"
+    )
+    
+    # Metadata
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Oluşturulma",
+        db_index=True
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Export Logu"
+        verbose_name_plural = "Export Logları"
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['export_type', 'format']),
+            models.Index(fields=['-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username}: {self.export_type} ({self.format}) - {self.file_size_mb} MB"
+    
+    def save(self, *args, **kwargs):
+        """Auto-calculate file_size_mb from file_size_bytes."""
+        if self.file_size_bytes > 0:
+            self.file_size_mb = Decimal(self.file_size_bytes) / Decimal(1024 * 1024)
+        super().save(*args, **kwargs)
+

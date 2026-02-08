@@ -284,7 +284,58 @@
 <!-- Search Results -->
 {% if search_results %}
 <div class="card">
-    <h3>📝 Sonuçlar ({{ search_results|length }} eşleşme)</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0;">📝 Sonuçlar ({{ search_results|length }} eşleşme)</h3>
+        
+        {% if request.user|can_export %}
+        <div class="export-dropdown" style="position: relative;">
+            <button class="btn btn-primary btn-small" id="export-concordance-btn" style="display: flex; align-items: center; gap: 0.3rem;">
+                <span class="material-icons" style="font-size: 16px;">download</span>
+                Export Results
+                <span class="material-icons" style="font-size: 16px;">arrow_drop_down</span>
+            </button>
+            <div class="export-menu" id="export-concordance-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.5rem; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0.5rem; min-width: 180px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 100;">
+                <a href="{% url 'corpus:export_concordance_watermarked' document.id %}?query={{ request.GET.query|urlencode }}&format=csv" class="export-menu-item" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 4px; text-decoration: none; color: var(--text-main); transition: background 0.2s;">
+                    <span class="material-icons" style="font-size: 18px; color: #10b981;">grid_on</span>
+                    <span>CSV (Watermarked)</span>
+                </a>
+                <a href="{% url 'corpus:export_concordance_watermarked' document.id %}?query={{ request.GET.query|urlencode }}&format=json" class="export-menu-item" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 4px; text-decoration: none; color: var(--text-main); transition: background 0.2s;">
+                    <span class="material-icons" style="font-size: 18px; color: #f59e0b;">code</span>
+                    <span>JSON (Watermarked)</span>
+                </a>
+                <a href="{% url 'corpus:export_concordance_watermarked' document.id %}?query={{ request.GET.query|urlencode }}&format=excel" class="export-menu-item" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 4px; text-decoration: none; color: var(--text-main); transition: background 0.2s;">
+                    <span class="material-icons" style="font-size: 18px; color: #3b82f6;">table_chart</span>
+                    <span>Excel (Watermarked)</span>
+                </a>
+            </div>
+        </div>
+        
+        <script>
+        (function(){
+            const btn = document.getElementById('export-concordance-btn');
+            const menu = document.getElementById('export-concordance-menu');
+            if(btn && menu) {
+                btn.addEventListener('click', function(e){
+                    e.stopPropagation();
+                    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+                });
+                document.addEventListener('click', function(){
+                    menu.style.display = 'none';
+                });
+                menu.addEventListener('click', function(e){
+                    e.stopPropagation();
+                });
+            }
+        })();
+        </script>
+        
+        <style>
+        .export-menu-item:hover {
+            background: rgba(59, 130, 246, 0.1) !important;
+        }
+        </style>
+        {% endif %}
+    </div>
 
     <div class="concordance-table">
         <table>
@@ -402,6 +453,36 @@
                 <a href="{% url 'corpus:export' document.id %}?format=conllu"
                     class="btn btn-outline btn-small">CoNLL-U</a>
             </div>
+        </div>
+
+        <!-- Watermarked Exports (Week 3) -->
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle);">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <span class="material-icons" style="font-size: 18px; color: #3b82f6;">verified</span>
+                <h4 style="font-size: 0.875rem; color: var(--text-secondary); margin: 0;">Watermarked Exports</h4>
+                <span style="font-size: 0.75rem; background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 0.125rem 0.5rem; border-radius: 12px; font-weight: 500;">NEW</span>
+            </div>
+            <p style="color: var(--text-tertiary); font-size: 0.75rem; margin-bottom: 0.75rem; line-height: 1.4;">
+                📌 Attribution included • 🔒 Quota tracked • 📊 Recommended for research
+            </p>
+            <div class="export-buttons">
+                <a href="{% url 'corpus:export_frequency_watermarked' document.id %}?format=csv" class="btn btn-primary btn-small" style="display: flex; align-items: center; gap: 0.3rem;">
+                    <span class="material-icons" style="font-size: 16px;">grid_on</span>
+                    Frequency CSV
+                </a>
+                <a href="{% url 'corpus:export_frequency_watermarked' document.id %}?format=json" class="btn btn-small" style="display: flex; align-items: center; gap: 0.3rem;">
+                    <span class="material-icons" style="font-size: 16px;">code</span>
+                    Frequency JSON
+                </a>
+                <a href="{% url 'corpus:export_frequency_watermarked' document.id %}?format=excel" class="btn btn-success btn-small" style="display: flex; align-items: center; gap: 0.3rem;">
+                    <span class="material-icons" style="font-size: 16px;">table_chart</span>
+                    Frequency Excel
+                </a>
+            </div>
+            <a href="{% url 'corpus:export_history' %}" style="display: inline-flex; align-items: center; gap: 0.3rem; margin-top: 0.75rem; font-size: 0.75rem; color: var(--accent-primary); text-decoration: none; transition: opacity 0.2s;">
+                <span class="material-icons" style="font-size: 14px;">history</span>
+                View Export History & Quota
+            </a>
         </div>
     </div>
 </div>

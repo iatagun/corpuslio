@@ -12,7 +12,7 @@ from ocrchestra.search_engine import CorpusSearchEngine
 from ocrchestra.statistics import CorpusStatistics
 from ocrchestra.exporters import CorpusExporter
 
-from .models import Document, Content, Analysis
+from corpus.models import Document, Content, Analysis
 
 
 class CorpusService:

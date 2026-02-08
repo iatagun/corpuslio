@@ -8,6 +8,8 @@ from django.contrib.auth.models import User, Group
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django_ratelimit.decorators import ratelimit
+from django_ratelimit.exceptions import Ratelimited
 
 from .models import Document, ProcessingTask, Analysis, Tag, Content
 from .forms import DocumentUploadForm
@@ -17,6 +19,10 @@ from .services import CorpusService
 from .collections import Collection
 import os
 from django.contrib.auth.decorators import user_passes_test, login_required
+
+def rate_limit_exceeded(request, exception=None):
+    """Custom 429 error handler for rate limiting."""
+    return render(request, 'corpus/429.html', status=429)
 
 def is_academician(user):
     """Check if user has Academician or Developer access."""
@@ -64,12 +70,19 @@ def home_view(request):
 
 
 @ensure_csrf_cookie
+@ratelimit(key='user_or_ip', rate='1000/d', method='GET')
 def library_view(request):
     """Display all documents in library with filtering.
 
     Anonymous users see a limited public view (only processed documents,
     smaller page size) while authenticated users see the full library.
+    
+    Rate limit: 1000 requests per day per user or IP address.
     """
+    # Bypass rate limit for superusers
+    if request.user.is_authenticated and request.user.is_superuser:
+        request.limited = False
+    
     documents = Document.objects.all().order_by('-upload_date')
     
     # Metadata filters
@@ -257,8 +270,16 @@ def upload_view(request):
     return render(request, 'corpus/upload.html', context)
 
 
+@ratelimit(key='user_or_ip', rate='100/d', method='GET')
 def analysis_view(request, doc_id):
-    """Display corpus analysis and KWIC search."""
+    """Display corpus analysis and KWIC search.
+    
+    Rate limit: 100 requests per day per user or IP address.
+    """
+    # Bypass rate limit for superusers
+    if request.user.is_authenticated and request.user.is_superuser:
+        request.limited = False
+    
     document = get_object_or_404(Document, id=doc_id)
     
     if not document.processed:
@@ -373,8 +394,16 @@ def delete_document(request, doc_id):
 
 
 @login_required
+@ratelimit(key='user', rate='50/d', method='POST')
 def download_search_results(request, doc_id):
-    """Download KWIC search results as CSV."""
+    """Download KWIC search results as CSV.
+    
+    Rate limit: 50 downloads per day per user.
+    """
+    # Bypass rate limit for superusers
+    if request.user.is_superuser:
+        request.limited = False
+    
     from .permissions import user_can_export
     if not user_can_export(request.user):
         messages.error(request, 'Bu işlem için yetkiniz yok. (Öğrenci veya üstü üyelik gerektirir)')
@@ -598,8 +627,12 @@ def logout_view(request):
 def profile_view(request):
     """User profile view with role info and quota tracking."""
     # Get or create UserProfile
-    from .models import UserProfile
+    from .models import UserProfile, QueryLog, ExportLog
     profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    # Reset quotas if needed
+    profile.reset_query_count_if_needed()
+    profile.reset_export_quota_if_needed()
     
     # Calculate quota percentages
     query_limit = profile.get_query_limit()
@@ -607,8 +640,14 @@ def profile_view(request):
     
     export_percentage = (profile.export_used_mb / profile.export_quota_mb * 100) if profile.export_quota_mb > 0 else 0
     
-    # Get recent search history
+    # Get recent search history (old model)
     recent_searches = request.user.search_history.order_by('-created_at')[:10]
+    
+    # Get recent query logs (NEW - detailed activity)
+    recent_query_logs = QueryLog.objects.filter(user=request.user).order_by('-created_at')[:10]
+    
+    # Get recent export logs
+    recent_export_logs = ExportLog.objects.filter(user=request.user).order_by('-created_at')[:5]
     
     context = {
         'active_tab': 'profile',
@@ -617,6 +656,8 @@ def profile_view(request):
         'query_percentage': query_percentage,
         'export_percentage': export_percentage,
         'recent_searches': recent_searches,
+        'recent_query_logs': recent_query_logs,
+        'recent_export_logs': recent_export_logs,
     }
     
     return render(request, 'corpus/profile.html', context)
@@ -624,8 +665,16 @@ def profile_view(request):
 
 
 @login_required
+@ratelimit(key='user', rate='200/h', method='GET')
 def global_search_view(request):
-    """Global search endpoint for documents and collections (AJAX)."""
+    """Global search endpoint for documents and collections (AJAX).
+    
+    Rate limit: 200 requests per hour per user.
+    """
+    # Bypass rate limit for superusers
+    if request.user.is_superuser:
+        request.limited = False
+    
     if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'error': 'Invalid request'}, status=400)
     
