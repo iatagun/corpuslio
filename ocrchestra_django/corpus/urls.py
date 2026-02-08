@@ -8,6 +8,7 @@ from . import dashboard_views
 from . import export_views
 from . import dependency_views
 from . import statistics_views
+from . import privacy_views
 
 app_name = 'corpus'
 
@@ -62,4 +63,12 @@ urlpatterns = [
     path('tags/add/<int:doc_id>/', views.add_tag_to_document, name='add_tag'),
     path('tags/remove/<int:doc_id>/<slug:tag_slug>/', views.remove_tag_from_document, name='remove_tag'),
     path('tags/bulk-add/', views.bulk_add_tags, name='bulk_add_tags'),
+    
+    # Privacy & Anonymization (Week 6)
+    path('privacy/dashboard/', privacy_views.privacy_dashboard_view, name='privacy_dashboard'),
+    path('privacy/report/<int:document_id>/', privacy_views.anonymization_report_view, name='anonymization_report'),
+    path('privacy/export-data/', privacy_views.export_user_data_view, name='export_user_data'),
+    path('privacy/delete-account/', privacy_views.request_account_deletion_view, name='request_deletion'),
+    path('privacy-policy/', privacy_views.privacy_policy_view, name='privacy_policy'),
+    path('terms/', privacy_views.terms_of_service_view, name='terms_of_service'),
 ]
