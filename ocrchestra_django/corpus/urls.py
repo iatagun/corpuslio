@@ -35,6 +35,7 @@ urlpatterns = [
     path('statistics/', views.statistics_view, name='statistics'),
     path('corpus-statistics/', statistics_views.corpus_statistics_view, name='corpus_statistics'),
     path('dashboard/', dashboard_views.dashboard_view, name='dashboard'),
+    path('my-dashboard/', dashboard_views.user_dashboard_view, name='user_dashboard'),
     path('collections/', collection_views.collections_view, name='collections'),
     path('collections/create/', collection_views.create_collection_view, name='create_collection'),
     path('collections/<int:coll_id>/', collection_views.collection_detail_view, name='collection_detail'),
@@ -52,6 +53,7 @@ urlpatterns = [
     path('export/frequency/<int:document_id>/', export_views.export_frequency_watermarked, name='export_frequency_watermarked'),
     path('export/conllu/<int:document_id>/', export_views.export_conllu_watermarked, name='export_conllu_watermarked'),
     path('export/history/', export_views.export_history_view, name='export_history'),
+    path('download-center/', export_views.download_center_view, name='download_center'),
     
     # Dependency analysis (Week 4 - CoNLL-U)
     path('dependency/<int:document_id>/', dependency_views.dependency_search_view, name='dependency_search'),

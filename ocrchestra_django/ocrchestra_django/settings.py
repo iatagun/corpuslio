@@ -204,14 +204,45 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.BrowsableAPIRenderer',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    
+    # Authentication (Week 7)
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'api.authentication.APIKeyAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    
+    # Permissions
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    
+    # Throttling (Week 7)
+    'DEFAULT_THROTTLE_CLASSES': [
+        'api.throttling.APIKeyRateThrottle',
+        'api.throttling.BurstRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon_api': '10/day',
+        'burst': '10/min',
+        'search': '50/hour',
+        'export': '20/day',
+    },
+    
+    # Filtering
+    'DEFAULT_FILTER_BACKENDS': [
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
 }
 
 # DRF Spectacular settings
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'CorpusIO API',
-    'DESCRIPTION': 'OCR ve Corpus Analysis API',
+    'TITLE': 'OCRchestra Corpus API',
+    'DESCRIPTION': 'REST API for Turkish National Corpus Platform - VRT, CoNLL-U, and linguistic analysis',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': r'/api/v[0-9]',
 }
 
 

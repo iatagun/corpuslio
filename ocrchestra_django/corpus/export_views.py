@@ -894,3 +894,51 @@ def export_conllu_watermarked(request, document_id):
     except Exception as e:
         messages.error(request, f"Export hatası: {str(e)}")
         return redirect('corpus:dependency_search', document_id=document_id)
+
+
+@login_required
+def download_center_view(request):
+    """View for users to browse and download their exported files."""
+    from django.core.paginator import Paginator
+    
+    # Get user's export logs
+    export_logs = ExportLog.objects.filter(user=request.user).order_by('-timestamp')
+    
+    # Filter by format if specified
+    format_filter = request.GET.get('format')
+    if format_filter:
+        export_logs = export_logs.filter(export_format=format_filter)
+    
+    # Filter by date range if specified
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    if date_from:
+        export_logs = export_logs.filter(timestamp__date__gte=date_from)
+    if date_to:
+        export_logs = export_logs.filter(timestamp__date__lte=date_to)
+    
+    # Pagination (50 per page)
+    paginator = Paginator(export_logs, 50)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    # Statistics
+    total_exports = export_logs.count()
+    total_size = sum([log.file_size_mb for log in export_logs if log.file_size_mb]) or 0
+    
+    # Format distribution (for filter dropdown)
+    formats = export_logs.values_list('export_format', flat=True).distinct()
+    
+    context = {
+        'page_obj': page_obj,
+        'export_logs': page_obj.object_list,
+        'total_exports': total_exports,
+        'total_size_mb': round(total_size, 2),
+        'available_formats': sorted(formats),
+        'current_format': format_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'active_tab': 'exports'
+    }
+    
+    return render(request, 'corpus/download_center.html', context)
