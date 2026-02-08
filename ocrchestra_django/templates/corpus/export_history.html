@@ -24,7 +24,7 @@
         <div class="card-body">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <div>
-                    <span style="font-size: 2rem; font-weight: 700; color: {% if quota_percentage >= 90 %}#dc2626{% elif quota_percentage >= 70 %}#f59e0b{% else %}#059669{% endif %};">
+                    <span style="font-size: 2rem; font-weight: 700; color: {% if quota_percentage >= 90 %}#dc2626{% elif quota_percentage >= 70 %}#f59e0b{% else %}#059669{% endif %};" class="quota-text">
                         {{ quota_used|floatformat:2 }} MB
                     </span>
                     <span style="color: var(--muted-color); font-size: 1.1rem;">
@@ -35,7 +35,7 @@
                     <div style="font-size: 0.9rem; color: var(--muted-color);">
                         Quota Usage
                     </div>
-                    <div style="font-size: 1.5rem; font-weight: 600; color: {% if quota_percentage >= 90 %}#dc2626{% elif quota_percentage >= 70 %}#f59e0b{% else %}#059669{% endif %};">
+                    <div style="font-size: 1.5rem; font-weight: 600; color: {% if quota_percentage >= 90 %}#dc2626{% elif quota_percentage >= 70 %}#f59e0b{% else %}#059669{% endif %};" class="quota-percent">
                         {{ quota_percentage|floatformat:1 }}%
                     </div>
                 </div>
@@ -43,14 +43,13 @@
             
             <!-- Progress bar -->
             <div style="background: #e5e7eb; height: 20px; border-radius: 10px; overflow: hidden; margin-bottom: 1rem;">
-                <div style="background: {% if quota_percentage >= 90 %}#dc2626{% elif quota_percentage >= 70 %}#f59e0b{% else %}linear-gradient(90deg, #059669, #10b981){% endif %}; 
-                            height: 100%; 
+                <div style="height: 100%; 
                             width: {{ quota_percentage|floatformat:1 }}%; 
                             transition: width 0.3s ease;
                             display: flex;
                             align-items: center;
                             justify-content: flex-end;
-                            padding-right: 0.5rem;">
+                            padding-right: 0.5rem; background: {% if quota_percentage >= 90 %}#dc2626{% elif quota_percentage >= 70 %}#f59e0b{% else %}linear-gradient(90deg, #059669, #10b981){% endif %};" >
                     {% if quota_percentage > 10 %}
                     <span style="color: white; font-size: 0.75rem; font-weight: 600;">
                         {{ quota_percentage|floatformat:1 }}%

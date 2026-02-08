@@ -6,6 +6,8 @@ from . import analysis_views
 from . import collection_views
 from . import dashboard_views
 from . import export_views
+from . import dependency_views
+from . import statistics_views
 
 app_name = 'corpus'
 
@@ -30,6 +32,7 @@ urlpatterns = [
     path('wordcloud/<int:doc_id>/', analysis_views.wordcloud_view, name='wordcloud'),
     path('comparison/', analysis_views.comparison_view, name='comparison'),
     path('statistics/', views.statistics_view, name='statistics'),
+    path('corpus-statistics/', statistics_views.corpus_statistics_view, name='corpus_statistics'),
     path('dashboard/', dashboard_views.dashboard_view, name='dashboard'),
     path('collections/', collection_views.collections_view, name='collections'),
     path('collections/create/', collection_views.create_collection_view, name='create_collection'),
@@ -46,7 +49,14 @@ urlpatterns = [
     # Watermarked exports (Week 3)
     path('export/concordance/<int:document_id>/', export_views.export_concordance_watermarked, name='export_concordance_watermarked'),
     path('export/frequency/<int:document_id>/', export_views.export_frequency_watermarked, name='export_frequency_watermarked'),
+    path('export/conllu/<int:document_id>/', export_views.export_conllu_watermarked, name='export_conllu_watermarked'),
     path('export/history/', export_views.export_history_view, name='export_history'),
+    
+    # Dependency analysis (Week 4 - CoNLL-U)
+    path('dependency/<int:document_id>/', dependency_views.dependency_search_view, name='dependency_search'),
+    path('dependency/<int:document_id>/tree/<int:sentence_id>/', dependency_views.dependency_tree_page, name='dependency_tree_page'),
+    path('dependency/<int:document_id>/tree/<int:sentence_id>/data/', dependency_views.dependency_tree_view, name='dependency_tree_data'),
+    path('dependency/<int:document_id>/statistics/', dependency_views.dependency_statistics_view, name='dependency_statistics'),
     
     # Tag management
     path('tags/add/<int:doc_id>/', views.add_tag_to_document, name='add_tag'),

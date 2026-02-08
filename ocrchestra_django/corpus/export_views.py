@@ -8,6 +8,7 @@ from django.utils import timezone
 from decimal import Decimal
 from .models import Document, UserProfile, ExportLog
 from .services import ExportService
+from .permissions import role_required
 from collections import Counter
 import csv
 import io
@@ -818,3 +819,78 @@ def _get_frequency_results(document):
         {'word': 'bir', 'lemma': 'bir', 'pos': 'DET', 'frequency': 189, 'percentage': 4.1},
         {'word': 'için', 'lemma': 'için', 'pos': 'ADP', 'frequency': 145, 'percentage': 3.2},
     ]
+
+
+@login_required
+@role_required('verified_researcher')
+def export_conllu_watermarked(request, document_id):
+    """
+    Export dependency annotations as CoNLL-U with watermark.
+    
+    Week 4 - CoNLL-U Format Support
+    """
+    document = get_object_or_404(Document, id=document_id)
+    
+    # Check if document has dependency annotations
+    if not hasattr(document, 'analysis') or not document.analysis.has_dependencies:
+        messages.error(
+            request,
+            f"'{document.filename}' için bağımlılık ayrıştırma verisi bulunmuyor. "
+            "Önce CoNLL-U formatında veri yükleyin veya otomatik ayrıştırma yapın."
+        )
+        return redirect('corpus:dependency_search', document_id=document_id)
+    
+    # Create export service
+    service = ExportService(
+        user=request.user,
+        document=document,
+        query_text=request.GET.get('query', '')
+    )
+    
+    # Get sentence indices if filtered
+    sentence_indices = request.GET.getlist('sentences')
+    if sentence_indices:
+        try:
+            sentence_indices = [int(s) for s in sentence_indices]
+        except ValueError:
+            sentence_indices = None
+    else:
+        sentence_indices = None
+    
+    try:
+        # Export CoNLL-U
+        content = service.export_conllu(sentence_indices)
+        
+        # Calculate file size
+        file_size_mb = Decimal(len(content)) / Decimal(1024 * 1024)
+        
+        # Create export log
+        ExportLog.objects.create(
+            user=request.user,
+            document=document,
+            export_type='dependency',
+            file_format='conllu',
+            file_size_mb=file_size_mb,
+            query_text=request.GET.get('query', ''),
+            watermarked=True
+        )
+        
+        # Update quota for non-superusers
+        if not request.user.is_superuser:
+            try:
+                request.user.profile.use_export_quota(file_size_mb)
+            except Exception as e:
+                messages.warning(request, f"Kota güncellenemedi: {e}")
+        
+        # Prepare response
+        filename = f"{document.filename.rsplit('.', 1)[0]}_dependencies.conllu"
+        response = HttpResponse(content, content_type='text/plain; charset=utf-8')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        messages.success(request, f"Bağımlılık verileri başarıyla indirildi: {filename}")
+        
+        return response
+        
+    except Exception as e:
+        messages.error(request, f"Export hatası: {str(e)}")
+        return redirect('corpus:dependency_search', document_id=document_id)

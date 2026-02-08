@@ -91,6 +91,7 @@ def library_view(request):
     date_filter = request.GET.get('date')
     search_query = request.GET.get('q')
     tag_filter = request.GET.get('tag')  # New: Tag filter
+    dependency_filter = request.GET.get('has_dependencies')  # New: Dependency filter
     
     if author_filter:
         documents = documents.filter(metadata__author__icontains=author_filter)
@@ -103,6 +104,13 @@ def library_view(request):
     
     if tag_filter:
         documents = documents.filter(tags__slug=tag_filter)
+    
+    if dependency_filter:
+        if dependency_filter == 'yes':
+            documents = documents.filter(analysis__has_dependencies=True)
+        elif dependency_filter == 'no':
+            from django.db.models import Q
+            documents = documents.filter(Q(analysis__has_dependencies=False) | Q(analysis__isnull=True))
     
     if search_query:
         from django.db.models import Q
@@ -199,6 +207,7 @@ def upload_view(request):
         
         # Get form options
         analyze = request.POST.get('analyze') == 'on'
+        enable_dependencies = request.POST.get('enable_dependencies') == 'on'
         label_studio = request.POST.get('label_studio_export') == 'on'
         
         # Metadata
@@ -238,6 +247,7 @@ def upload_view(request):
                     task = process_document_task.delay(
                         document.id,
                         analyze=analyze,
+                        enable_dependencies=enable_dependencies,
                         label_studio=label_studio
                     )
                     processed_count += 1

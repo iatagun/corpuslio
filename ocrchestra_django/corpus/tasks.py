@@ -16,13 +16,14 @@ from .models import Document, Content, Analysis, ProcessingTask
 
 
 @shared_task(bind=True)
-def process_document_task(self, document_id, analyze=True, label_studio=False):
+def process_document_task(self, document_id, analyze=True, enable_dependencies=False, label_studio=False):
     """
     Async task to process a document.
     
     Args:
         document_id: Document model ID
         analyze: Whether to perform linguistic analysis
+        enable_dependencies: Whether to perform dependency parsing (CoNLL-U)
         label_studio: Whether to export to Label Studio format
     
     Returns:
@@ -125,6 +126,41 @@ def process_document_task(self, document_id, analyze=True, label_studio=False):
 
             analysis.data = analysis_data
             analysis.save()
+        
+        # Perform dependency parsing if requested
+        if enable_dependencies and cleaned_text:
+            try:
+                task.progress = 85
+                task.save()
+                
+                # Import parser
+                from corpus.dependency_parser import get_parser
+                
+                parser = get_parser()
+                
+                if parser.is_available():
+                    # Parse text with Stanza
+                    conllu_str = parser.parse(cleaned_text)
+                    
+                    if conllu_str:
+                        # Save to Analysis
+                        analysis, _ = Analysis.objects.get_or_create(document=document)
+                        analysis.conllu_data = conllu_str
+                        analysis.has_dependencies = True
+                        analysis.dependency_parser = 'stanza-tr-2.0'
+                        analysis.save()
+                        
+                        print(f"✅ Dependency parsing completed for document {document_id}")
+                    else:
+                        print(f"⚠️  Dependency parsing returned no data for document {document_id}")
+                else:
+                    print(f"⚠️  Stanza not available for document {document_id}")
+                    print(parser.get_installation_guide())
+                    
+            except Exception as e:
+                print(f"❌ Dependency parsing failed for document {document_id}: {e}")
+                import traceback
+                traceback.print_exc()
         
         # Mark as processed
         document.processed = True

@@ -356,6 +356,104 @@ class Document(models.Model):
     publication_year = models.IntegerField(null=True, blank=True, verbose_name="Basım Yılı")
     isbn = models.CharField(max_length=20, blank=True, verbose_name="ISBN")
 
+    # Corpus Linguistics Metadata Fields (Week 5)
+    TEXT_TYPE_CHOICES = [
+        ('written', 'Yazılı'),
+        ('spoken', 'Sözlü'),
+        ('mixed', 'Karma'),
+        ('web', 'Web/Dijital'),
+    ]
+    
+    text_type = models.CharField(
+        max_length=20,
+        choices=TEXT_TYPE_CHOICES,
+        default='written',
+        verbose_name="Metin Türü",
+        help_text="Yazılı, sözlü veya karma metin"
+    )
+    
+    LICENSE_CHOICES = [
+        ('public_domain', 'Kamu Malı'),
+        ('cc_by', 'CC BY - İsim Belirtme'),
+        ('cc_by_sa', 'CC BY-SA - Aynı Lisansla Paylaşım'),
+        ('cc_by_nc', 'CC BY-NC - Ticari Olmayan'),
+        ('cc_by_nc_sa', 'CC BY-NC-SA - Ticari Olmayan, Aynı Lisansla'),
+        ('educational', 'Eğitim Amaçlı Kullanım'),
+        ('copyright', 'Telif Hakkı Korumalı'),
+        ('unknown', 'Bilinmiyor'),
+    ]
+    
+    license = models.CharField(
+        max_length=30,
+        choices=LICENSE_CHOICES,
+        default='unknown',
+        verbose_name="Lisans",
+        help_text="Belgenin kullanım lisansı"
+    )
+    
+    region = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Bölge/Lehçe",
+        help_text="Coğrafi köken (örn: İstanbul, Anadolu, Rumeli)"
+    )
+    
+    collection = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Koleksiyon",
+        help_text="Alt küme kategorisi (örn: Modern Türk Edebiyatı, Basın Metinleri)"
+    )
+    
+    token_count = models.IntegerField(
+        default=0,
+        verbose_name="Token Sayısı",
+        help_text="Otomatik hesaplanan kelime/token sayısı"
+    )
+    
+    document_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Belge Tarihi",
+        help_text="Metnin gerçek oluşturulma tarihi (yükleme tarihinden farklı)"
+    )
+    
+    # Privacy & Anonymization Fields (Week 6)
+    PRIVACY_STATUS_CHOICES = [
+        ('raw', 'Ham Veri (İşlenmemiş)'),
+        ('anonymized', 'Anonimleştirilmiş'),
+        ('pseudonymized', 'Sözde Anonimleştirilmiş'),
+        ('public', 'Genel Kullanıma Açık'),
+    ]
+    
+    privacy_status = models.CharField(
+        max_length=20,
+        choices=PRIVACY_STATUS_CHOICES,
+        default='raw',
+        verbose_name="Gizlilik Durumu",
+        help_text="Belgenin anonimleştirme durumu"
+    )
+    
+    anonymized_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Anonimleştirme Tarihi",
+        help_text="Belgenin anonimleştirildiği tarih"
+    )
+    
+    anonymization_report = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Anonimleştirme Raporu",
+        help_text="Maskelenen varlıkların detayları (PERSON: 5, EMAIL: 2, vb.)"
+    )
+    
+    contains_personal_data = models.BooleanField(
+        default=False,
+        verbose_name="Kişisel Veri İçeriyor",
+        help_text="Belgede tespit edilen kişisel veri var mı?"
+    )
+
     # Legacy metadata (kept for backward compatibility & extra fields)
     metadata = models.JSONField(
         default=dict,
@@ -383,8 +481,19 @@ class Document(models.Model):
     def get_word_count(self):
         """Get word count from cleaned text."""
         if hasattr(self, 'content') and self.content.cleaned_text:
-            return len(self.content.cleaned_text.split())
-        return 0
+            count = len(self.content.cleaned_text.split())
+            # Update token_count if different
+            if self.token_count != count:
+                self.token_count = count
+                self.save(update_fields=['token_count'])
+            return count
+        return self.token_count  # Return stored value if no content
+    
+    def update_token_count(self):
+        """Update token count from content."""
+        if hasattr(self, 'content') and self.content.cleaned_text:
+            self.token_count = len(self.content.cleaned_text.split())
+            self.save(update_fields=['token_count'])
     
     def get_metadata_display(self):
         """Get formatted metadata for display."""
@@ -423,7 +532,7 @@ class Content(models.Model):
 
 
 class Analysis(models.Model):
-    """Linguistic analysis data (POS, lemma, morphology)."""
+    """Linguistic analysis data (POS, lemma, morphology, dependencies)."""
     
     document = models.OneToOneField(
         Document, 
@@ -433,6 +542,27 @@ class Analysis(models.Model):
     )
     data = models.JSONField(default=list, verbose_name="Analiz Verisi")
     analyzed_at = models.DateTimeField(auto_now=True, verbose_name="Analiz Tarihi")
+    
+    # CoNLL-U / Dependency Parsing Support (Week 4)
+    conllu_data = models.JSONField(
+        default=list,
+        null=True,
+        blank=True,
+        verbose_name="CoNLL-U Verisi",
+        help_text="Bağımlılık ayrıştırma verileri (10 sütunlu CoNLL-U formatı)"
+    )
+    has_dependencies = models.BooleanField(
+        default=False,
+        verbose_name="Bağımlılık Verisi Var",
+        help_text="Bu belgenin bağımlılık ayrıştırma verisi var mı?"
+    )
+    dependency_parser = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        verbose_name="Bağımlılık Ayrıştırıcı",
+        help_text="Kullanılan ayrıştırıcı (örn: 'stanza-tr', 'spaCy-tr')"
+    )
     
     class Meta:
         verbose_name = "Analiz"
@@ -453,6 +583,23 @@ class Analysis(models.Model):
         
         pos_tags = [item.get('pos', 'UNKNOWN') for item in self.data if isinstance(item, dict)]
         return dict(Counter(pos_tags))
+    
+    def get_dependency_count(self):
+        """Get total dependency relations."""
+        if not self.has_dependencies or not self.conllu_data:
+            return 0
+        return len(self.conllu_data)
+    
+    def get_dependency_relations(self):
+        """Get distribution of dependency relations."""
+        from collections import Counter
+        if not self.has_dependencies or not self.conllu_data:
+            return {}
+        
+        deprels = [token.get('deprel', 'UNKNOWN') 
+                   for token in self.conllu_data 
+                   if isinstance(token, dict)]
+        return dict(Counter(deprels))
 
 
 class ProcessingTask(models.Model):

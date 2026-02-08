@@ -67,10 +67,66 @@ class DocumentUploadForm(forms.ModelForm):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     
+    # Corpus Metadata Fields (Week 5)
+    text_type = forms.ChoiceField(
+        required=False,
+        label="Metin Türü",
+        choices=[
+            ('written', 'Yazılı'),
+            ('spoken', 'Sözlü'),
+            ('mixed', 'Karma'),
+            ('web', 'Web/Dijital'),
+        ],
+        initial='written',
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    license = forms.ChoiceField(
+        required=False,
+        label="Lisans",
+        choices=[
+            ('unknown', 'Bilinmiyor'),
+            ('public_domain', 'Kamu Malı'),
+            ('educational', 'Eğitim Amaçlı'),
+            ('cc_by', 'CC BY - İsim Belirtme'),
+            ('cc_by_sa', 'CC BY-SA'),
+            ('cc_by_nc', 'CC BY-NC'),
+            ('copyright', 'Telif Hakkı Korumalı'),
+        ],
+        initial='unknown',
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    collection = forms.CharField(
+        required=False,
+        label="Koleksiyon",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Örn: Modern Türk Edebiyatı'})
+    )
+    
+    region = forms.CharField(
+        required=False,
+        label="Bölge/Lehçe",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Örn: İstanbul, Anadolu'})
+    )
+    
+    document_date = forms.DateField(
+        required=False,
+        label="Belge Tarihi",
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        help_text="Metnin gerçek oluşturulma tarihi"
+    )
+    
     analyze = forms.BooleanField(
         required=False, 
         initial=True,
         label="Dilbilimsel Analiz Yap (POS/Lemma)",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    
+    enable_dependencies = forms.BooleanField(
+        required=False,
+        initial=False,
+        label="Bağımlılık Ayrıştırma Yap (CoNLL-U)",
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
     
@@ -83,7 +139,11 @@ class DocumentUploadForm(forms.ModelForm):
     
     class Meta:
         model = Document
-        fields = ['file', 'author', 'grade_level', 'subject', 'publisher', 'publication_year', 'isbn', 'source', 'genre']
+        fields = [
+            'file', 'author', 'grade_level', 'subject', 'publisher', 'publication_year', 
+            'isbn', 'source', 'genre', 'text_type', 'license', 'collection', 'region', 
+            'document_date'
+        ]
         widgets = {
             'file': forms.FileInput(attrs={
                 'class': 'form-control',

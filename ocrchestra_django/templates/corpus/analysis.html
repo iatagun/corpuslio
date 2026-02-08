@@ -12,6 +12,19 @@
     </div>
 </div>
 
+<!-- Quick Actions -->
+{% if document.analysis.has_dependencies %}
+<div class="quick-actions">
+    <a href="{% url 'corpus:dependency_search' document_id=document.id %}" class="action-btn dependency-btn">
+        <span class="material-icons">account_tree</span>
+        <div class="action-text">
+            <strong>Bağımlılık Analizi</strong>
+            <small>CoNLL-U format arama ve görselleştirme</small>
+        </div>
+    </a>
+</div>
+{% endif %}
+
 <!-- Statistics Overview -->
 {% if stats %}
 {% load auth_extras pos_extras %}
@@ -642,6 +655,53 @@
         color: var(--text-secondary);
         font-size: 0.9rem;
     }
+</style>
+
+
+<style>
+.quick-actions {
+    margin: 1.5rem 0;
+    display: flex;
+    gap: 1rem;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    text-decoration: none;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+}
+
+.action-btn .material-icons {
+    font-size: 32px;
+}
+
+.action-text {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.action-text strong {
+    font-size: 1.1rem;
+}
+
+.action-text small {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
 </style>
 
 <script>

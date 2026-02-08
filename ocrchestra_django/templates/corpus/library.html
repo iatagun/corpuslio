@@ -63,6 +63,12 @@
                 {% endfor %}
             </select>
 
+            <select name="has_dependencies" id="dependencySelect" class="form-control">
+                <option value="">Bağımlılık Durumu</option>
+                <option value="yes" {% if request.GET.has_dependencies == 'yes' %}selected{% endif %}>Var</option>
+                <option value="no" {% if request.GET.has_dependencies == 'no' %}selected{% endif %}>Yok</option>
+            </select>
+
             <input type="text" name="date" value="{{ request.GET.date }}" placeholder="Tarih" class="form-control">
 
             <button type="submit" class="btn btn-primary">Filtrele</button>
@@ -98,6 +104,13 @@
                 <span class="material-icons" style="font-size:16px;">check_circle</span> İşlendi
             </span>
             <span class="word-count">{{ doc.get_word_count }} kelime</span>
+            {% if doc.analysis.has_dependencies %}
+            <span
+                style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-primary); font-weight:500; font-size:0.85rem;"
+                title="Bağımlılık ayrıştırma mevcut">
+                <span class="material-icons" style="font-size:16px;">account_tree</span> CoNLL-U
+            </span>
+            {% endif %}
             {% else %}
             <span
                 style="display:flex; align-items:center; gap:0.25rem; color:var(--text-secondary); font-size:0.85rem;">

@@ -1,0 +1,479 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}Corpus İstatistikleri - CorpusIO{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <h2><span class="material-icons" style="vertical-align:middle; margin-right:0.5rem;">analytics</span> Corpus İstatistikleri</h2>
+    <p style="color: var(--text-secondary); margin-top: 0.5rem;">
+        Derlem genelinde toplanan verilerin kapsamlı istatistiksel analizi
+    </p>
+</div>
+
+<!-- Summary Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <span class="material-icons">description</span>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ total_documents|default:0 }}</div>
+            <div class="stat-label">Toplam Belge</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <span class="material-icons">text_fields</span>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ total_tokens|default:0|floatformat:0 }}</div>
+            <div class="stat-label">Toplam Token</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <span class="material-icons">functions</span>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ avg_tokens|default:0 }}</div>
+            <div class="stat-label">Ortalama Token/Belge</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <span class="material-icons">account_tree</span>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ docs_with_dependencies|default:0 }}</div>
+            <div class="stat-label">Bağımlılık Verili Belge</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="charts-grid">
+    <!-- Genre Distribution -->
+    {% if genre_stats %}
+    <div class="card chart-card">
+        <h3><span class="material-icons">category</span> Tür Dağılımı</h3>
+        <canvas id="genreChart"></canvas>
+        <div class="chart-legend">
+            {% for item in genre_stats %}
+            <div class="legend-item">
+                <span class="legend-label">{{ item.genre|default:"Belirtilmemiş" }}</span>
+                <span class="legend-value">{{ item.count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Text Type Distribution -->
+    {% if text_type_stats %}
+    <div class="card chart-card">
+        <h3><span class="material-icons">text_snippet</span> Metin Türü</h3>
+        <canvas id="textTypeChart"></canvas>
+        <div class="chart-legend">
+            {% for item in text_type_stats %}
+            <div class="legend-item">
+                <span class="legend-label">
+                    {% if item.text_type == 'written' %}Yazılı
+                    {% elif item.text_type == 'spoken' %}Sözlü
+                    {% elif item.text_type == 'mixed' %}Karma
+                    {% elif item.text_type == 'web' %}Web/Dijital
+                    {% else %}{{ item.text_type }}
+                    {% endif %}
+                </span>
+                <span class="legend-value">{{ item.count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- License Distribution -->
+    {% if license_stats %}
+    <div class="card chart-card">
+        <h3><span class="material-icons">gavel</span> Lisans Dağılımı</h3>
+        <canvas id="licenseChart"></canvas>
+    </div>
+    {% endif %}
+
+    <!-- Top Authors -->
+    {% if author_stats %}
+    <div class="card chart-card">
+        <h3><span class="material-icons">person</span> En Çok Temsil Edilen Yazarlar</h3>
+        <canvas id="authorChart"></canvas>
+    </div>
+    {% endif %}
+
+    <!-- Collections -->
+    {% if collection_stats %}
+    <div class="card chart-card">
+        <h3><span class="material-icons">collections_bookmark</span> Koleksiyonlar</h3>
+        <canvas id="collectionChart"></canvas>
+    </div>
+    {% endif %}
+
+    <!-- Publication Year Timeline -->
+    {% if chart_data_json %}
+    <div class="card chart-card" style="grid-column: span 2;">
+        <h3><span class="material-icons">timeline</span> Yayın Yılı Dağılımı</h3>
+        <canvas id="yearChart"></canvas>
+    </div>
+    {% endif %}
+
+    <!-- Grade Level (if educational corpus) -->
+    {% if grade_stats %}
+    <div class="card chart-card">
+        <h3><span class="material-icons">school</span> Sınıf Seviyesi (MEB)</h3>
+        <canvas id="gradeChart"></canvas>
+    </div>
+    {% endif %}
+
+    <!-- Region Distribution -->
+    {% if region_stats %}
+    <div class="card chart-card">
+        <h3><span class="material-icons">place</span> Bölge/Lehçe Dağılımı</h3>
+        <canvas id="regionChart"></canvas>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Recent Activity -->
+<div class="card" style="margin-top: 2rem;">
+    <h3><span class="material-icons">schedule</span> Son Aktivite</h3>
+    <p style="font-size: 1.1rem; color: var(--text-secondary);">
+        Son 30 günde <strong style="color: var(--accent-primary);">{{ recent_documents }}</strong> yeni belge eklendi.
+    </p>
+</div>
+
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .stat-icon .material-icons {
+        font-size: 32px;
+        color: white;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-main);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+    }
+
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 2rem;
+    }
+
+    .chart-card {
+        min-height: 400px;
+    }
+
+    .chart-card h3 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 1.125rem;
+    }
+
+    .chart-card h3 .material-icons {
+        font-size: 20px;
+        color: var(--accent-primary);
+    }
+
+    .chart-card canvas {
+        max-height: 300px;
+    }
+
+    .chart-legend {
+        margin-top: 1rem;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .legend-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem;
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .legend-item:last-child {
+        border-bottom: none;
+    }
+
+    .legend-label {
+        color: var(--text-main);
+        font-size: 0.875rem;
+    }
+
+    .legend-value {
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+    const chartData = {{ chart_data_json|safe }};
+
+    // Color palettes
+    const colors = [
+        '#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe',
+        '#43e97b', '#38f9d7', '#fa709a', '#fee140', '#30cfd0', '#330867'
+    ];
+
+    const bgColors = colors.map(c => c + '40');
+
+    // Genre Chart (Pie)
+    if (chartData.genre_labels && chartData.genre_labels.length > 0) {
+        new Chart(document.getElementById('genreChart'), {
+            type: 'doughnut',
+            data: {
+                labels: chartData.genre_labels,
+                datasets: [{
+                    data: chartData.genre_counts,
+                    backgroundColor: bgColors,
+                    borderColor: colors,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // Text Type Chart (Pie)
+    if (chartData.text_type_labels && chartData.text_type_labels.length > 0) {
+        new Chart(document.getElementById('textTypeChart'), {
+            type: 'pie',
+            data: {
+                labels: chartData.text_type_labels,
+                datasets: [{
+                    data: chartData.text_type_counts,
+                    backgroundColor: bgColors.slice(0, 4),
+                    borderColor: colors.slice(0, 4),
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // License Chart (Bar)
+    if (chartData.license_labels && chartData.license_labels.length > 0) {
+        new Chart(document.getElementById('licenseChart'), {
+            type: 'bar',
+            data: {
+                labels: chartData.license_labels,
+                datasets: [{
+                    label: 'Belge Sayısı',
+                    data: chartData.license_counts,
+                    backgroundColor: '#667eea80',
+                    borderColor: '#667eea',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: { beginAtZero: true }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // Author Chart (Horizontal Bar)
+    if (chartData.author_labels && chartData.author_labels.length > 0) {
+        new Chart(document.getElementById('authorChart'), {
+            type: 'bar',
+            data: {
+                labels: chartData.author_labels,
+                datasets: [{
+                    label: 'Belge Sayısı',
+                    data: chartData.author_counts,
+                    backgroundColor: '#f093fb80',
+                    borderColor: '#f093fb',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    x: { beginAtZero: true }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // Collection Chart (Bar)
+    if (chartData.collection_labels && chartData.collection_labels.length > 0) {
+        new Chart(document.getElementById('collectionChart'), {
+            type: 'bar',
+            data: {
+                labels: chartData.collection_labels,
+                datasets: [{
+                    label: 'Belge Sayısı',
+                    data: chartData.collection_counts,
+                    backgroundColor: '#43e97b80',
+                    borderColor: '#43e97b',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: { beginAtZero: true }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // Year Timeline (Line)
+    if (chartData.year_labels && chartData.year_labels.length > 0) {
+        new Chart(document.getElementById('yearChart'), {
+            type: 'line',
+            data: {
+                labels: chartData.year_labels,
+                datasets: [{
+                    label: 'Belge Sayısı',
+                    data: chartData.year_counts,
+                    backgroundColor: '#4facfe40',
+                    borderColor: '#4facfe',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // Grade Level Chart (Bar)
+    if (chartData.grade_labels && chartData.grade_labels.length > 0) {
+        new Chart(document.getElementById('gradeChart'), {
+            type: 'bar',
+            data: {
+                labels: chartData.grade_labels,
+                datasets: [{
+                    label: 'Belge Sayısı',
+                    data: chartData.grade_counts,
+                    backgroundColor: '#fa709a80',
+                    borderColor: '#fa709a',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: { beginAtZero: true }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // Region Chart (Pie)
+    if (chartData.region_labels && chartData.region_labels.length > 0) {
+        new Chart(document.getElementById('regionChart'), {
+            type: 'doughnut',
+            data: {
+                labels: chartData.region_labels,
+                datasets: [{
+                    data: chartData.region_counts,
+                    backgroundColor: bgColors,
+                    borderColor: colors,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 15, font: { size: 11 } }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -411,3 +411,56 @@ class ExportService:
         output = io.BytesIO()
         wb.save(output)
         return output.getvalue()
+    
+    def export_conllu(self, sentence_indices: List[int] = None) -> bytes:
+        """
+        Export document as CoNLL-U format with watermark.
+        
+        Args:
+            sentence_indices: Optional list of sentence indices to export.
+                            If None, export all sentences.
+        
+        Returns:
+            CoNLL-U formatted text as bytes
+            
+        Raises:
+            ValueError: If document has no dependency annotations
+        """
+        if not self.document.analysis.has_dependencies:
+            raise ValueError("Document has no dependency annotations")
+        
+        from ocrchestra.parsers.conllu_parser import CoNLLUParser
+        
+        tokens = self.document.analysis.conllu_data or []
+        
+        if not tokens:
+            raise ValueError("No CoNLL-U data available")
+        
+        # Filter by sentence indices if provided
+        if sentence_indices:
+            tokens = [t for t in tokens if t.get('sentence_id') in sentence_indices]
+        
+        # Add watermark as comment lines at the beginning
+        citation = self.generate_citation()
+        watermark_lines = [
+            "# ========================================",
+            "# CoNLL-U Export from OCRchestra Platform",
+            "# ========================================",
+        ]
+        
+        for line in citation.split('\n'):
+            if line.strip():
+                watermark_lines.append(f"# {line}")
+        
+        watermark_lines.append("# ========================================")
+        watermark_lines.append("")
+        
+        watermark_text = '\n'.join(watermark_lines)
+        
+        # Serialize tokens to CoNLL-U format
+        conllu_text = CoNLLUParser.serialize(tokens, include_metadata=True)
+        
+        # Combine watermark and content
+        full_output = watermark_text + conllu_text
+        
+        return full_output.encode('utf-8')

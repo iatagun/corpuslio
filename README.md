@@ -50,13 +50,23 @@ OCRchestra/
 
 ## 🎨 Features
 
+### Core Features
 - ✅ Modern dark theme with glassmorphism
 - ✅ Document upload (PDF, DOCX, TXT, images)
 - ✅ AI-powered analysis (Groq API)
 - ✅ Async processing (Celery)
 - ✅ KWIC concordance search
 - ✅ REST API
-- ✅ Export to VRT, JSON, CSV, CoNLL-U
+- ✅ Export to VRT, JSON, CSV, Excel, CoNLL-U
+
+### Week 4: Dependency Parsing (CoNLL-U Support)
+- ✅ 10-column CoNLL-U format parser/serializer
+- ✅ Interactive D3.js dependency tree visualization
+- ✅ Pattern-based dependency queries ("NOUN:nsubj>VERB")
+- ✅ Morphological feature search (Case, Number, Person)
+- ✅ Chart.js statistics dashboard (POS/deprel distributions)
+- ✅ Watermarked CoNLL-U export with citation headers
+- ✅ Turkish Universal Dependencies support (15+ relations)
 
 ## 📖 Documentation
 
