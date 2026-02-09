@@ -6,7 +6,8 @@ from django.db.models import Count, Sum
 from .models import (
     Document, Content, Analysis, ProcessingTask, Tag,
     UserProfile, QueryLog, ExportLog,
-    DataExportRequest, ConsentRecord, AccountDeletionRequest  # Week 11: GDPR
+    DataExportRequest, ConsentRecord, AccountDeletionRequest,  # Week 11: GDPR
+    Sentence, Token, CorpusMetadata  # Corpus Query Models
 )
 
 
@@ -541,3 +542,135 @@ class AccountDeletionRequestAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         # Don't allow deletion of deletion requests (audit trail)
         return False
+
+
+# ============================================================================
+# CORPUS QUERY ADMIN INTERFACES
+# ============================================================================
+
+class TokenInline(admin.TabularInline):
+    """Inline display of tokens within a sentence."""
+    model = Token
+    extra = 0
+    fields = ['index', 'form', 'lemma', 'upos', 'deprel']
+    readonly_fields = ['index', 'form', 'lemma', 'upos', 'deprel']
+    can_delete = False
+    max_num = 20  # Show first 20 tokens
+    
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(Sentence)
+class SentenceAdmin(admin.ModelAdmin):
+    """Admin interface for Sentence model."""
+    
+    list_display = ['id', 'document', 'index', 'text_preview', 'token_count']
+    list_filter = ['document']
+    search_fields = ['text', 'document__filename']
+    readonly_fields = ['index', 'text', 'token_count', 'metadata']
+    inlines = [TokenInline]
+    
+    def text_preview(self, obj):
+        preview = obj.text[:80] + '...' if len(obj.text) > 80 else obj.text
+        return preview
+    text_preview.short_description = 'Cümle'
+    
+    def has_add_permission(self, request):
+        return False  # Sentences created via import only
+    
+    def has_change_permission(self, request, obj=None):
+        return True  # View only
+    
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+
+@admin.register(Token)
+class TokenAdmin(admin.ModelAdmin):
+    """Admin interface for Token model."""
+    
+    list_display = ['id', 'form', 'lemma', 'upos', 'sentence_preview', 'document']
+    list_filter = ['upos', 'document']
+    search_fields = ['form', 'lemma']
+    readonly_fields = [
+        'document', 'sentence', 'index', 'form', 'lemma', 
+        'upos', 'xpos', 'feats', 'head', 'deprel', 'deps', 'misc',
+        'vrt_attributes'
+    ]
+    
+    fieldsets = (
+        ('Token Info', {
+            'fields': ('document', 'sentence', 'index', 'form')
+        }),
+        ('Linguistic Annotations', {
+            'fields': ('lemma', 'upos', 'xpos', 'feats')
+        }),
+        ('Dependency Parsing', {
+            'fields': ('head', 'deprel', 'deps')
+        }),
+        ('Additional', {
+            'fields': ('misc', 'vrt_attributes'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def sentence_preview(self, obj):
+        preview = obj.sentence.text[:50] + '...' if len(obj.sentence.text) > 50 else obj.sentence.text
+        return preview
+    sentence_preview.short_description = 'Cümle'
+    
+    def has_add_permission(self, request):
+        return False  # Tokens created via import only
+    
+    def has_change_permission(self, request, obj=None):
+        return True  # View only
+    
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+
+@admin.register(CorpusMetadata)
+class CorpusMetadataAdmin(admin.ModelAdmin):
+    """Admin interface for CorpusMetadata model."""
+    
+    list_display = [
+        'document', 
+        'source_format', 
+        'sentence_count', 
+        'unique_forms',
+        'unique_lemmas',
+        'imported_at',
+        'imported_by'
+    ]
+    list_filter = ['source_format', 'imported_at']
+    search_fields = ['document__filename', 'original_filename']
+    readonly_fields = [
+        'document', 'source_format', 'global_metadata', 'structural_annotations',
+        'imported_at', 'imported_by', 'original_filename', 'file_hash',
+        'sentence_count', 'unique_lemmas', 'unique_forms'
+    ]
+    
+    fieldsets = (
+        ('Document Info', {
+            'fields': ('document', 'source_format', 'original_filename')
+        }),
+        ('Metadata', {
+            'fields': ('global_metadata', 'structural_annotations')
+        }),
+        ('Statistics', {
+            'fields': ('sentence_count', 'unique_forms', 'unique_lemmas')
+        }),
+        ('Import Tracking', {
+            'fields': ('imported_at', 'imported_by', 'file_hash')
+        }),
+    )
+    
+    def has_add_permission(self, request):
+        return False  # Metadata created via import only
+    
+    def has_change_permission(self, request, obj=None):
+        return True  # View only
+    
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser

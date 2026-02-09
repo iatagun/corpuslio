@@ -1319,3 +1319,283 @@ class AccountDeletionRequest(models.Model):
             return True
         return False
 
+
+# ============================================================================
+# CORPUS QUERY MODELS (Refactored for VRT/CoNLL-U Import)
+# ============================================================================
+
+class Sentence(models.Model):
+    """Sentence within a document.
+    
+    Each sentence contains multiple tokens and maintains order within document.
+    Supports both VRT and CoNLL-U formats.
+    """
+    
+    document = models.ForeignKey(
+        Document,
+        on_delete=models.CASCADE,
+        related_name='sentences',
+        verbose_name="Belge"
+    )
+    
+    index = models.IntegerField(
+        verbose_name="Cümle Sırası",
+        help_text="Belge içindeki sıra numarası (1'den başlar)"
+    )
+    
+    text = models.TextField(
+        verbose_name="Cümle Metni",
+        help_text="Ham metin formu"
+    )
+    
+    token_count = models.IntegerField(
+        default=0,
+        verbose_name="Token Sayısı"
+    )
+    
+    # Metadata from VRT/CoNLL-U comments
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Metadata",
+        help_text="Sentence-level metadata (sent_id, text, etc.)"
+    )
+    
+    class Meta:
+        verbose_name = "Cümle"
+        verbose_name_plural = "Cümleler"
+        ordering = ['document', 'index']
+        indexes = [
+            models.Index(fields=['document', 'index']),
+        ]
+    
+    def __str__(self):
+        preview = self.text[:50] + '...' if len(self.text) > 50 else self.text
+        return f"Sentence {self.index} in {self.document.filename}: {preview}"
+
+
+class Token(models.Model):
+    """Linguistic token with full morphological annotations.
+    
+    Supports CoNLL-U 10-column format:
+    ID, FORM, LEMMA, UPOS, XPOS, FEATS, HEAD, DEPREL, DEPS, MISC
+    
+    Also compatible with VRT format attributes.
+    """
+    
+    document = models.ForeignKey(
+        Document,
+        on_delete=models.CASCADE,
+        related_name='tokens',
+        verbose_name="Belge"
+    )
+    
+    sentence = models.ForeignKey(
+        Sentence,
+        on_delete=models.CASCADE,
+        related_name='tokens',
+        verbose_name="Cümle"
+    )
+    
+    index = models.IntegerField(
+        verbose_name="Token Sırası",
+        help_text="Cümle içindeki pozisyon (1'den başlar)"
+    )
+    
+    # Core token data
+    form = models.CharField(
+        max_length=255,
+        db_index=True,
+        verbose_name="Kelime Formu",
+        help_text="Surface form (FORM in CoNLL-U)"
+    )
+    
+    lemma = models.CharField(
+        max_length=255,
+        blank=True,
+        db_index=True,
+        verbose_name="Lemma",
+        help_text="Base form (LEMMA in CoNLL-U)"
+    )
+    
+    upos = models.CharField(
+        max_length=20,
+        blank=True,
+        db_index=True,
+        verbose_name="UPOS",
+        help_text="Universal POS tag (NOUN, VERB, etc.)"
+    )
+    
+    xpos = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="XPOS",
+        help_text="Language-specific POS tag"
+    )
+    
+    feats = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name="Morph Features",
+        help_text="Morphological features (Case=Nom|Number=Sing)"
+    )
+    
+    # Dependency parsing
+    head = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Head",
+        help_text="Head token index (0 for root)"
+    )
+    
+    deprel = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="Dependency Relation",
+        help_text="Syntactic relation to head (nsubj, obj, etc.)"
+    )
+    
+    deps = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name="Enhanced Dependencies",
+        help_text="Enhanced dependency graph"
+    )
+    
+    misc = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name="Misc",
+        help_text="Additional annotations (SpaceAfter=No, etc.)"
+    )
+    
+    # VRT-specific fields (custom attributes)
+    vrt_attributes = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="VRT Attributes",
+        help_text="Extra VRT tab-separated attributes"
+    )
+    
+    class Meta:
+        verbose_name = "Token"
+        verbose_name_plural = "Tokens"
+        ordering = ['document', 'sentence', 'index']
+        indexes = [
+            models.Index(fields=['document', 'index']),
+            models.Index(fields=['sentence', 'index']),
+            models.Index(fields=['form']),  # Fast concordance lookup
+            models.Index(fields=['lemma']),
+            models.Index(fields=['upos']),
+        ]
+    
+    def __str__(self):
+        return f"{self.form} ({self.lemma}/{self.upos}) in Sent {self.sentence.index}"
+    
+    def to_conllu_line(self):
+        """Export token as CoNLL-U format line."""
+        return '\t'.join([
+            str(self.index),
+            self.form,
+            self.lemma or '_',
+            self.upos or '_',
+            self.xpos or '_',
+            self.feats or '_',
+            str(self.head) if self.head is not None else '_',
+            self.deprel or '_',
+            self.deps or '_',
+            self.misc or '_',
+        ])
+
+
+class CorpusMetadata(models.Model):
+    """Document-level corpus metadata.
+    
+    Stores header information from VRT/CoNLL-U files that doesn't fit
+    in standard Document fields.
+    """
+    
+    document = models.OneToOneField(
+        Document,
+        on_delete=models.CASCADE,
+        related_name='corpus_metadata',
+        verbose_name="Belge"
+    )
+    
+    FORMAT_CHOICES = [
+        ('vrt', 'VRT (Corpus Workbench)'),
+        ('conllu', 'CoNLL-U (Universal Dependencies)'),
+        ('plain', 'Plain Text'),
+    ]
+    
+    source_format = models.CharField(
+        max_length=20,
+        choices=FORMAT_CHOICES,
+        verbose_name="Kaynak Format"
+    )
+    
+    # Global metadata (from VRT <text> attributes or CoNLL-U # global comments)
+    global_metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Global Metadata",
+        help_text="Document-level attributes (author, date, genre, etc.)"
+    )
+    
+    # Structural metadata (VRT <p>, <s> hierarchies)
+    structural_annotations = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Yapısal Anotasyonlar",
+        help_text="Paragraph, section, speaker information"
+    )
+    
+    # Import tracking
+    imported_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="İmport Tarihi"
+    )
+    
+    imported_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="İmport Eden"
+    )
+    
+    original_filename = models.CharField(
+        max_length=500,
+        verbose_name="Orijinal Dosya Adı"
+    )
+    
+    file_hash = models.CharField(
+        max_length=64,
+        unique=True,
+        verbose_name="Dosya Hash (SHA256)",
+        help_text="Duplicate detection"
+    )
+    
+    # Statistics
+    sentence_count = models.IntegerField(
+        default=0,
+        verbose_name="Cümle Sayısı"
+    )
+    
+    unique_lemmas = models.IntegerField(
+        default=0,
+        verbose_name="Benzersiz Lemma Sayısı"
+    )
+    
+    unique_forms = models.IntegerField(
+        default=0,
+        verbose_name="Benzersiz Form Sayısı"
+    )
+    
+    class Meta:
+        verbose_name = "Korpus Metadata"
+        verbose_name_plural = "Korpus Metadata"
+    
+    def __str__(self):
+        return f"Metadata for {self.document.filename} ({self.source_format})"
+
