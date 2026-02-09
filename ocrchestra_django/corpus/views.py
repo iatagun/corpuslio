@@ -11,7 +11,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 
-from .models import Document, ProcessingTask, Analysis, Tag, Content
+from .models import Document, ProcessingTask, Analysis, Tag, Content, CorpusMetadata
 from .forms import DocumentUploadForm
 from .tasks import process_document_task
 from .services import CorpusService
@@ -49,15 +49,17 @@ def is_developer(user):
 
 
 def home_view(request):
-    """Blog-style landing page."""
-    total_docs = Document.objects.count()
-    processed_docs = Document.objects.filter(processed=True).count()
-    recent_documents = Document.objects.all().order_by('-upload_date')[:4]
+    """Corpus Query Platform landing page."""
+    from .models import Token, Sentence, CorpusMetadata
     
-    # Total words calculation
-    total_words = 0
-    for doc in Document.objects.filter(processed=True):
-        total_words += doc.get_word_count()
+    # Corpus statistics
+    total_corpora = CorpusMetadata.objects.count()
+    total_documents = Document.objects.count()
+    total_tokens = Token.objects.count()
+    total_sentences = Sentence.objects.count()
+    
+    # Recent corpus uploads
+    recent_corpora = CorpusMetadata.objects.select_related('document').all().order_by('-imported_at')[:4]
     
     total_collections = Collection.objects.count()
     
@@ -68,11 +70,12 @@ def home_view(request):
     ).filter(doc_count__gt=0).order_by('-doc_count')[:10]
     
     context = {
-        'total_docs': total_docs,
-        'processed_docs': processed_docs,
-        'total_words': total_words,
+        'total_corpora': total_corpora,
+        'total_documents': total_documents,
+        'total_tokens': total_tokens,
+        'total_sentences': total_sentences,
         'total_collections': total_collections,
-        'recent_documents': recent_documents,
+        'recent_corpora': recent_corpora,
         'popular_tags': popular_tags,
         'active_tab': 'home'
     }
@@ -82,10 +85,10 @@ def home_view(request):
 @ensure_csrf_cookie
 @ratelimit(key='user_or_ip', rate='1000/d', method='GET')
 def library_view(request):
-    """Display all documents in library with filtering.
+    """Display all corpus files with metadata filtering.
 
-    Anonymous users see a limited public view (only processed documents,
-    smaller page size) while authenticated users see the full library.
+    Shows CorpusMetadata entries with linguistic statistics.
+    Anonymous users see limited view.
     
     Rate limit: 1000 requests per day per user or IP address.
     """
@@ -93,52 +96,45 @@ def library_view(request):
     if request.user.is_authenticated and request.user.is_superuser:
         request.limited = False
     
-    documents = Document.objects.all().order_by('-upload_date')
+    corpora = CorpusMetadata.objects.select_related('document').all().order_by('-imported_at')
     
-    # Metadata filters
+    # Metadata filters (JSONField access)
     author_filter = request.GET.get('author')
     genre_filter = request.GET.get('genre')
     date_filter = request.GET.get('date')
     search_query = request.GET.get('q')
-    tag_filter = request.GET.get('tag')  # New: Tag filter
-    dependency_filter = request.GET.get('has_dependencies')  # New: Dependency filter
+    format_filter = request.GET.get('format')
     
     if author_filter:
-        documents = documents.filter(metadata__author__icontains=author_filter)
+        corpora = corpora.filter(global_metadata__author__icontains=author_filter)
     
     if genre_filter:
-        documents = documents.filter(metadata__genre=genre_filter)
+        corpora = corpora.filter(global_metadata__genre__icontains=genre_filter)
     
     if date_filter:
-        documents = documents.filter(metadata__date__icontains=date_filter)
+        corpora = corpora.filter(global_metadata__date__icontains=date_filter)
     
-    if tag_filter:
-        documents = documents.filter(tags__slug=tag_filter)
-    
-    if dependency_filter:
-        if dependency_filter == 'yes':
-            documents = documents.filter(analysis__has_dependencies=True)
-        elif dependency_filter == 'no':
-            from django.db.models import Q
-            documents = documents.filter(Q(analysis__has_dependencies=False) | Q(analysis__isnull=True))
+    if format_filter:
+        corpora = corpora.filter(source_format=format_filter)
     
     if search_query:
         from django.db.models import Q
-        documents = documents.filter(
-            Q(filename__icontains=search_query) |
-            Q(metadata__author__icontains=search_query) |
-            Q(metadata__source__icontains=search_query)
+        corpora = corpora.filter(
+            Q(original_filename__icontains=search_query) |
+            Q(global_metadata__author__icontains=search_query) |
+            Q(global_metadata__genre__icontains=search_query)
         )
     
-    # If anonymous, limit to processed documents and smaller page size
+    # Anonymous users see limited results
     is_limited_public_view = not request.user.is_authenticated
     if is_limited_public_view:
-        documents = documents.filter(processed=True)
+        # No specific limit for corpus metadata (all are "processed")
+        pass
 
     # Pagination (Infinite scroll)
     from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
     page_size = 12 if is_limited_public_view else 20
-    paginator = Paginator(documents, page_size)
+    paginator = Paginator(corpora, page_size)
     
     page_number = request.GET.get('page')
     try:
@@ -151,63 +147,55 @@ def library_view(request):
     # Check if this is an AJAX request for infinite scroll
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         # Return JSON data for AJAX infinite scroll
-        documents_data = []
-        for doc in page_obj:
-            documents_data.append({
-                'id': doc.id,
-                'title': doc.title,
-                'filename': doc.filename,
-                'upload_date': doc.upload_date.strftime('%d.%m.%Y %H:%M'),
-                'author': doc.author or 'Bilinmeyen',
-                'word_count': doc.get_word_count() if doc.processed else 0,
-                'processed': doc.processed,
-                'url': f'/corpus/analysis/{doc.id}/',
-                'delete_url': f'/corpus/delete/{doc.id}/',
-                'export_url': f'/corpus/export/{doc.id}/',
-                'tags': [{'name': tag.name, 'slug': tag.slug, 'color': tag.color} 
-                        for tag in doc.tags.all()]
+        corpora_data = []
+        for corpus in page_obj:
+            corpora_data.append({
+                'id': corpus.id,
+                'filename': corpus.original_filename,
+                'imported_at': corpus.imported_at.strftime('%d.%m.%Y %H:%M'),
+                'author': corpus.global_metadata.get('author', 'Bilinmeyen'),
+                'genre': corpus.global_metadata.get('genre', '-'),
+                'token_count': corpus.document.get_word_count(),
+                'sentence_count': corpus.sentence_count,
+                'unique_lemmas': corpus.unique_lemmas,
+                'format': corpus.get_source_format_display(),
+                'format_code': corpus.source_format,
             })
         
         return JsonResponse({
-            'documents': documents_data,
+            'corpora': corpora_data,
             'has_next': page_obj.has_next(),
             'has_previous': page_obj.has_previous(),
             'page': page_obj.number,
             'total_pages': paginator.num_pages
         })
     
-    # Get all tags for filter dropdown
-    from .models import Tag
-    all_tags = Tag.objects.all().order_by('name')
-    
-    # Get unique values for filter dropdowns (Optimized check)
-    # Note: For 20k records, iterating all() is slow. Ideally this should be distinct()
-    # but Document.metadata is a JSONField (or similar) which is tricky.
-    # We will keep it for now but wrap it in a try-catch or limit optimization later.
+    # Get unique values for filter dropdowns
     all_genres = set()
-    # Limiting to last 1000 for performance on large sets if needed, 
-    # but for true distinct values on JSONField we need Postgres.
-    # For now, simplistic approach is fine until DB migration.
-    if Document.objects.exists():
-         # Fetching IDs/Metadata only would be faster 
-        for doc in Document.objects.only('metadata').order_by('-id')[:1000]: 
-            if doc.metadata and doc.metadata.get('genre'):
-                all_genres.add(doc.metadata['genre'])
+    all_authors = set()
+    for corpus in CorpusMetadata.objects.only('global_metadata').all()[:500]:  # Limit for performance
+        if corpus.global_metadata:
+            if 'genre' in corpus.global_metadata:
+                all_genres.add(corpus.global_metadata['genre'])
+            if 'author' in corpus.global_metadata:
+                all_authors.add(corpus.global_metadata['author'])
     
     context = {
-        'documents': page_obj, # Pass page_obj instead of full queryset
+        'corpora': page_obj,  # Pass page_obj instead of full queryset
         'page_obj': page_obj,  # Explicit naming for template clarity
         'all_genres': sorted(all_genres),
-        'all_tags': all_tags,  # Add tags to context
+        'all_authors': sorted(all_authors),
+        'format_choices': CorpusMetadata.FORMAT_CHOICES,
         'is_limited_public_view': is_limited_public_view,
         'active_tab': 'library'
     }
     return render(request, 'corpus/library.html', context)
 
 
+
 @require_http_methods(["GET", "POST"])
 def upload_view(request):
-    """Handle document upload and processing (supports batch upload)."""
+    """Handle corpus file upload and import (supports batch upload of VRT/CoNLL-U files)."""
     if request.method == 'POST':
         files = request.FILES.getlist('files')
         
@@ -215,10 +203,10 @@ def upload_view(request):
             messages.error(request, '❌ Lütfen en az bir dosya seçin.')
             return redirect('corpus:upload')
         
-        # Get form options
-        analyze = request.POST.get('analyze') == 'on'
-        enable_dependencies = request.POST.get('enable_dependencies') == 'on'
-        label_studio = request.POST.get('label_studio_export') == 'on'
+        # Get corpus import options
+        auto_detect = request.POST.get('auto_detect_format') == 'on'
+        validate_format = request.POST.get('validate_format') == 'on'
+        skip_duplicates = request.POST.get('skip_duplicates') == 'on'
         
         # Metadata
         metadata = {
@@ -244,27 +232,51 @@ def upload_view(request):
                     failed_count += 1
                     continue
                 
-                # Create document
+                # Create document entry
                 document = Document.objects.create(
                     filename=uploaded_file.name,
                     file=uploaded_file,
                     format=ext[1:].upper(),
-                    metadata=metadata
+                    metadata=metadata,
+                    processed=False  # Will be set to True after import
                 )
                 
-                # Try async processing
+                # Import corpus file (synchronous for now)
                 try:
-                    task = process_document_task.delay(
-                        document.id,
-                        analyze=analyze,
-                        enable_dependencies=enable_dependencies,
-                        label_studio=label_studio
-                    )
-                    processed_count += 1
-                except Exception:
-                    # Fallback to sync if Celery unavailable
-                    # (simplified - could add full sync processing here)
-                    processed_count += 1
+                    from django.core.management import call_command
+                    import tempfile
+                    import os
+                    
+                    # Save uploaded file to temp location
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp_file:
+                        for chunk in uploaded_file.chunks():
+                            tmp_file.write(chunk)
+                        tmp_path = tmp_file.name
+                    
+                    try:
+                        # Call import_corpus command
+                        call_command(
+                            'import_corpus',
+                            tmp_path,
+                            title=metadata.get('source', uploaded_file.name),
+                            author=metadata.get('author', ''),
+                            genre=metadata.get('genre', 'other'),
+                            skip_duplicates=skip_duplicates,
+                            validate=validate_format
+                        )
+                        document.processed = True
+                        document.save()
+                        processed_count += 1
+                    finally:
+                        # Clean up temp file
+                        if os.path.exists(tmp_path):
+                            os.unlink(tmp_path)
+                        
+                except Exception as e:
+                    messages.error(request, f'❌ {uploaded_file.name}: İmport hatası - {str(e)}')
+                    failed_count += 1
+                    document.delete()
+                    continue
                     
             except Exception as e:
                 messages.error(request, f'❌ {uploaded_file.name}: {str(e)}')
@@ -385,19 +397,49 @@ def analysis_view(request, doc_id):
 
 
 def statistics_view(request):
-    """Display corpus-wide statistics."""
-    documents = Document.objects.filter(processed=True)
+    """Display corpus-wide linguistic statistics."""
+    from .models import Token, Sentence, CorpusMetadata
+    from django.db.models import Count
+    from collections import Counter
     
-    total_words = sum(doc.get_word_count() for doc in documents)
-    total_docs = documents.count()
+    # Basic counts
+    total_tokens = Token.objects.count()
+    total_sentences = Sentence.objects.count()
+    total_documents = CorpusMetadata.objects.count()
+    
+    # POS distribution (top 15) - using upos (Universal POS tags)
+    pos_counts = Token.objects.values('upos').annotate(
+        count=Count('id')
+    ).order_by('-count')[:15]
+    
+    # Lemma diversity (unique lemmas)
+    unique_lemmas = Token.objects.values('lemma').distinct().count()
+    
+    # Type-Token Ratio (TTR)
+    unique_forms = Token.objects.values('form').distinct().count()
+    ttr = round(unique_forms / total_tokens * 100, 2) if total_tokens > 0 else 0
+    
+    # Average sentence length
+    avg_sentence_length = round(total_tokens / total_sentences, 2) if total_sentences > 0 else 0
+    
+    # Most frequent tokens (top 20)
+    frequent_tokens = Token.objects.values('form', 'lemma').annotate(
+        count=Count('id')
+    ).order_by('-count')[:20]
     
     context = {
-        'documents': documents,
-        'total_words': total_words,
-        'total_docs': total_docs,
+        'total_tokens': total_tokens,
+        'total_sentences': total_sentences,
+        'total_documents': total_documents,
+        'unique_lemmas': unique_lemmas,
+        'unique_forms': unique_forms,
+        'ttr': ttr,
+        'avg_sentence_length': avg_sentence_length,
+        'pos_distribution': pos_counts,
+        'frequent_tokens': frequent_tokens,
         'active_tab': 'statistics'
     }
-    return render(request, 'corpus/statistics.html', context)
+    return render(request, 'corpus/corpus_statistics.html', context)
 
 
 @login_required

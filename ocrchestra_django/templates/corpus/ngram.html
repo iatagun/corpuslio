@@ -298,17 +298,28 @@
     
     {% if ngrams %}
     <div class="analysis-card">
-        <h2>📈 {% trans "En Sık Kullanılan N-gramlar" %}
-            {% if n == 2 %}
-            <span class="ngram-type-badge bigram-badge">Bigram</span>
-            {% elif n == 3 %}
-            <span class="ngram-type-badge trigram-badge">Trigram</span>
-            {% elif n == 4 %}
-            <span class="ngram-type-badge fourgram-badge">4-gram</span>
-            {% elif n == 5 %}
-            <span class="ngram-type-badge fivegram-badge">5-gram</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2>📈 {% trans "En Sık Kullanılan N-gramlar" %}
+                {% if n == 2 %}
+                <span class="ngram-type-badge bigram-badge">Bigram</span>
+                {% elif n == 3 %}
+                <span class="ngram-type-badge trigram-badge">Trigram</span>
+                {% elif n == 4 %}
+                <span class="ngram-type-badge fourgram-badge">4-gram</span>
+                {% elif n == 5 %}
+                <span class="ngram-type-badge fivegram-badge">5-gram</span>
+                {% endif %}
+            </h2>
+            {% if user.is_authenticated %}
+            <div class="export-buttons">
+                <a href="{% url 'corpus:export_ngram' %}?{{ request.GET.urlencode }}" 
+                   class="btn-export" 
+                   title="CSV formatında indir (su damgalı)">
+                    <span class="material-icons">download</span> CSV
+                </a>
+            </div>
             {% endif %}
-        </h2>
+        </div>
         
         <div class="stats-banner">
             <div class="stat-item">

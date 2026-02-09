@@ -307,6 +307,15 @@
     </div>
     
     {% if frequencies %}
+    {% if user.is_authenticated %}
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+        <a href="{% url 'corpus:export_frequency' %}?{{ request.GET.urlencode }}" 
+           class="btn-export" 
+           title="CSV formatında indir (su damgalı)">
+            <span class="material-icons">download</span> CSV İndir
+        </a>
+    </div>
+    {% endif %}
     <div class="stats-banner">
         <div class="stat-item">
             <div class="stat-value">{{ frequencies|length }}</div>

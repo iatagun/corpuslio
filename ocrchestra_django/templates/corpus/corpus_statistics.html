@@ -16,11 +16,11 @@
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <span class="material-icons">description</span>
+            <span class="material-icons">library_books</span>
         </div>
         <div class="stat-content">
             <div class="stat-value">{{ total_documents|default:0 }}</div>
-            <div class="stat-label">Toplam Belge</div>
+            <div class="stat-label">Toplam Korpus</div>
         </div>
     </div>
 
@@ -36,27 +36,96 @@
 
     <div class="stat-card">
         <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-            <span class="material-icons">functions</span>
+            <span class="material-icons">format_list_numbered</span>
         </div>
         <div class="stat-content">
-            <div class="stat-value">{{ avg_tokens|default:0 }}</div>
-            <div class="stat-label">Ortalama Token/Belge</div>
+            <div class="stat-value">{{ total_sentences|default:0|floatformat:0 }}</div>
+            <div class="stat-label">Toplam Cümle</div>
         </div>
     </div>
 
     <div class="stat-card">
         <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-            <span class="material-icons">account_tree</span>
+            <span class="material-icons">insights</span>
         </div>
         <div class="stat-content">
-            <div class="stat-value">{{ docs_with_dependencies|default:0 }}</div>
-            <div class="stat-label">Bağımlılık Verili Belge</div>
+            <div class="stat-value">{{ avg_sentence_length|default:0 }}</div>
+            <div class="stat-label">Ortalama Cümle Uzunluğu</div>
+        </div>
+    </div>
+</div>
+
+<!-- Linguistic Metrics -->
+<div class="stats-grid" style="margin-top: 2rem;">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+            <span class="material-icons">label</span>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ unique_lemmas|default:0|floatformat:0 }}</div>
+            <div class="stat-label">Benzersiz Lemma</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+            <span class="material-icons">abc</span>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ unique_forms|default:0|floatformat:0 }}</div>
+            <div class="stat-label">Benzersiz Form</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+            <span class="material-icons">percent</span>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ ttr|default:0 }}%</div>
+            <div class="stat-label">Type-Token Ratio (TTR)</div>
         </div>
     </div>
 </div>
 
 <!-- Charts Grid -->
 <div class="charts-grid">
+    <!-- POS Distribution -->
+    {% if pos_distribution %}
+    <div class="card chart-card">
+        <h3><span class="material-icons">category</span> Sözcük Türü (POS) Dağılımı</h3>
+        <canvas id="posChart"></canvas>
+        <div class="chart-legend">
+            {% for item in pos_distribution %}
+            <div class="legend-item">
+                <span class="legend-label">{{ item.upos|default:"Belirtilmemiş" }}</span>
+                <span class="legend-value">{{ item.count|floatformat:0 }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Frequent Tokens -->
+    {% if frequent_tokens %}
+    <div class="card chart-card">
+        <h3><span class="material-icons">trending_up</span> En Sık Kullanılan Tokenlar</h3>
+        <div class="chart-legend" style="max-height: 350px;">
+            {% for token in frequent_tokens %}
+            <div class="legend-item">
+                <span class="legend-label">
+                    <strong>{{ token.form }}</strong>
+                    {% if token.lemma and token.lemma != token.form %}
+                        <span style="color: var(--text-tertiary); font-size: 0.8em;">({{ token.lemma }})</span>
+                    {% endif %}
+                </span>
+                <span class="legend-value">{{ token.count|floatformat:0 }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Genre Distribution -->
     {% if genre_stats %}
     <div class="card chart-card">
@@ -270,6 +339,38 @@
     ];
 
     const bgColors = colors.map(c => c + '40');
+
+    // POS Distribution Chart (Bar)
+    {% if pos_distribution %}
+    const posLabels = [{% for item in pos_distribution %}'{{ item.upos|default:"?" }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const posCounts = [{% for item in pos_distribution %}{{ item.count }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    
+    if (document.getElementById('posChart')) {
+        new Chart(document.getElementById('posChart'), {
+            type: 'bar',
+            data: {
+                labels: posLabels,
+                datasets: [{
+                    label: 'Token Sayısı',
+                    data: posCounts,
+                    backgroundColor: '#667eea80',
+                    borderColor: '#667eea',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: { beginAtZero: true }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+    {% endif %}
 
     // Genre Chart (Pie)
     if (chartData.genre_labels && chartData.genre_labels.length > 0) {

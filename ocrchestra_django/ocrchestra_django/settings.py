@@ -310,8 +310,8 @@ GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
 FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50 MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50 MB
 
-# Allowed file extensions
-ALLOWED_DOCUMENT_EXTENSIONS = ['.pdf', '.docx', '.txt', '.png', '.jpg', '.jpeg']
+# Corpus file formats (CoNLL-U, VRT, plain text)
+ALLOWED_DOCUMENT_EXTENSIONS = ['.conllu', '.vrt', '.txt', '.conll']
 
 # Google OAuth credentials (loaded from environment)
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')

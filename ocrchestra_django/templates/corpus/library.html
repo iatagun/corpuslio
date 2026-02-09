@@ -1,14 +1,13 @@
 {% extends "corpus/base.html" %}
 {% load auth_extras %}
 
-{% block title %}Kütüphane - CorpusIO{% endblock %}
+{% block title %}Korpus Kütüphanesi - CorpusIO{% endblock %}
 
 {% block content %}
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-    <h2><span class="material-icons" style="vertical-align:middle; margin-right:0.5rem;">library_books</span> Mevcut
-        Kitaplar</h2>
+    <h2><span class="material-icons" style="vertical-align:middle; margin-right:0.5rem;">library_books</span> Korpus Kütüphanesi</h2>
     <span class="badge" style="background:var(--bg-surface); color:var(--text-secondary);">
-        {{ page_obj.paginator.count }} doküman
+        {{ page_obj.paginator.count }} korpus dosyası
     </span>
 </div>
 
@@ -16,10 +15,15 @@
 <div class="card filter-section">
     <form method="GET" class="filter-form">
         <div class="filter-grid">
-            <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Dosya adı, yazar..."
+            <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Dosya adı, yazar, tür..."
                 class="form-control">
 
-            <input type="text" name="author" value="{{ request.GET.author }}" placeholder="Yazar" class="form-control">
+            <select name="author" class="form-control" id="authorSelect">
+                <option value="">-- Yazar --</option>
+                {% for author in all_authors %}
+                <option value="{{ author }}">{{ author }}</option>
+                {% endfor %}
+            </select>
 
             <select name="genre" class="form-control" id="genreSelect">
                 <option value="">-- Tür --</option>
@@ -27,52 +31,27 @@
                 <option value="{{ genre }}">{{ genre|title }}</option>
                 {% endfor %}
             </select>
-            <script>
-                // Set selected genre from URL parameter (Robust Solution)
-                document.addEventListener('DOMContentLoaded', function () {
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const genre = urlParams.get('genre');
-                    if (genre) {
-                        const select = document.getElementById('genreSelect');
-                        // Find option with specific value
-                        for (let i = 0; i < select.options.length; i++) {
-                            if (select.options[i].value === genre) {
-                                select.selectedIndex = i;
-                                break;
-                            }
-                        }
-                    }
 
-                    const tag = urlParams.get('tag');
-                    if (tag) {
-                        const select = document.getElementById('tagSelect');
-                        for (let i = 0; i < select.options.length; i++) {
-                            if (select.options[i].value === tag) {
-                                select.selectedIndex = i;
-                                break;
-                            }
-                        }
-                    }
-                });
-            </script>
-
-            <select name="tag" id="tagSelect" class="form-control">
-                <option value="">Tüm Etiketler</option>
-                {% for tag in all_tags %}
-                <option value="{{ tag.slug }}">{{ tag.name }} ({{ tag.get_document_count }})</option>
+            <select name="format" class="form-control" id="formatSelect">
+                <option value="">-- Format --</option>
+                {% for code, name in format_choices %}
+                <option value="{{ code }}">{{ name }}</option>
                 {% endfor %}
             </select>
 
-            <select name="has_dependencies" id="dependencySelect" class="form-control">
-                <option value="">Bağımlılık Durumu</option>
-                <option value="yes" {% if request.GET.has_dependencies == 'yes' %}selected{% endif %}>Var</option>
-                <option value="no" {% if request.GET.has_dependencies == 'no' %}selected{% endif %}>Yok</option>
-            </select>
+            <input type="text" name="date" value="{{ request.GET.date }}" placeholder="Tarih (örn: 2023)"
+                class="form-control">
+        </div>
 
-            <input type="text" name="date" value="{{ request.GET.date }}" placeholder="Tarih" class="form-control">
-
-            <button type="submit" class="btn btn-primary">Filtrele</button>
-            <a href="{% url 'corpus:library' %}" class="btn btn-outline" style="text-align:center;">Temizle</a>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary">
+                <span class="material-icons" style="font-size:16px;">search</span>
+                Ara
+            </button>
+            <a href="{% url 'corpus:library' %}" class="btn btn-outline">
+                <span class="material-icons" style="font-size:16px;">clear</span>
+                Temizle
+            </a>
         </div>
     </form>
 </div>
@@ -80,152 +59,103 @@
 {% if is_limited_public_view %}
 <div class="alert alert-info" style="display:flex; align-items:center; gap:0.5rem; margin-top:1rem;">
     <span class="material-icons">visibility</span>
-    <p>Anonim ziyaretçiler için görüntüleme sınırlıdır: sadece işlenmiş belgeler, özet önizleme ve sınırlı sayfa başına sonuç gösterilir. Tam erişim için lütfen <a href="{% url 'corpus:login' %}">giriş yapın</a> veya <a href="{% url 'corpus:register' %}">kayıt olun</a>.</p>
+    <p>Anonim ziyaretçiler için görüntüleme sınırlıdır. Tam erişim için lütfen <a href="{% url 'corpus:login' %}">giriş yapın</a> veya <a href="{% url 'corpus:register' %}">kayıt olun</a>.</p>
 </div>
 {% endif %}
 
-{% if documents %}
+{% if corpora %}
 <div class="documents-grid" id="documentsGrid">
-    {% for doc in documents %}
+    {% for corpus in corpora %}
     <div class="card document-card">
-        <h3>{{ doc.filename }}</h3>
+        <h3>{{ corpus.original_filename }}</h3>
         <p class="meta">
-            <span class="format-badge">{{ doc.format }}</span>
+            <span class="format-badge">{{ corpus.get_source_format_display }}</span>
             <span class="date" style="display:flex; align-items:center; gap:0.25rem;">
                 <span class="material-icons" style="font-size:14px;">calendar_today</span>
-                {{ doc.upload_date|date:"d.m.Y" }}
+                {{ corpus.imported_at|date:"d.m.Y" }}
             </span>
         </p>
 
         <p class="status">
-            {% if doc.processed %}
-            <span
-                style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-success); font-weight:500; font-size:0.85rem;">
-                <span class="material-icons" style="font-size:16px;">check_circle</span> İşlendi
+            <span style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-primary); font-weight:500; font-size:0.85rem;">
+                <span class="material-icons" style="font-size:16px;">analytics</span>
+                {{ corpus.document.get_word_count }} token
             </span>
-            <span class="word-count">{{ doc.get_word_count }} kelime</span>
-            {% if doc.analysis.has_dependencies %}
-            <span
-                style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-primary); font-weight:500; font-size:0.85rem;"
-                title="Bağımlılık ayrıştırma mevcut">
-                <span class="material-icons" style="font-size:16px;">account_tree</span> CoNLL-U
+            <span style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-secondary); font-weight:500; font-size:0.85rem;">
+                <span class="material-icons" style="font-size:16px;">article</span>
+                {{ corpus.sentence_count }} cümle
             </span>
-            {% endif %}
-            {% else %}
-            <span
-                style="display:flex; align-items:center; gap:0.25rem; color:var(--text-secondary); font-size:0.85rem;">
-                <span class="material-icons" style="font-size:16px;">hourglass_empty</span> Bekliyor
+            <span style="display:flex; align-items:center; gap:0.25rem; color:var(--text-secondary); font-weight:500; font-size:0.85rem;">
+                <span class="material-icons" style="font-size:16px;">psychology</span>
+                {{ corpus.unique_lemmas }} lemma
             </span>
-            {% endif %}
         </p>
 
-        <!-- Document Tags -->
-        {% if doc.tags.all %}
-        <div class="document-tags" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;">
-            {% for tag in doc.tags.all %}
-            <span class="tag-badge tag-{{ tag.color }}" data-tag-slug="{{ tag.slug }}" style="cursor:pointer;"
-                title="Tıklayarak filtrele">
-                {{ tag.name }}
+        <!-- Corpus Metadata -->
+        {% if corpus.global_metadata %}
+        <div class="corpus-metadata" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;">
+            {% if corpus.global_metadata.author %}
+            <span class="metadata-badge" style="background:var(--bg-accent); color:var(--text-primary); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
+                <span class="material-icons" style="font-size:12px; vertical-align:middle;">person</span>
+                {{ corpus.global_metadata.author }}
             </span>
-            {% endfor %}
+            {% endif %}
+            {% if corpus.global_metadata.genre %}
+            <span class="metadata-badge" style="background:var(--bg-secondary); color:var(--text-primary); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
+                <span class="material-icons" style="font-size:12px; vertical-align:middle;">category</span>
+                {{ corpus.global_metadata.genre|title }}
+            </span>
+            {% endif %}
+            {% if corpus.global_metadata.date %}
+            <span class="metadata-badge" style="background:var(--bg-surface); color:var(--text-secondary); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
+                <span class="material-icons" style="font-size:12px; vertical-align:middle;">event</span>
+                {{ corpus.global_metadata.date }}
+            </span>
+            {% endif %}
         </div>
         {% endif %}
 
         <div class="actions">
-            {% if doc.processed %}
-            <a href="{% url 'corpus:analysis' doc.id %}" class="btn btn-secondary btn-small">İncele</a>
-
-            <!-- Export Dropdown -->
-            {% if request.user|can_export %}
-            <div class="dropdown" style="display:inline-block; position:relative;">
-                <button class="btn btn-outline btn-small dropdown-toggle" type="button" data-doc-id="{{ doc.id }}">
-                    <span class="material-icons" style="font-size:16px;">download</span>
-                    Export
-                </button>
-                <div class="export-menu" id="exportMenu{{ doc.id }}" style="display:none;">
-                    <a href="{% url 'corpus:export_pdf' doc.id %}" class="export-menu-item">
-                        <span class="material-icons">picture_as_pdf</span>
-                        PDF Rapor
-                    </a>
-                    <a href="{% url 'corpus:export_excel' doc.id %}" class="export-menu-item">
-                        <span class="material-icons">table_chart</span>
-                        Excel
-                    </a>
-                    <a href="{% url 'corpus:export_csv' doc.id %}?type=full" class="export-menu-item">
-                        <span class="material-icons">grid_on</span>
-                        CSV
-                    </a>
-                    <div class="export-menu-divider"></div>
-                    <a href="{% url 'corpus:export' doc.id %}?format=vrt" class="export-menu-item">VRT</a>
-                    <a href="{% url 'corpus:export' doc.id %}?format=json" class="export-menu-item">JSON</a>
-                    <a href="{% url 'corpus:export' doc.id %}?format=conllu" class="export-menu-item">CoNLL-U</a>
-                </div>
-            </div>
-            {% endif %}
-            {% endif %}
-            {% if request.user.is_superuser or request.user|has_group:"Academician" or request.user|has_group:"Developer" %}
-            <form method="POST" action="{% url 'corpus:delete' doc.id %}" style="display:inline;"
-                onsubmit="return confirm('Silmek istediğinize emin misiniz?');">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-small btn-danger" style="border:none;">
-                    <span class="material-icons" style="font-size:16px;">delete</span>
-                </button>
-            </form>
+            {% if request.user.is_authenticated %}
+            <a href="{% url 'corpus:corpus_search' %}?corpus={{ corpus.id }}" class="btn btn-primary btn-small">
+                <span class="material-icons" style="font-size:16px;">search</span>
+                Ara
+            </a>
             {% endif %}
         </div>
     </div>
     {% endfor %}
 </div>
 
-<!-- Loading indicator for infinite scroll -->
-<div id="infiniteScrollLoader" class="infinite-scroll-loader" style="display: none;"
-    data-current-page="{{ page_obj.number }}" data-total-pages="{{ page_obj.paginator.num_pages }}"
-    data-has-more="{{ page_obj.has_next|yesno:'true,false' }}">
-    <div class="spinner-small"></div>
-    <p style="color: var(--text-secondary); margin-top: 0.5rem;">Daha fazla yükleniyor...</p>
-</div>
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="pagination" style="display:flex; justify-content:center; align-items:center; gap:1rem; margin-top:2rem;">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+        class="btn btn-outline">
+        <span class="material-icons" style="font-size:16px;">chevron_left</span>
+        Önceki
+    </a>
+    {% endif %}
 
-<!-- End of results indicator -->
-<div id="endOfResults" class="end-of-results" style="display: none;">
-    <span class="material-icons" style="font-size: 2rem; color: var(--text-tertiary);">check_circle</span>
-    <p style="color: var(--text-secondary); margin-top: 0.5rem;">Tüm dokümanlar yüklendi</p>
+    <span class="pagination-info" style="color:var(--text-secondary);">
+        Sayfa {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+        class="btn btn-outline">
+        Sonraki
+        <span class="material-icons" style="font-size:16px;">chevron_right</span>
+    </a>
+    {% endif %}
 </div>
+{% endif %}
 
 {% else %}
-<!-- Skeleton Loading (initially hidden, shown via JS when loading) -->
-<div class="documents-grid" id="skeletonGrid" style="display: none;">
-    <div class="skeleton-card">
-        <div class="skeleton skeleton-text-lg" style="width: 70%; margin-bottom: 1rem;"></div>
-        <div class="skeleton skeleton-text" style="width: 30%; margin-bottom: 0.5rem;"></div>
-        <div class="skeleton skeleton-text" style="width: 50%; margin-bottom: 1rem;"></div>
-        <div style="display: flex; gap: 0.5rem;">
-            <div class="skeleton skeleton-text" style="width: 80px; height: 36px;"></div>
-            <div class="skeleton skeleton-text" style="width: 80px; height: 36px;"></div>
-        </div>
-    </div>
-    <div class="skeleton-card">
-        <div class="skeleton skeleton-text-lg" style="width: 60%; margin-bottom: 1rem;"></div>
-        <div class="skeleton skeleton-text" style="width: 40%; margin-bottom: 0.5rem;"></div>
-        <div class="skeleton skeleton-text" style="width: 45%; margin-bottom: 1rem;"></div>
-        <div style="display: flex; gap: 0.5rem;">
-            <div class="skeleton skeleton-text" style="width: 80px; height: 36px;"></div>
-            <div class="skeleton skeleton-text" style="width: 80px; height: 36px;"></div>
-        </div>
-    </div>
-    <div class="skeleton-card">
-        <div class="skeleton skeleton-text-lg" style="width: 75%; margin-bottom: 1rem;"></div>
-        <div class="skeleton skeleton-text" style="width: 35%; margin-bottom: 0.5rem;"></div>
-        <div class="skeleton skeleton-text" style="width: 55%; margin-bottom: 1rem;"></div>
-        <div style="display: flex; gap: 0.5rem;">
-            <div class="skeleton skeleton-text" style="width: 80px; height: 36px;"></div>
-            <div class="skeleton skeleton-text" style="width: 80px; height: 36px;"></div>
-        </div>
-    </div>
-</div>
-
 <div class="alert alert-info" style="display:flex; align-items:center; gap:0.5rem;">
     <span class="material-icons">info</span>
-    <p>Kütüphane boş. 'Yeni Ekle' sekmesinden kitap ekleyebilirsiniz.</p>
+    <p>Kütüphane boş. Yönetici panelinden corpus dosyaları import edilebilir.</p>
 </div>
 {% endif %}
 
@@ -243,323 +173,67 @@
         align-items: center;
     }
 
-    .infinite-scroll-loader,
-    .end-of-results {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
-        margin: 2rem 0;
+    .pagination {
+        margin-top: 2rem;
     }
 
-    /* Export Dropdown Menu */
-    .export-menu {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        margin-top: 0.5rem;
+    .pagination-info {
+        font-weight: 500;
+        padding: 0.5rem 1rem;
         background: var(--bg-surface);
-        border: 1px solid var(--border-subtle);
-        border-radius: var(--radius-md);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-        min-width: 180px;
-        z-index: 1000;
-        overflow: hidden;
-    }
-
-    .export-menu-item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.75rem 1rem;
-        color: var(--text-main);
-        text-decoration: none;
-        transition: background 0.2s;
-        font-size: 0.875rem;
-    }
-
-    .export-menu-item:hover {
-        background: var(--bg-surface-hover);
-    }
-
-    .export-menu-item .material-icons {
-        font-size: 18px;
-        color: var(--text-secondary);
-    }
-
-    .export-menu-divider {
-        height: 1px;
-        background: var(--border-subtle);
-        margin: 0.25rem 0;
-    }
-
-    .dropdown-toggle::after {
-        content: '▼';
-        margin-left: 0.25rem;
-        font-size: 0.75rem;
+        border-radius: var(--radius-sm);
     }
 </style>
+
 <script>
-    // Permission check for JS
-    const userCanExport = {{ request.user|can_export|yesno:"true,false" }};
+// Set selected values from URL parameters
+document.addEventListener('DOMContentLoaded', function () {
+    const urlParams = new URLSearchParams(window.location.search);
 
-    // ========================================
-    // EXPORT DROPDOWN
-    // ========================================
-    document.addEventListener('DOMContentLoaded', function () {
-        // Event delegation for export dropdown buttons
-        document.addEventListener('click', function (event) {
-            const dropdownBtn = event.target.closest('.dropdown-toggle');
-
-            if (dropdownBtn) {
-                event.stopPropagation();
-                const docId = dropdownBtn.dataset.docId;
-                const menu = document.getElementById('exportMenu' + docId);
-                const isVisible = menu.style.display === 'block';
-
-                // Close all menus
-                document.querySelectorAll('.export-menu').forEach(m => m.style.display = 'none');
-
-                // Toggle current menu
-                menu.style.display = isVisible ? 'none' : 'block';
-            } else if (!event.target.closest('.dropdown')) {
-                // Close menus when clicking outside
-                document.querySelectorAll('.export-menu').forEach(m => m.style.display = 'none');
+    // Author select
+    const author = urlParams.get('author');
+    if (author) {
+        const select = document.getElementById('authorSelect');
+        for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].value === author) {
+                select.selectedIndex = i;
+                break;
             }
-        });
-    });
-
-    // ========================================
-    // INFINITE SCROLL IMPLEMENTATION
-    // ========================================
-
-    // Get initial values from data attributes
-    const loaderElement = document.getElementById('infiniteScrollLoader');
-    let currentPage = parseInt(loaderElement.dataset.currentPage);
-    let totalPages = parseInt(loaderElement.dataset.totalPages);
-    let isLoading = false;
-    let hasMore = loaderElement.dataset.hasMore === 'true';
-
-    // Get current filter parameters
-    function getCurrentFilters() {
-        const params = new URLSearchParams(window.location.search);
-        return {
-            q: params.get('q') || '',
-            author: params.get('author') || '',
-            genre: params.get('genre') || '',
-            date: params.get('date') || '',
-            tag: params.get('tag') || ''
-        };
+        }
     }
 
-    // Build query string from filters
-    function buildQueryString(page) {
-        const filters = getCurrentFilters();
-        const params = new URLSearchParams();
-
-        params.append('page', page);
-        if (filters.q) params.append('q', filters.q);
-        if (filters.author) params.append('author', filters.author);
-        if (filters.genre) params.append('genre', filters.genre);
-        if (filters.date) params.append('date', filters.date);
-        if (filters.tag) params.append('tag', filters.tag);
-
-        return params.toString();
-    }
-
-    // Load more documents
-    function loadMoreDocuments() {
-        if (isLoading || !hasMore) return;
-
-        isLoading = true;
-        const loader = document.getElementById('infiniteScrollLoader');
-        loader.style.display = 'flex';
-
-        const nextPage = currentPage + 1;
-        const queryString = buildQueryString(nextPage);
-
-        fetch(`/corpus/library/?${queryString}`, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+    // Genre select
+    const genre = urlParams.get('genre');
+    if (genre) {
+        const select = document.getElementById('genreSelect');
+        for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].value === genre) {
+                select.selectedIndex = i;
+                break;
             }
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.documents && data.documents.length > 0) {
-                    appendDocuments(data.documents);
-                    currentPage = data.page;
-                    hasMore = data.has_next;
-
-                    if (!hasMore) {
-                        showEndOfResults();
-                    }
-                } else {
-                    hasMore = false;
-                    showEndOfResults();
-                }
-            })
-            .catch(error => {
-                console.error('Error loading documents:', error);
-                toastError('Dokümanlar yüklenirken bir hata oluştu');
-            })
-            .finally(() => {
-                loader.style.display = 'none';
-                isLoading = false;
-            });
-    }
-
-    // Append documents to grid
-    function appendDocuments(documents) {
-        const grid = document.getElementById('documentsGrid');
-
-        documents.forEach(doc => {
-            const card = createDocumentCard(doc);
-            grid.appendChild(card);
-        });
-    }
-
-    // Create document card element
-    function createDocumentCard(doc) {
-        const card = document.createElement('div');
-        card.className = 'card document-card';
-
-        const processedBadge = doc.processed
-            ? `<span style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-success); font-weight:500; font-size:0.85rem;">
-                   <span class="material-icons" style="font-size:16px;">check_circle</span> İşlendi
-               </span>
-               <span class="word-count">${doc.word_count} kelime</span>`
-            : `<span style="display:flex; align-items:center; gap:0.25rem; color:var(--text-secondary); font-size:0.85rem;">
-                   <span class="material-icons" style="font-size:16px;">hourglass_empty</span> Bekliyor
-               </span>`;
-
-        // Build tags HTML
-        let tagsHtml = '';
-        if (doc.tags && doc.tags.length > 0) {
-            tagsHtml = '<div class="document-tags" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;">';
-            doc.tags.forEach(tag => {
-                tagsHtml += `<span class="tag-badge tag-${tag.color}" data-tag-slug="${tag.slug}" style="cursor:pointer;" title="Tıklayarak filtrele">${tag.name}</span>`;
-            });
-            tagsHtml += '</div>';
         }
+    }
 
-        // Conditional actions based on userCanExport
-        let exportActions = '';
-        if (userCanExport) {
-            exportActions = `
-               <div class="dropdown" style="display:inline-block; position:relative;">
-                   <button class="btn btn-outline btn-small dropdown-toggle" type="button" 
-                           data-doc-id="${doc.id}">
-                       <span class="material-icons" style="font-size:16px;">download</span>
-                       Export
-                   </button>
-                   <div class="export-menu" id="exportMenu${doc.id}" style="display:none;">
-                       <a href="/corpus/export/pdf/${doc.id}/" class="export-menu-item">
-                           <span class="material-icons">picture_as_pdf</span>
-                           PDF Rapor
-                       </a>
-                       <a href="/corpus/export/excel/${doc.id}/" class="export-menu-item">
-                           <span class="material-icons">table_chart</span>
-                           Excel
-                       </a>
-                       <a href="/corpus/export/csv/${doc.id}/?type=full" class="export-menu-item">
-                           <span class="material-icons">grid_on</span>
-                           CSV
-                       </a>
-                       <div class="export-menu-divider"></div>
-                       <a href="${doc.export_url}?format=vrt" class="export-menu-item">VRT</a>
-                       <a href="${doc.export_url}?format=json" class="export-menu-item">JSON</a>
-                       <a href="${doc.export_url}?format=conllu" class="export-menu-item">CoNLL-U</a>
-                   </div>
-               </div>`;
+    // Format select
+    const format = urlParams.get('format');
+    if (format) {
+        const select = document.getElementById('formatSelect');
+        for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].value === format) {
+                select.selectedIndex = i;
+                break;
+            }
         }
-
-        const actions = doc.processed
-            ? `<a href="${doc.url}" class="btn btn-secondary btn-small">İncele</a>
-               ${exportActions}`
-            : '';
-
-
-        card.innerHTML = `
-            <h3>${doc.title}</h3>
-            <p class="meta">
-                <span class="format-badge">${doc.filename.split('.').pop().toUpperCase()}</span>
-                <span class="date" style="display:flex; align-items:center; gap:0.25rem;">
-                    <span class="material-icons" style="font-size:14px;">calendar_today</span>
-                    ${doc.upload_date}
-                </span>
-            </p>
-            <p class="status">
-                ${processedBadge}
-            </p>
-            ${tagsHtml}
-            <div class="actions">
-                ${actions}
-            </div>
-        `;
-
-        // Add click event for tag badges
-        card.querySelectorAll('.tag-badge').forEach(badge => {
-            badge.addEventListener('click', function () {
-                const tagSlug = this.dataset.tagSlug;
-                window.location.href = `/corpus/library/?tag=${tagSlug}`;
-            });
-        });
-
-        return card;
     }
+});
 
-    // Show end of results message
-    function showEndOfResults() {
-        const endMessage = document.getElementById('endOfResults');
-        endMessage.style.display = 'flex';
-    }
-
-    // Intersection Observer for infinite scroll
-    function setupInfiniteScroll() {
-        const loader = document.getElementById('infiniteScrollLoader');
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting && hasMore && !isLoading) {
-                    loadMoreDocuments();
-                }
-            });
-        }, {
-            root: null,
-            rootMargin: '200px', // Start loading 200px before reaching the bottom
-            threshold: 0
-        });
-
-        observer.observe(loader);
-    }
-
-    // Initialize infinite scroll on page load
-    document.addEventListener('DOMContentLoaded', function () {
-        if (hasMore) {
-            setupInfiniteScroll();
-        } else {
-            showEndOfResults();
-        }
-
-        // Add click handlers to existing tag badges
-        document.querySelectorAll('.tag-badge').forEach(badge => {
-            badge.addEventListener('click', function () {
-                const tagSlug = this.dataset.tagSlug;
-                window.location.href = `/corpus/library/?tag=${tagSlug}`;
-            });
+// Auto-submit form when select changes for better UX
+document.addEventListener('DOMContentLoaded', function () {
+    // Auto-submit on filter changes
+    document.querySelectorAll('select[name="author"], select[name="genre"], select[name="format"]').forEach(select => {
+        select.addEventListener('change', function () {
+            this.form.submit();
         });
     });
-
-    // Auto-submit form when select changes (optional)
-    document.querySelector('select[name="genre"]').addEventListener('change', function () {
-        this.form.submit();
-    });
-
-    document.querySelector('select[name="tag"]').addEventListener('change', function () {
-        this.form.submit();
-    });
-</script>
-</script>
+});
 {% endblock %}

@@ -172,20 +172,20 @@
     </h2>
 
     <div class="stats-grid">
-        <div class="stat-card" tabindex="0" aria-label="Toplam {{ total_docs|default:0 }} belge">
-            <div class="stat-icon"><span class="material-icons" aria-hidden="true">description</span></div>
-            <div class="stat-number" aria-label="Toplam belge sayısı">{{ total_docs|default:0 }}</div>
-            <div class="stat-label">Toplam Belge</div>
+        <div class="stat-card" tabindex="0" aria-label="Toplam {{ total_corpora|default:0 }} korpus">
+            <div class="stat-icon"><span class="material-icons" aria-hidden="true">library_books</span></div>
+            <div class="stat-number" aria-label="Toplam korpus sayısı">{{ total_corpora|default:0 }}</div>
+            <div class="stat-label">Toplam Korpus</div>
         </div>
-        <div class="stat-card" tabindex="0" aria-label="{{ processed_docs|default:0 }} işlenmiş belge">
-            <div class="stat-icon"><span class="material-icons" aria-hidden="true">check_circle</span></div>
-            <div class="stat-number" aria-label="İşlenmiş belge sayısı">{{ processed_docs|default:0 }}</div>
-            <div class="stat-label">İşlenmiş Belge</div>
-        </div>
-        <div class="stat-card" tabindex="0" aria-label="Toplam {{ total_words|default:0|floatformat:0 }} kelime">
+        <div class="stat-card" tabindex="0" aria-label="{{ total_tokens|default:0|floatformat:0 }} token">
             <div class="stat-icon"><span class="material-icons" aria-hidden="true">text_fields</span></div>
-            <div class="stat-number" aria-label="Toplam kelime sayısı">{{ total_words|default:0|floatformat:0 }}</div>
+            <div class="stat-number" aria-label="Toplam token sayısı">{{ total_tokens|default:0|floatformat:0 }}</div>
             <div class="stat-label">Toplam Token</div>
+        </div>
+        <div class="stat-card" tabindex="0" aria-label="Toplam {{ total_sentences|default:0|floatformat:0 }} cümle">
+            <div class="stat-icon"><span class="material-icons" aria-hidden="true">format_list_numbered</span></div>
+            <div class="stat-number" aria-label="Toplam cümle sayısı">{{ total_sentences|default:0|floatformat:0 }}</div>
+            <div class="stat-label">Toplam Cümle</div>
         </div>
         <div class="stat-card" tabindex="0" aria-label="{{ total_collections|default:0 }} koleksiyon">
             <div class="stat-icon"><span class="material-icons" aria-hidden="true">collections_bookmark</span></div>
@@ -257,28 +257,22 @@
 {% endif %}
 
 <!-- Recent Activity -->
-{% if recent_documents %}
+{% if recent_corpora %}
 <section class="recent-section">
-    <h3 style="color:var(--text-main); margin-bottom:1.5rem;">Son Yüklenenler</h3>
+    <h3 style="color:var(--text-main); margin-bottom:1.5rem;">Son Yüklenen Korpuslar</h3>
 
     <div class="recent-grid">
-        {% for doc in recent_documents %}
+        {% for corpus in recent_corpora %}
         <div class="recent-card">
             <div class="recent-header">
-                <h4>{{ doc.filename }}</h4>
-                <span class="format-badge">{{ doc.format }}</span>
+                <h4>{{ corpus.original_filename }}</h4>
+                <span class="format-badge">{{ corpus.get_source_format_display }}</span>
             </div>
             <div class="recent-meta">
-                <span>{{ doc.upload_date|date:"d.m.Y H:i" }}</span>
-                {% if doc.processed %}
-                <span class="material-icons" style="color:var(--accent-success); font-size:1rem;">check_circle</span>
-                {% else %}
-                <span class="material-icons" style="color:var(--text-secondary); font-size:1rem;">hourglass_empty</span>
-                {% endif %}
+                <span>{{ corpus.imported_at|date:"d.m.Y H:i" }}</span>
+                <span class="material-icons" style="color:var(--accent-primary); font-size:1rem;">library_books</span>
             </div>
-            {% if doc.processed %}
-            <a href="{% url 'corpus:analysis' doc.id %}" class="btn btn-secondary btn-small">İncele</a>
-            {% endif %}
+            <a href="{% url 'corpus:corpus_search' %}?corpus={{ corpus.id }}" class="btn btn-secondary btn-small">Ara</a>
         </div>
         {% endfor %}
     </div>
@@ -288,18 +282,39 @@
 <!-- CTA Section -->
 {% load auth_extras %}
 {% if user.is_authenticated %}
-{% if request.user|can_upload %}
 <section class="cta-section" role="region" aria-labelledby="cta-heading">
     <h2 id="cta-heading">Korpusta Arama Yapın</h2>
     <p>Dilbilimsel açıklamalı korpus dosyalarında gelişmiş sorgulama araçlarıyla lemma, POS etiketi ve bağımlılık ilişkilerine dayalı aramalar yapın.</p>
-    <a href="{% url 'corpus:corpus_search' %}" 
-       class="btn btn-primary btn-large"
-       aria-label="Korpus arama aracına git">
-        <span class="material-icons" aria-hidden="true">search</span> 
-        <span>Aramaya Başla</span>
-    </a>
+    <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px; flex-wrap: wrap;">
+        <a href="{% url 'corpus:corpus_search' %}" 
+           class="btn btn-primary btn-large"
+           aria-label="KWIC konkordans arama">
+            <span class="material-icons" aria-hidden="true">search</span> 
+            <span>KWIC Arama</span>
+        </a>
+        <a href="{% url 'corpus:collocation' %}" 
+           class="btn btn-outline btn-large"
+           style="background: var(--bg-surface); color: var(--accent-primary); border-color: var(--accent-primary);"
+           aria-label="Kollokasyon analizi">
+            <span class="material-icons" aria-hidden="true">grain</span> 
+            <span>Kollokasyon</span>
+        </a>
+        <a href="{% url 'corpus:ngram' %}" 
+           class="btn btn-outline btn-large"
+           style="background: var(--bg-surface); color: var(--accent-success); border-color: var(--accent-success);"
+           aria-label="N-gram analizi">
+            <span class="material-icons" aria-hidden="true">view_module</span> 
+            <span>N-gram</span>
+        </a>
+        <a href="{% url 'corpus:frequency' %}" 
+           class="btn btn-outline btn-large"
+           style="background: var(--bg-surface); color: var(--accent-warning); border-color: var(--accent-warning);"
+           aria-label="Frekans analizi">
+            <span class="material-icons" aria-hidden="true">bar_chart</span> 
+            <span>Frekans</span>
+        </a>
+    </div>
 </section>
-{% endif %}
 {% else %}
 <section class="cta-section" role="region" aria-labelledby="cta-heading">
     <h2 id="cta-heading">Araştırmanıza Başlayın</h2>

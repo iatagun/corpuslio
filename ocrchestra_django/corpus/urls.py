@@ -32,6 +32,12 @@ urlpatterns = [
     path('ngram-analysis/', search_views.ngram_view, name='ngram'),
     path('frequency/', search_views.frequency_view, name='frequency'),
     
+    # Corpus search exports
+    path('export/concordance/', search_views.export_concordance_view, name='export_concordance'),
+    path('export/collocation/', search_views.export_collocation_view, name='export_collocation_results'),
+    path('export/ngram/', search_views.export_ngram_view, name='export_ngram'),
+    path('export/frequency-list/', search_views.export_frequency_view, name='export_frequency'),
+    
     # API endpoints
     path('api/concordance/', search_views.api_concordance, name='api_concordance'),
     
@@ -43,12 +49,12 @@ urlpatterns = [
     # Main pages
     path('', views.home_view, name='home'),
     path('library/', views.library_view, name='library'),
-    path('upload/', views.upload_view, name='upload'),
-    path('analysis/<int:doc_id>/', views.analysis_view, name='analysis'),
-    path('analysis/<int:doc_id>/download/', views.download_search_results, name='download_results'),
-    path('ngrams/<int:doc_id>/', analysis_views.ngrams_view, name='ngrams'),
-    path('wordcloud/<int:doc_id>/', analysis_views.wordcloud_view, name='wordcloud'),
-    path('comparison/', analysis_views.comparison_view, name='comparison'),
+    # path('upload/', views.upload_view, name='upload'),  # Disabled: Use management command import_corpus
+        path('analysis/<int:doc_id>/', views.analysis_view, name='analysis'),  # Backwards-compat: document-level analysis
+    # path('analysis/<int:doc_id>/download/', views.download_search_results, name='download_results'),  # Disabled
+    # path('ngrams/<int:doc_id>/', analysis_views.ngrams_view, name='ngrams'),  # Disabled: Use corpus-wide ngram
+    # path('wordcloud/<int:doc_id>/', analysis_views.wordcloud_view, name='wordcloud'),  # Disabled
+    # path('comparison/', analysis_views.comparison_view, name='comparison'),  # Disabled: Not corpus query feature
     path('statistics/', views.statistics_view, name='statistics'),
     path('corpus-statistics/', statistics_views.corpus_statistics_view, name='corpus_statistics'),
     path('dashboard/', dashboard_views.dashboard_view, name='dashboard'),
@@ -57,8 +63,8 @@ urlpatterns = [
     path('collections/create/', collection_views.create_collection_view, name='create_collection'),
     path('collections/<int:coll_id>/', collection_views.collection_detail_view, name='collection_detail'),
     path('delete/<int:doc_id>/', views.delete_document, name='delete'),
-    path('export/<int:doc_id>/', views.export_document, name='export'),
-    path('task/<str:task_id>/', views.task_status_view, name='task_status'),
+    # path('export/<int:doc_id>/', views.export_document, name='export'),  # Disabled: Use corpus search exports
+    # path('task/<int:task_id>/', views.task_status_view, name='task_status'),  # Disabled: OCR task tracking
     
     # Advanced exports
     path('export/pdf/<int:doc_id>/', export_views.export_pdf_report, name='export_pdf'),

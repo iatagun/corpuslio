@@ -116,25 +116,28 @@ class DocumentUploadForm(forms.ModelForm):
         help_text="Metnin gerçek oluşturulma tarihi"
     )
     
-    analyze = forms.BooleanField(
+    auto_detect_format = forms.BooleanField(
         required=False, 
         initial=True,
-        label="Dilbilimsel Analiz Yap (POS/Lemma)",
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+        label="Dosya Formatını Otomatik Algıla",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        help_text="VRT, CoNLL-U veya düz metin formatını otomatik tespit eder"
     )
     
-    enable_dependencies = forms.BooleanField(
+    validate_format = forms.BooleanField(
         required=False,
-        initial=False,
-        label="Bağımlılık Ayrıştırma Yap (CoNLL-U)",
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+        initial=True,
+        label="Format Doğrulama Yap",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        help_text="Dosyanın derlem formatına uygunluğunu kontrol eder"
     )
     
-    label_studio_export = forms.BooleanField(
+    skip_duplicates = forms.BooleanField(
         required=False,
         initial=False,
-        label="Label Studio Formatında Kaydet",
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+        label="Tekrarlanan Cümleleri Atla",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        help_text="Aynı metne sahip cümlelerin tekrar eklenmesini engeller"
     )
     
     class Meta:

@@ -79,6 +79,37 @@
         margin-top: 1rem;
     }
     
+    .export-buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+    
+    .btn-export {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid var(--border-subtle);
+        background: var(--bg-base);
+        color: var(--text-main);
+    }
+    
+    .btn-export:hover {
+        background: var(--bg-surface-hover);
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+        transform: translateY(-1px);
+    }
+    
+    .btn-export .material-icons {
+        font-size: 18px;
+    }
+    
     .collocation-table thead {
         background: var(--bg-base);
         color: var(--text-main);
@@ -268,7 +299,18 @@
     
     {% if collocates %}
     <div class="analysis-card">
-        <h2>📈 {% trans "Sonuçlar" %}</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2>📈 {% trans "Sonuçlar" %}</h2>
+            {% if user.is_authenticated %}
+            <div class="export-buttons">
+                <a href="{% url 'corpus:export_collocation_results' %}?{{ request.GET.urlencode }}" 
+                   class="btn-export" 
+                   title="CSV formatında indir (su damgalı)">
+                    <span class="material-icons">download</span> CSV İndir
+                </a>
+            </div>
+            {% endif %}
+        </div>
         
         <div class="stats-banner">
             <div class="stat-item">
