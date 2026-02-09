@@ -1,12 +1,9 @@
 """OCRchestra package initializer.
 
-Ollama-based document processing orchestra system.
+Corpus Query Platform - Pre-analyzed corpus management system.
 """
-from .ollama_client import OllamaClient
-from .ollama_orchestrator import OllamaOrchestrator, process_file
 
-__all__ = [
-    "OllamaClient",
-    "OllamaOrchestrator",
-    "process_file",
-]
+# Legacy OCR modules removed - platform transformed to corpus query system
+# All document analysis is now done via pre-analyzed VRT/CoNLL-U imports
+
+__all__ = []

@@ -28,6 +28,9 @@
     --accent-primary: #3b82f6;
     --accent-hover: #2563eb;
     --accent-success: #10b981;
+    --accent-success-hover: #059669;
+    --accent-warning: #f59e0b;
+    --accent-warning-hover: #d97706;
     --accent-danger: #ef4444;
     --text-main: #f1f5f9;
     --text-secondary: #94a3b8;
@@ -44,6 +47,9 @@
     --accent-primary: #0ea5e9;
     --accent-hover: #0284c7;
     --accent-success: #059669;
+    --accent-success-hover: #047857;
+    --accent-warning: #f59e0b;
+    --accent-warning-hover: #d97706;
     --accent-danger: #dc2626;
     --text-main: #1c1917;
     --text-secondary: #57534e;
@@ -61,6 +67,9 @@
         --accent-primary: #3b82f6;
         --accent-hover: #2563eb;
         --accent-success: #10b981;
+        --accent-success-hover: #059669;
+        --accent-warning: #f59e0b;
+        --accent-warning-hover: #d97706;
         --accent-danger: #ef4444;
         --text-main: #f1f5f9;
         --text-secondary: #94a3b8;
@@ -78,6 +87,9 @@
         --accent-primary: #0ea5e9;
         --accent-hover: #0284c7;
         --accent-success: #059669;
+        --accent-success-hover: #047857;
+        --accent-warning: #f59e0b;
+        --accent-warning-hover: #d97706;
         --accent-danger: #dc2626;
         --text-main: #1c1917;
         --text-secondary: #57534e;
@@ -95,6 +107,9 @@ html:not([data-theme]) {
     --accent-primary: #3b82f6;
     --accent-hover: #2563eb;
     --accent-success: #10b981;
+    --accent-success-hover: #059669;
+    --accent-warning: #f59e0b;
+    --accent-warning-hover: #d97706;
     --accent-danger: #ef4444;
     --text-main: #f1f5f9;
     --text-secondary: #94a3b8;

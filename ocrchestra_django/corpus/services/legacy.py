@@ -1,16 +1,40 @@
-"""Service layer for corpus business logic."""
+"""Service layer for corpus business logic.
+
+LEGACY MODULE: Supports old document analysis workflow.
+New corpus query platform uses parsers and query_engine instead.
+"""
 
 import sys
 import os
 from django.conf import settings
 
 # Add parent ocrchestra module to path
-parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, parent_dir)
+parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 
-from ocrchestra.search_engine import CorpusSearchEngine
-from ocrchestra.statistics import CorpusStatistics
-from ocrchestra.exporters import CorpusExporter
+# Import legacy ocrchestra modules with fallback
+try:
+    from ocrchestra.search_engine import CorpusSearchEngine
+    from ocrchestra.statistics import CorpusStatistics
+    from ocrchestra.exporters import CorpusExporter
+    LEGACY_AVAILABLE = True
+except ImportError as e:
+    import warnings
+    warnings.warn(f"Legacy ocrchestra modules not available: {e}")
+    LEGACY_AVAILABLE = False
+    # Create placeholder classes
+    class CorpusSearchEngine:
+        def __init__(self, *args, **kwargs):
+            raise NotImplementedError("Legacy search engine not available")
+    
+    class CorpusStatistics:
+        def __init__(self, *args, **kwargs):
+            raise NotImplementedError("Legacy statistics not available")
+    
+    class CorpusExporter:
+        def __init__(self, *args, **kwargs):
+            raise NotImplementedError("Legacy exporter not available")
 
 from corpus.models import Document, Content, Analysis
 
@@ -165,14 +189,92 @@ class CorpusService:
         """
         Get statistics for a document.
         
+        Supports both legacy (Analysis model) and new corpus (Token model) data.
+        
         Args:
             document: Document model instance
         
         Returns:
             Dictionary with statistics
         """
+        from collections import Counter
+        from corpus.models import Token
+        
+        # Try new corpus query platform first (Token-based)
+        if Token.objects.filter(document=document).exists():
+            tokens = Token.objects.filter(document=document).select_related('sentence')
+            
+            # Build statistics from Token model
+            forms = [t.form for t in tokens if t.form and t.upos != 'PUNCT']
+            lemmas = [t.lemma for t in tokens if t.lemma and t.upos != 'PUNCT']
+            pos_tags = [t.upos for t in tokens if t.upos]
+            
+            token_count = len(forms)
+            type_count = len(set(forms))
+            ttr = type_count / token_count if token_count > 0 else 0.0
+            
+            # Word frequency (top 50)
+            word_freq = Counter(forms).most_common(50)
+            word_frequency = [{'word': word, 'count': count} for word, count in word_freq]
+            
+            # Lemma frequency (top 50)
+            lemma_freq = Counter(lemmas).most_common(50)
+            lemma_frequency = [{'lemma': lemma, 'count': count} for lemma, count in lemma_freq]
+            
+            # POS distribution
+            pos_dist = Counter(pos_tags)
+            pos_distribution = [{'pos': pos, 'count': count} for pos, count in pos_dist.items()]
+            
+            # Zipf distribution (top 20)
+            import math
+            zipf = []
+            for rank, (word, count) in enumerate(word_freq[:20], start=1):
+                expected = word_freq[0][1] / rank if word_freq else 0
+                zipf.append({
+                    'rank': rank,
+                    'word': word,
+                    'count': count,
+                    'expected': round(expected, 2)
+                })
+            
+            return {
+                'token_count': token_count,
+                'type_count': type_count,
+                'ttr': round(ttr, 4),
+                'word_frequency': word_frequency,
+                'lemma_frequency': lemma_frequency,
+                'pos_distribution': pos_distribution,
+                'zipf': zipf
+            }
+        
+        # Fallback to legacy Analysis model
         if not hasattr(document, 'analysis') or not document.analysis.data:
             return None
+        
+        if not LEGACY_AVAILABLE:
+            # Return basic stats without CorpusStatistics
+            analysis_data = document.analysis.data
+            words = [item.get('word', '') for item in analysis_data if isinstance(item, dict)]
+            lemmas = [item.get('lemma', '') for item in analysis_data if isinstance(item, dict)]
+            pos_tags = [item.get('pos', '') for item in analysis_data if isinstance(item, dict)]
+            
+            token_count = len(words)
+            type_count = len(set(words))
+            ttr = type_count / token_count if token_count > 0 else 0.0
+            
+            word_freq = Counter(words).most_common(50)
+            lemma_freq = Counter(lemmas).most_common(50)
+            pos_dist = Counter(pos_tags)
+            
+            return {
+                'token_count': token_count,
+                'type_count': type_count,
+                'ttr': round(ttr, 4),
+                'word_frequency': [{'word': w, 'count': c} for w, c in word_freq],
+                'lemma_frequency': [{'lemma': l, 'count': c} for l, c in lemma_freq],
+                'pos_distribution': [{'pos': p, 'count': c} for p, c in pos_dist.items()],
+                'zipf': []
+            }
         
         stats = CorpusStatistics(document.analysis.data)
         

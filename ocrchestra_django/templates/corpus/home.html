@@ -32,14 +32,12 @@
             </a>
 
             {% if user.is_authenticated %}
-            {% if request.user|can_upload %}
-            <a href="{% url 'corpus:upload' %}" 
+            <a href="{% url 'corpus:corpus_search' %}" 
                class="btn btn-secondary btn-large"
-               aria-label="Yeni belge yükle">
-                <span class="material-icons" aria-hidden="true">cloud_upload</span> 
-                <span>Belge Yükle</span>
+               aria-label="Korpusta arama yap">
+                <span class="material-icons" aria-hidden="true">search</span> 
+                <span>Korpus Ara</span>
             </a>
-            {% endif %}
             <a href="{% url 'corpus:dashboard' %}" 
                class="btn btn-outline btn-large"
                aria-label="Kontrol panelinize git">
@@ -93,12 +91,12 @@
         <div class="feature-card" tabindex="0">
             <span class="material-icons feature-icon" aria-hidden="true">search</span>
             <h3>Gelişmiş Korpus Sorgulama</h3>
-            <p>Concordance, kolokasyon, frekans analizi ve n-gram araçları ile detaylı korpus incelemeleri yapın. Regex ve fuzzy search desteği.</p>
+            <p>Önceden dilbilimsel açıklaması yapılmış korpus dosyalarında (VRT, CoNLL-U) KWIC konkordans, kollokasyon, frekans ve n-gram analizleri.</p>
             <ul class="feature-list" aria-label="Arama özellikleri">
                 <li>KWIC (Keyword in Context) görünümü</li>
-                <li>Kolokasyon ağları</li>
-                <li>İstatistiksel analizler</li>
-                <li>Çoklu filtre desteği</li>
+                <li>Lemma ve POS tabanlı sorgular</li>
+                <li>Regex ve pattern matching</li>
+                <li>CQP-style arama dili</li>
             </ul>
         </div>
 
@@ -153,12 +151,12 @@
         <div class="feature-card" tabindex="0">
             <span class="material-icons feature-icon" aria-hidden="true">collections_bookmark</span>
             <h3>Koleksiyon Yönetimi</h3>
-            <p>Kendi alt-korpusunuzu oluşturun, etiketleyin ve paylaşın. Belge yükleme ve organizasyon araçları.</p>
+            <p>Kendi alt-korpusunuzu oluşturun, etiketleyin ve paylaşın. Pre-analyzed korpus dosyalarını import edin.</p>
             <ul class="feature-list" aria-label="Koleksiyon özellikleri">
                 <li>Özel koleksiyonlar</li>
                 <li>Etiket sistemi</li>
-                <li>OCR entegrasyonu</li>
-                <li>Format otomatik tespiti</li>
+                <li>VRT ve CoNLL-U import</li>
+                <li>Metadata yönetimi</li>
             </ul>
         </div>
     </div>
@@ -292,13 +290,13 @@
 {% if user.is_authenticated %}
 {% if request.user|can_upload %}
 <section class="cta-section" role="region" aria-labelledby="cta-heading">
-    <h2 id="cta-heading">Korpusu Zenginleştirin</h2>
-    <p>Kendi belgelerinizi ekleyerek Türkçe korpusa katkıda bulunun ve tüm gelişmiş analiz araçlarından yararlanın. Araştırma topluluğuna destek olun.</p>
-    <a href="{% url 'corpus:upload' %}" 
+    <h2 id="cta-heading">Korpusta Arama Yapın</h2>
+    <p>Dilbilimsel açıklamalı korpus dosyalarında gelişmiş sorgulama araçlarıyla lemma, POS etiketi ve bağımlılık ilişkilerine dayalı aramalar yapın.</p>
+    <a href="{% url 'corpus:corpus_search' %}" 
        class="btn btn-primary btn-large"
-       aria-label="Yeni belge yükleyerek korpusa katkıda bulunun">
-        <span class="material-icons" aria-hidden="true">add_circle</span> 
-        <span>Yeni Belge Yükle</span>
+       aria-label="Korpus arama aracına git">
+        <span class="material-icons" aria-hidden="true">search</span> 
+        <span>Aramaya Başla</span>
     </a>
 </section>
 {% endif %}

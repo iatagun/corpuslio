@@ -1,16 +1,24 @@
-"""Celery tasks for async document processing."""
+"""Celery tasks for async document processing.
+
+DEPRECATED: OCR/analysis tasks removed - platform transformed to corpus query system.
+Pre-analyzed corpus files (VRT/CoNLL-U) are imported via management commands.
+These tasks are kept for backwards compatibility but should not be used.
+"""
 
 from celery import shared_task
 from django.conf import settings
 import sys
 import os
 
-# Add parent ocrchestra module to path
-parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, parent_dir)
-
-from ocrchestra import OllamaOrchestrator
-from ocrchestra.groq_client import GroqClient
+# Legacy imports - kept for backwards compatibility
+# OCR orchestrator removed - use corpus import commands instead
+try:
+    from ocrchestra import OllamaOrchestrator
+    from ocrchestra.groq_client import GroqClient
+except (ImportError, ModuleNotFoundError):
+    # OCR modules removed - platform is now corpus query only
+    OllamaOrchestrator = None
+    GroqClient = None
 
 from .models import Document, Content, Analysis, ProcessingTask
 
@@ -18,7 +26,10 @@ from .models import Document, Content, Analysis, ProcessingTask
 @shared_task(bind=True)
 def process_document_task(self, document_id, analyze=True, enable_dependencies=False, label_studio=False):
     """
-    Async task to process a document.
+    DEPRECATED: OCR processing removed - platform transformed to corpus query system.
+    
+    This task is kept for backwards compatibility only.
+    To import corpus files, use: python manage.py import_corpus file.conllu
     
     Args:
         document_id: Document model ID
@@ -29,6 +40,13 @@ def process_document_task(self, document_id, analyze=True, enable_dependencies=F
     Returns:
         Processing result dictionary
     """
+    # Return early with deprecation message
+    if OllamaOrchestrator is None:
+        return {
+            'success': False, 
+            'error': 'OCR processing deprecated. Use: python manage.py import_corpus file.conllu'
+        }
+    
     # Get document
     try:
         document = Document.objects.get(id=document_id)
@@ -51,8 +69,16 @@ def process_document_task(self, document_id, analyze=True, enable_dependencies=F
         task.progress = 10
         task.save()
         
-        # Initialize orchestrator
-        orchestrator = OllamaOrchestrator()
+        # DEPRECATED: OCR orchestrator no longer available
+        # Return deprecation error
+        task.status = 'FAILED'
+        task.error_message = 'OCR processing deprecated. Platform is now corpus query only.'
+        task.save()
+        
+        return {
+            'success': False,
+            'error': 'OCR processing deprecated. Use: python manage.py import_corpus'
+        }
         
         # Set up Groq client
         if settings.GROQ_API_KEY:

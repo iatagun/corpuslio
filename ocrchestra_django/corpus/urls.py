@@ -11,6 +11,7 @@ from . import statistics_views
 from . import privacy_views
 from . import advanced_search_views
 from . import gdpr_views  # Week 11: KVKK/GDPR compliance
+from . import search_views  # Corpus Query Platform search views
 
 app_name = 'corpus'
 
@@ -24,6 +25,15 @@ urlpatterns = [
     # Global search (AJAX endpoint)
     path('search/', views.global_search_view, name='global_search'),
     path('suggest/', views.search_suggestions_view, name='search_suggest'),
+    
+    # Corpus Query Platform (NEW - Pre-analyzed corpus search)
+    path('corpus-search/', search_views.corpus_search_view, name='corpus_search'),
+    path('collocation/', search_views.collocation_view, name='collocation'),
+    path('ngram-analysis/', search_views.ngram_view, name='ngram'),
+    path('frequency/', search_views.frequency_view, name='frequency'),
+    
+    # API endpoints
+    path('api/concordance/', search_views.api_concordance, name='api_concordance'),
     
     # Advanced search (Week 9)
     path('advanced-search/', advanced_search_views.advanced_search_view, name='advanced_search'),
