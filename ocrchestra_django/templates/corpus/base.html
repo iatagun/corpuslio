@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}CorpusIO{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=4">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     {% block extra_css %}{% endblock %}
@@ -99,6 +99,29 @@
             </div>
 
             <div style="display: flex; align-items: center; gap: 15px;">
+                <!-- Language Switcher -->
+                {% load i18n %}
+                <div class="language-switcher">
+                    <button class="language-btn" onclick="toggleLanguageMenu()" title="Dil Değiştir / Change Language">
+                        {{ LANGUAGE_CODE|upper }}
+                    </button>
+                    <div class="language-menu" id="languageMenu">
+                        <form action="{% url 'set_language' %}" method="post">
+                            {% csrf_token %}
+                            <input name="next" type="hidden" value="{{ request.path }}">
+                            {% get_current_language as LANGUAGE_CODE %}
+                            {% get_available_languages as LANGUAGES %}
+                            {% for lang_code, lang_name in LANGUAGES %}
+                            <button type="submit" name="language" value="{{ lang_code }}" 
+                                    class="language-option {% if LANGUAGE_CODE == lang_code %}active{% endif %}">
+                                <span class="flag-icon">{% if lang_code == 'tr' %}🇹🇷{% else %}🇬🇧{% endif %}</span>
+                                <span>{{ lang_name }}</span>
+                            </button>
+                            {% endfor %}
+                        </form>
+                    </div>
+                </div>
+
                 <!-- Theme Switcher -->
                 <div class="theme-switcher">
                     <button class="theme-btn" onclick="toggleThemeMenu()" title="Tema Değiştir">
@@ -340,6 +363,11 @@
             menu.classList.toggle('show');
         }
 
+        function toggleLanguageMenu() {
+            const menu = document.getElementById('languageMenu');
+            menu.classList.toggle('show');
+        }
+
         // Profile Dropdown
         function toggleDropdown() {
             const dropdown = document.getElementById('profileDropdown');
@@ -358,6 +386,12 @@
                 const themeMenu = document.getElementById('themeMenu');
                 if (themeMenu && themeMenu.classList.contains('show')) {
                     themeMenu.classList.remove('show');
+                }
+            }
+            if (!event.target.closest('.language-switcher')) {
+                const languageMenu = document.getElementById('languageMenu');
+                if (languageMenu && languageMenu.classList.contains('show')) {
+                    languageMenu.classList.remove('show');
                 }
             }
         }
