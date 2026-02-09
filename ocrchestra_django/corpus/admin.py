@@ -5,7 +5,8 @@ from django.utils.html import format_html
 from django.db.models import Count, Sum
 from .models import (
     Document, Content, Analysis, ProcessingTask, Tag,
-    UserProfile, QueryLog, ExportLog
+    UserProfile, QueryLog, ExportLog,
+    DataExportRequest, ConsentRecord, AccountDeletionRequest  # Week 11: GDPR
 )
 
 
@@ -338,3 +339,205 @@ from .collections import Collection, QueryHistory
 
 admin.site.register(Collection)
 admin.site.register(QueryHistory)
+
+
+# ============================================================
+# KVKK/GDPR COMPLIANCE ADMIN (Week 11)
+# ============================================================
+
+@admin.register(DataExportRequest)
+class DataExportRequestAdmin(admin.ModelAdmin):
+    """Admin interface for Data Export Requests (KVKK/GDPR)."""
+    
+    list_display = [
+        'id', 'user', 'format', 'get_status_badge', 
+        'requested_at', 'completed_at', 'download_count', 'is_expired_status'
+    ]
+    list_filter = ['status', 'format', 'requested_at', 'completed_at']
+    search_fields = ['user__username', 'user__email', 'ip_address']
+    readonly_fields = [
+        'requested_at', 'processed_at', 'completed_at', 'downloaded_at',
+        'ip_address', 'user_agent', 'error_message'
+    ]
+    date_hierarchy = 'requested_at'
+    
+    fieldsets = (
+        ('Kullanıcı Bilgisi', {
+            'fields': ('user', 'format')
+        }),
+        ('Durum', {
+            'fields': ('status', 'error_message')
+        }),
+        ('Tarihler', {
+            'fields': (
+                'requested_at',
+                'processed_at',
+                'completed_at',
+                'expires_at'
+            )
+        }),
+        ('Dosyalar', {
+            'fields': ('json_file', 'csv_file')
+        }),
+        ('İndirme Takibi', {
+            'fields': ('downloaded_at', 'download_count')
+        }),
+        ('Metadata', {
+            'fields': ('ip_address', 'user_agent'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_status_badge(self, obj):
+        """Display status as colored badge."""
+        colors = {
+            'pending': 'gray',
+            'processing': 'blue',
+            'completed': 'green',
+            'failed': 'red',
+            'expired': 'orange',
+        }
+        color = colors.get(obj.status, 'gray')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; '
+            'border-radius: 3px; font-weight: bold;">{}</span>',
+            color,
+            obj.get_status_display()
+        )
+    get_status_badge.short_description = 'Durum'
+    
+    def is_expired_status(self, obj):
+        """Check if export is expired."""
+        if obj.is_expired():
+            return format_html('<span style="color: red;">✗ Süresi Doldu</span>')
+        elif obj.status == 'completed':
+            return format_html('<span style="color: green;">✓ Geçerli</span>')
+        return '-'
+    is_expired_status.short_description = 'Geçerlilik'
+    
+    def has_add_permission(self, request):
+        return False  # Requests created by users only
+
+
+@admin.register(ConsentRecord)
+class ConsentRecordAdmin(admin.ModelAdmin):
+    """Admin interface for Consent Records (KVKK/GDPR)."""
+    
+    list_display = [
+        'id', 'user', 'consent_type', 'get_consent_badge',
+        'consented_at', 'withdrawn_at', 'policy_version'
+    ]
+    list_filter = ['consent_type', 'consented', 'policy_version', 'consented_at']
+    search_fields = ['user__username', 'user__email', 'ip_address']
+    readonly_fields = [
+        'consented_at', 'withdrawn_at',
+        'ip_address', 'user_agent'
+    ]
+    date_hierarchy = 'consented_at'
+    
+    fieldsets = (
+        ('İzin Bilgisi', {
+            'fields': ('user', 'consent_type', 'consented', 'policy_version')
+        }),
+        ('Tarihler', {
+            'fields': ('consented_at', 'withdrawn_at')
+        }),
+        ('Metadata', {
+            'fields': ('ip_address', 'user_agent'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_consent_badge(self, obj):
+        """Display consent status as badge."""
+        if obj.consented and not obj.withdrawn_at:
+            return format_html(
+                '<span style="background-color: green; color: white; padding: 3px 10px; '
+                'border-radius: 3px; font-weight: bold;">✓ İzin Verildi</span>'
+            )
+        else:
+            return format_html(
+                '<span style="background-color: red; color: white; padding: 3px 10px; '
+                'border-radius: 3px; font-weight: bold;">✗ İzin Yok</span>'
+            )
+    get_consent_badge.short_description = 'Durum'
+    
+    def has_add_permission(self, request):
+        return False  # Consents managed by users only
+
+
+@admin.register(AccountDeletionRequest)
+class AccountDeletionRequestAdmin(admin.ModelAdmin):
+    """Admin interface for Account Deletion Requests (KVKK/GDPR)."""
+    
+    list_display = [
+        'id', 'user', 'deletion_type', 'get_status_badge',
+        'requested_at', 'grace_period_ends_at', 'completed_at'
+    ]
+    list_filter = ['status', 'deletion_type', 'requested_at']
+    search_fields = ['user__username', 'user__email', 'reason', 'ip_address']
+    readonly_fields = [
+        'requested_at', 'grace_period_ends_at',
+        'processed_at', 'completed_at', 'cancelled_at',
+        'documents_count', 'queries_count', 'exports_count',
+        'ip_address'
+    ]
+    date_hierarchy = 'requested_at'
+    
+    fieldsets = (
+        ('Kullanıcı Bilgisi', {
+            'fields': ('user', 'deletion_type', 'reason')
+        }),
+        ('Durum', {
+            'fields': ('status',)
+        }),
+        ('Tarihler', {
+            'fields': (
+                'requested_at',
+                'grace_period_ends_at',
+                'processed_at',
+                'completed_at',
+                'cancelled_at'
+            )
+        }),
+        ('Veri Özeti', {
+            'fields': (
+                'documents_count',
+                'queries_count',
+                'exports_count'
+            )
+        }),
+        ('Metadata', {
+            'fields': ('ip_address',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_status_badge(self, obj):
+        """Display status as colored badge."""
+        colors = {
+            'pending': 'gray',
+            'grace_period': 'orange',
+            'processing': 'blue',
+            'completed': 'red',
+            'cancelled': 'green',
+        }
+        color = colors.get(obj.status, 'gray')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; '
+            'border-radius: 3px; font-weight: bold;">{}</span>',
+            color,
+            obj.get_status_display()
+        )
+    get_status_badge.short_description = 'Durum'
+    
+    def has_add_permission(self, request):
+        return False  # Requests created by users only
+    
+    def has_change_permission(self, request, obj=None):
+        # Allow viewing but not changing
+        return True
+    
+    def has_delete_permission(self, request, obj=None):
+        # Don't allow deletion of deletion requests (audit trail)
+        return False

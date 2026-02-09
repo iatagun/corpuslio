@@ -10,6 +10,7 @@ from . import dependency_views
 from . import statistics_views
 from . import privacy_views
 from . import advanced_search_views
+from . import gdpr_views  # Week 11: KVKK/GDPR compliance
 
 app_name = 'corpus'
 
@@ -79,4 +80,25 @@ urlpatterns = [
     path('privacy/delete-account/', privacy_views.request_account_deletion_view, name='request_deletion'),
     path('privacy-policy/', privacy_views.privacy_policy_view, name='privacy_policy'),
     path('terms/', privacy_views.terms_of_service_view, name='terms_of_service'),
+    
+    # KVKK/GDPR Compliance (Week 11)
+    path('gdpr/settings/', gdpr_views.privacy_settings, name='privacy_settings'),
+    
+    # Data Export (KVKK/GDPR)
+    path('gdpr/data-export/request/', gdpr_views.request_data_export, name='request_data_export'),
+    path('gdpr/data-export/list/', gdpr_views.data_export_list, name='data_export_list'),
+    path('gdpr/data-export/download/<int:export_id>/', gdpr_views.download_data_export, name='download_data_export'),
+    
+    # Account Deletion (KVKK/GDPR)
+    path('gdpr/account-deletion/request/', gdpr_views.request_account_deletion, name='request_account_deletion'),
+    path('gdpr/account-deletion/status/', gdpr_views.account_deletion_status, name='account_deletion_status'),
+    path('gdpr/account-deletion/cancel/<int:request_id>/', gdpr_views.cancel_account_deletion, name='cancel_account_deletion'),
+    
+    # Consent Management (KVKK/GDPR)
+    path('gdpr/consent/', gdpr_views.consent_management, name='consent_management'),
+    
+    # Legal Pages (KVKK/GDPR)
+    path('gdpr/privacy-policy/', gdpr_views.privacy_policy, name='gdpr_privacy_policy'),
+    path('gdpr/terms/', gdpr_views.terms_of_service, name='gdpr_terms'),
+    path('gdpr/kvkk/', gdpr_views.kvkk_notice, name='kvkk_notice'),
 ]

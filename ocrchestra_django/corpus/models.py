@@ -952,3 +952,370 @@ class ExportLog(models.Model):
             self.file_size_mb = Decimal(self.file_size_bytes) / Decimal(1024 * 1024)
         super().save(*args, **kwargs)
 
+
+# ============================================================
+# KVKK/GDPR COMPLIANCE MODELS (Week 11)
+# ============================================================
+
+class DataExportRequest(models.Model):
+    """
+    User data export requests (KVKK/GDPR compliance).
+    
+    Users have the right to request all their personal data
+    in a portable format (JSON or CSV).
+    """
+    
+    STATUS_CHOICES = [
+        ('pending', 'Beklemede'),
+        ('processing', 'İşleniyor'),
+        ('completed', 'Tamamlandı'),
+        ('failed', 'Başarısız'),
+        ('expired', 'Süresi Doldu'),
+    ]
+    
+    FORMAT_CHOICES = [
+        ('json', 'JSON'),
+        ('csv', 'CSV'),
+        ('both', 'Both (JSON + CSV)'),
+    ]
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='data_export_requests',
+        verbose_name="Kullanıcı"
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name="Durum",
+        db_index=True
+    )
+    
+    format = models.CharField(
+        max_length=10,
+        choices=FORMAT_CHOICES,
+        default='json',
+        verbose_name="Format"
+    )
+    
+    requested_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Talep Tarihi",
+        db_index=True
+    )
+    
+    processed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="İşlenme Tarihi"
+    )
+    
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Tamamlanma Tarihi"
+    )
+    
+    # Export file paths
+    json_file = models.FileField(
+        upload_to='data_exports/json/',
+        null=True,
+        blank=True,
+        verbose_name="JSON Dosyası"
+    )
+    
+    csv_file = models.FileField(
+        upload_to='data_exports/csv/',
+        null=True,
+        blank=True,
+        verbose_name="CSV Dosyası"
+    )
+    
+    # Download tracking
+    downloaded_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="İndirilme Tarihi"
+    )
+    
+    download_count = models.IntegerField(
+        default=0,
+        verbose_name="İndirme Sayısı"
+    )
+    
+    # Expiry (30 days after completion)
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Geçerlilik Süresi"
+    )
+    
+    # Error handling
+    error_message = models.TextField(
+        blank=True,
+        verbose_name="Hata Mesajı"
+    )
+    
+    # Metadata
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name="IP Adresi"
+    )
+    
+    user_agent = models.CharField(
+        max_length=512,
+        blank=True,
+        verbose_name="User Agent"
+    )
+    
+    class Meta:
+        ordering = ['-requested_at']
+        verbose_name = "Veri İhraç Talebi"
+        verbose_name_plural = "Veri İhraç Talepleri"
+        indexes = [
+            models.Index(fields=['user', '-requested_at']),
+            models.Index(fields=['status', '-requested_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.format} ({self.status})"
+    
+    def is_expired(self):
+        """Check if export has expired."""
+        if self.expires_at and timezone.now() > self.expires_at:
+            return True
+        return False
+    
+    def mark_downloaded(self):
+        """Track download."""
+        self.download_count += 1
+        if not self.downloaded_at:
+            self.downloaded_at = timezone.now()
+        self.save()
+
+
+class ConsentRecord(models.Model):
+    """
+    User consent tracking (KVKK/GDPR compliance).
+    
+    Tracks user consent for:
+    - Data processing
+    - Marketing communications
+    - Third-party sharing
+    - Analytics/cookies
+    """
+    
+    CONSENT_TYPE_CHOICES = [
+        ('data_processing', 'Veri İşleme'),
+        ('marketing', 'Pazarlama İletişimi'),
+        ('third_party', 'Üçüncü Taraf Paylaşımı'),
+        ('analytics', 'Analitik/Çerezler'),
+        ('terms', 'Kullanım Koşulları'),
+        ('privacy_policy', 'Gizlilik Politikası'),
+    ]
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='consents',
+        verbose_name="Kullanıcı"
+    )
+    
+    consent_type = models.CharField(
+        max_length=50,
+        choices=CONSENT_TYPE_CHOICES,
+        verbose_name="İzin Türü",
+        db_index=True
+    )
+    
+    consented = models.BooleanField(
+        default=False,
+        verbose_name="İzin Verdi"
+    )
+    
+    consented_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="İzin Tarihi",
+        db_index=True
+    )
+    
+    # Consent withdrawal
+    withdrawn_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="İzin Geri Çekme Tarihi"
+    )
+    
+    # Metadata
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name="IP Adresi"
+    )
+    
+    user_agent = models.CharField(
+        max_length=512,
+        blank=True,
+        verbose_name="User Agent"
+    )
+    
+    # Consent version (for policy updates)
+    policy_version = models.CharField(
+        max_length=20,
+        default='1.0',
+        verbose_name="Politika Versiyonu"
+    )
+    
+    class Meta:
+        ordering = ['-consented_at']
+        verbose_name = "İzin Kaydı"
+        verbose_name_plural = "İzin Kayıtları"
+        indexes = [
+            models.Index(fields=['user', 'consent_type', '-consented_at']),
+        ]
+        unique_together = ['user', 'consent_type', 'policy_version']
+    
+    def __str__(self):
+        status = "✓" if self.consented else "✗"
+        return f"{self.user.username} - {self.consent_type} {status}"
+    
+    def withdraw(self):
+        """Withdraw consent."""
+        self.consented = False
+        self.withdrawn_at = timezone.now()
+        self.save()
+
+
+class AccountDeletionRequest(models.Model):
+    """
+    Account deletion requests (KVKK/GDPR Right to be Forgotten).
+    
+    Users can request complete account deletion.
+    Implements:
+    - Grace period (7 days to cancel)
+    - Data anonymization (optional)
+    - Complete deletion
+    """
+    
+    STATUS_CHOICES = [
+        ('pending', 'Beklemede'),
+        ('grace_period', 'Bekleme Süresi'),
+        ('processing', 'İşleniyor'),
+        ('completed', 'Tamamlandı'),
+        ('cancelled', 'İptal Edildi'),
+    ]
+    
+    DELETION_TYPE_CHOICES = [
+        ('full', 'Tam Silme'),
+        ('anonymize', 'Anonimleştirme'),
+    ]
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='deletion_requests',
+        verbose_name="Kullanıcı"
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name="Durum",
+        db_index=True
+    )
+    
+    deletion_type = models.CharField(
+        max_length=20,
+        choices=DELETION_TYPE_CHOICES,
+        default='full',
+        verbose_name="Silme Türü"
+    )
+    
+    reason = models.TextField(
+        blank=True,
+        verbose_name="Sebep"
+    )
+    
+    requested_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Talep Tarihi",
+        db_index=True
+    )
+    
+    # Grace period (7 days to cancel)
+    grace_period_ends_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Bekleme Süresi Bitişi"
+    )
+    
+    processed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="İşlenme Tarihi"
+    )
+    
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Tamamlanma Tarihi"
+    )
+    
+    cancelled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="İptal Tarihi"
+    )
+    
+    # Metadata
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name="IP Adresi"
+    )
+    
+    # Data summary (what will be deleted)
+    documents_count = models.IntegerField(
+        default=0,
+        verbose_name="Doküman Sayısı"
+    )
+    
+    queries_count = models.IntegerField(
+        default=0,
+        verbose_name="Sorgu Sayısı"
+    )
+    
+    exports_count = models.IntegerField(
+        default=0,
+        verbose_name="Export Sayısı"
+    )
+    
+    class Meta:
+        ordering = ['-requested_at']
+        verbose_name = "Hesap Silme Talebi"
+        verbose_name_plural = "Hesap Silme Talepleri"
+        indexes = [
+            models.Index(fields=['user', '-requested_at']),
+            models.Index(fields=['status', '-requested_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.deletion_type} ({self.status})"
+    
+    def cancel(self):
+        """Cancel deletion request."""
+        self.status = 'cancelled'
+        self.cancelled_at = timezone.now()
+        self.save()
+    
+    def is_in_grace_period(self):
+        """Check if still in grace period."""
+        if self.grace_period_ends_at and timezone.now() < self.grace_period_ends_at:
+            return True
+        return False
+
