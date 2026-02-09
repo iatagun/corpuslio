@@ -24,6 +24,16 @@ def rate_limit_exceeded(request, exception=None):
     """Custom 429 error handler for rate limiting."""
     return render(request, 'corpus/429.html', status=429)
 
+
+def csrf_failure(request, reason=""):
+    """Custom 403 CSRF error handler."""
+    context = {
+        'message': 'CSRF verification failed. Request aborted.',
+        'reason': reason,
+    }
+    return render(request, 'corpus/403_csrf.html', context, status=403)
+
+
 def is_academician(user):
     """Check if user has Academician or Developer access."""
     return user.is_authenticated and (

@@ -6,8 +6,11 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from django.contrib import messages
+from django.core.exceptions import ValidationError
+from django_ratelimit.decorators import ratelimit
 from .models import Document, QueryLog
 from .permissions import role_required
+from .validators import validate_cqp_query as validate_query, validate_integer_param
 import sys
 import os
 
@@ -19,6 +22,7 @@ from ocrchestra.query_parser import CQPQueryParser, PatternMatcher, parse_cqp_qu
 
 @login_required
 @role_required('researcher')
+@ratelimit(key='user', rate='50/hour', method='POST', block=True)
 def advanced_search_view(request):
     """Advanced search with CQP-style pattern matching.
     
@@ -48,11 +52,25 @@ def advanced_search_view(request):
     if request.method == 'POST':
         query = request.POST.get('query', '').strip()
         document_id = request.POST.get('document_id')
-        context_size = int(request.POST.get('context_size', 5))
+        context_size_raw = request.POST.get('context_size', '5')
         
         if not query:
             messages.error(request, "Please enter a search query")
             return render(request, 'corpus/advanced_search.html', context)
+        
+        # Validate query input
+        try:
+            validate_query(query)
+        except ValidationError as e:
+            messages.error(request, f"Invalid query: {e.message}")
+            return render(request, 'corpus/advanced_search.html', context)
+        
+        # Validate context_size parameter
+        try:
+            context_size = validate_integer_param(context_size_raw, min_value=1, max_value=20, param_name='context_size')
+        except ValidationError as e:
+            messages.error(request, str(e))
+            context_size = 5  # Default fallback
         
         context['query'] = query
         context['context_size'] = context_size
@@ -144,6 +162,7 @@ def advanced_search_view(request):
 
 @require_http_methods(["POST"])
 @login_required
+@ratelimit(key='user', rate='100/hour', method='POST', block=True)
 def validate_cqp_query(request):
     """AJAX endpoint to validate CQP query syntax.
     
@@ -157,6 +176,16 @@ def validate_cqp_query(request):
             'error': 'Empty query'
         })
     
+    # First, validate with security validator
+    try:
+        validate_query(query)
+    except ValidationError as e:
+        return JsonResponse({
+            'valid': False,
+            'error': str(e.message)
+        })
+    
+    # Then, validate CQP syntax
     parser = CQPQueryParser()
     is_valid, error = parser.validate_query(query)
     

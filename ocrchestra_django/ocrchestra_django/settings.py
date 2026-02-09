@@ -62,6 +62,11 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # Security middleware (Week 10)
+    'corpus.security_middleware.SecurityHeadersMiddleware',
+    'corpus.security_middleware.ContentSecurityPolicyMiddleware',
+    'corpus.security_middleware.RequestValidationMiddleware',
+    
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -70,6 +75,9 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
+    # Session security (Week 10)
+    'corpus.security_middleware.SessionSecurityMiddleware',
     
     # Custom middleware for query logging and export tracking
     'corpus.middleware.QueryLogMiddleware',
@@ -333,3 +341,73 @@ LOGGING = {
         'level': 'INFO',
     },
 }
+
+
+# ============================================================
+# SECURITY HARDENING (Week 10)
+# ============================================================
+
+# CSRF Protection
+CSRF_COOKIE_SECURE = not DEBUG  # Use secure cookies in production
+CSRF_COOKIE_HTTPONLY = True  # Prevent JavaScript access to CSRF cookie
+CSRF_COOKIE_SAMESITE = 'Strict'  # Prevent CSRF in cross-site requests
+CSRF_USE_SESSIONS = False  # Use cookie-based CSRF (more secure than session)
+CSRF_FAILURE_VIEW = 'corpus.views.csrf_failure'  # Custom CSRF error page
+
+# Session Security
+SESSION_COOKIE_SECURE = not DEBUG  # Use secure cookies in production
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie
+SESSION_COOKIE_SAMESITE = 'Strict'  # Prevent session hijacking in cross-site requests
+SESSION_COOKIE_AGE = 3600  # 1 hour session timeout
+SESSION_SAVE_EVERY_REQUEST = True  # Update session on every request
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep session for SESSION_COOKIE_AGE
+
+# Security Headers (enforced by middleware)
+SECURE_CONTENT_TYPE_NOSNIFF = True  # X-Content-Type-Options: nosniff
+SECURE_BROWSER_XSS_FILTER = True  # X-XSS-Protection: 1; mode=block
+X_FRAME_OPTIONS = 'DENY'  # Prevent clickjacking
+
+# HTTPS/SSL (production only)
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True  # Redirect HTTP to HTTPS
+    SECURE_HSTS_SECONDS = 31536000  # 1 year HSTS
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Password Hashing (use Argon2 for better security)
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',  # Most secure
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+]
+
+# Host Header Validation
+ALLOWED_HOSTS = ['*'] if DEBUG else [
+    'ocrchestra.example.com',
+    'localhost',
+    '127.0.0.1',
+]
+
+# Admin Security
+ADMIN_URL = os.getenv('ADMIN_URL', 'admin/')  # Customize admin URL
+
+# File Upload Security (already configured above, but grouped here)
+# FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50 MB
+# DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024  # 50 MB
+# ALLOWED_DOCUMENT_EXTENSIONS = ['.pdf', '.docx', '.txt', '.png', '.jpg', '.jpeg']
+
+# SQL Injection Prevention (Django ORM handles this automatically)
+# Never use .raw() or .extra() with user input
+# Always use parameterized queries
+
+# XSS Prevention
+# Templates use {% autoescape on %} by default
+# Always escape user input in templates
+# Use |safe filter ONLY for trusted content
+
+# Input Validation
+# All user inputs validated using corpus.validators module
+# File uploads validated for type, size, and content
+# Query inputs sanitized to prevent injection attacks
