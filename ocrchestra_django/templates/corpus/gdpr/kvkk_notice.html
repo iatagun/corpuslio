@@ -1,0 +1,392 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}KVKK Aydınlatma Metni{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+            <h1>KVKK Aydınlatma Metni</h1>
+            <p class="text-muted">
+                <strong>6698 Sayılı Kişisel Verilerin Korunması Kanunu Uyarınca</strong><br>
+                <strong>Son Güncelleme:</strong> {{ last_updated }}
+            </p>
+            
+            <div class="alert alert-primary">
+                <h5><i class="fas fa-shield-alt"></i> Kişisel Verilerinizin Korunması</h5>
+                <p class="mb-0">
+                    6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, 
+                    kişisel verilerinizin işlenmesine ilişkin olarak aşağıdaki bilgilendirmeyi yapıyoruz.
+                </p>
+            </div>
+            
+            <hr>
+            
+            <h3>1. Veri Sorumlusu</h3>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <p><strong>Veri Sorumlusu Bilgileri:</strong></p>
+                    <ul>
+                        <li><strong>Unvan:</strong> OCRchestra Corpus Platform</li>
+                        <li><strong>İletişim:</strong> <a href="mailto:privacy@ocrchestra.tr">privacy@ocrchestra.tr</a></li>
+                        <li><strong>Tescil Durumu:</strong> VERBİS'e kayıtlı</li>
+                    </ul>
+                    <p class="mb-0">
+                        Kişisel verileriniz, yukarıda belirtilen veri sorumlusu tarafından işlenmektedir.
+                    </p>
+                </div>
+            </div>
+            
+            <h3>2. İşlenen Kişisel Veriler</h3>
+            
+            <h5>2.1. Kimlik ve İletişim Bilgileri</h5>
+            <ul>
+                <li>Ad, soyad</li>
+                <li>E-posta adresi</li>
+                <li>Kullanıcı adı</li>
+            </ul>
+            
+            <h5>2.2. Akademik ve Mesleki Bilgiler</h5>
+            <ul>
+                <li>Kurum bilgisi</li>
+                <li>Bölüm/Birim</li>
+                <li>Araştırma alanı</li>
+                <li>Akademik ünvan (isteğe bağlı)</li>
+            </ul>
+            
+            <h5>2.3. İşlem Güvenliği Bilgileri</h5>
+            <ul>
+                <li>IP adresi</li>
+                <li>Çerez kayıtları</li>
+                <li>Oturum bilgileri</li>
+                <li>Tarayıcı ve cihaz bilgileri</li>
+            </ul>
+            
+            <h5>2.4. Platform Kullanım Bilgileri</h5>
+            <ul>
+                <li>Yüklenen dokümanlar ve içerikleri</li>
+                <li>Sorgu ve arama geçmişi</li>
+                <li>Export ve indirme kayıtları</li>
+                <li>API kullanım logları</li>
+            </ul>
+            
+            <h3>3. Kişisel Verilerin İşlenme Amaçları</h3>
+            
+            <table class="table table-bordered">
+                <thead class="thead-light">
+                    <tr>
+                        <th style="width: 40%">İşleme Amacı</th>
+                        <th style="width: 30%">Hukuki Sebep</th>
+                        <th style="width: 30%">KVKK Madde</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Hesap oluşturma ve yönetimi</td>
+                        <td>Sözleşmenin ifası</td>
+                        <td>m. 5/2-c</td>
+                    </tr>
+                    <tr>
+                        <td>Platform hizmetlerinin sunulması</td>
+                        <td>Sözleşmenin ifası</td>
+                        <td>m. 5/2-c</td>
+                    </tr>
+                    <tr>
+                        <td>Güvenlik ve yetkisiz erişim önleme</td>
+                        <td>Meşru menfaat</td>
+                        <td>m. 5/2-f</td>
+                    </tr>
+                    <tr>
+                        <td>İstatistiksel analiz ve iyileştirme</td>
+                        <td>Meşru menfaat</td>
+                        <td>m. 5/2-f</td>
+                    </tr>
+                    <tr>
+                        <td>Pazarlama ve bilgilendirme</td>
+                        <td>Açık rıza</td>
+                        <td>m. 5/1</td>
+                    </tr>
+                    <tr>
+                        <td>Yasal yükümlülüklerin yerine getirilmesi</td>
+                        <td>Hukuki yükümlülük</td>
+                        <td>m. 5/2-ç</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>4. Kişisel Verilerin Aktarılması</h3>
+            
+            <h5>4.1. Yurtiçi Aktarım</h5>
+            <p>
+                Kişisel verileriniz, KVKK m. 8 ve m. 9 uyarınca, aşağıdaki durumlarda yurtiçinde 
+                üçüncü kişilere aktarılabilir:
+            </p>
+            <ul>
+                <li><strong>Hizmet Sağlayıcılar:</strong> Sunucu barındırma, teknik destek (gizlilik sözleşmesi ile)</li>
+                <li><strong>Yasal Merciler:</strong> Resmi talep, mahkeme kararı, kanuni zorunluluk</li>
+                <li><strong>İşbirliği Ortakları:</strong> Araştırma projelerinde (anonim veriler, açık rıza ile)</li>
+            </ul>
+            
+            <h5>4.2. Yurtdışı Aktarım</h5>
+            <p>
+                Kişisel verileriniz <strong>yurtiçinde saklanmaktadır</strong>. Yurtdışına aktarım yapılması 
+                durumunda:
+            </p>
+            <ul>
+                <li>KVKK m. 9 hükümleri uygulanır</li>
+                <li>Yeterli koruma sağlayan ülkelere aktarım yapılır</li>
+                <li>Açık rızanız alınır</li>
+                <li>Uygun güvenlik önlemleri sağlanır</li>
+            </ul>
+            
+            <h3>5. Kişisel Verilerin Toplanma Yöntemi</h3>
+            
+            <p>Kişisel verileriniz aşağıdaki yöntemlerle toplanmaktadır:</p>
+            <ul>
+                <li><strong>Doğrudan:</strong> Kayıt formu, profil düzenleme, doküman yükleme</li>
+                <li><strong>Otomatik:</strong> Çerezler, log dosyaları, oturum yönetimi</li>
+                <li><strong>Dolaylı:</strong> Platform kullanımı sırasında oluşan veriler</li>
+            </ul>
+            
+            <h3>6. Kişisel Verilerin Saklanma Süresi</h3>
+            
+            <table class="table table-bordered">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Veri Kategorisi</th>
+                        <th>Saklama Süresi</th>
+                        <th>İmha Yöntemi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Hesap bilgileri</td>
+                        <td>Hesap aktif olduğu sürece</td>
+                        <td>Hesap silme ile kalıcı imha</td>
+                    </tr>
+                    <tr>
+                        <td>Sorgu geçmişi</td>
+                        <td>2 yıl (aktif kullanım) + 1 yıl (pasif)</td>
+                        <td>Otomatik silme</td>
+                    </tr>
+                    <tr>
+                        <td>Log kayıtları</td>
+                        <td>1 yıl (yasal zorunluluk)</td>
+                        <td>Otomatik anonimleştirme</td>
+                    </tr>
+                    <tr>
+                        <td>İhracat dosyaları</td>
+                        <td>30 gün</td>
+                        <td>Otomatik silme</td>
+                    </tr>
+                    <tr>
+                        <td>Silme talebi</td>
+                        <td>7 gün (bekleme süresi)</td>
+                        <td>Tam silme veya anonimleştirme</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>7. KVKK Kapsamındaki Haklarınız</h3>
+            
+            <p>
+                KVKK'nın 11. maddesi uyarınca, veri sorumlusuna başvurarak aşağıdaki haklarınızı 
+                kullanabilirsiniz:
+            </p>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6><i class="fas fa-info-circle text-primary"></i> Bilgi Talep Etme</h6>
+                            <p class="mb-0">
+                                <small>
+                                    Kişisel verilerinizin işlenip işlenmediğini öğrenme, 
+                                    işlenmişse bilgi talep etme hakkı.
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6><i class="fas fa-download text-success"></i> Veri Taşınabilirliği</h6>
+                            <p class="mb-0">
+                                <small>
+                                    İşlenen verileri yapılandırılmış ve makine tarafından 
+                                    okunabilir formatta talep etme hakkı.
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6><i class="fas fa-edit text-warning"></i> Düzeltme İsteme</h6>
+                            <p class="mb-0">
+                                <small>
+                                    Eksik veya yanlış işlenmiş kişisel verilerin 
+                                    düzeltilmesini isteme hakkı.
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6><i class="fas fa-trash text-danger"></i> Silme/İmha İsteme</h6>
+                            <p class="mb-0">
+                                <small>
+                                    KVKK'da öngörülen şartlar çerçevesinde kişisel 
+                                    verilerinizin silinmesini veya yok edilmesini isteme hakkı.
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6><i class="fas fa-ban text-secondary"></i> İşlemeye İtiraz</h6>
+                            <p class="mb-0">
+                                <small>
+                                    Kişisel verilerin işlenmesine itiraz etme hakkı 
+                                    (meşru sebep ile).
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6><i class="fas fa-gavel text-info"></i> Zarara Uğrama</h6>
+                            <p class="mb-0">
+                                <small>
+                                    Kişisel verilerin kanuna aykırı işlenmesi nedeniyle 
+                                    zarara uğramanız halinde tazminat talep etme hakkı.
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>8. Haklarınızı Kullanma Yöntemleri</h3>
+            
+            <div class="card border-success mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-hand-pointer"></i> Self-Servis (Platform Üzerinden)</h5>
+                </div>
+                <div class="card-body">
+                    <p>Aşağıdaki haklarınızı doğrudan platform üzerinden kullanabilirsiniz:</p>
+                    <ul class="mb-0">
+                        <li>
+                            <strong>Veri İndirme:</strong> 
+                            <a href="{% url 'corpus:request_data_export' %}">Verilerimi İndir</a>
+                        </li>
+                        <li>
+                            <strong>Veri Düzeltme:</strong> 
+                            <a href="{% url 'corpus:profile' %}">Profilimi Düzenle</a>
+                        </li>
+                        <li>
+                            <strong>Veri Silme:</strong> 
+                            <a href="{% url 'corpus:request_account_deletion' %}">Hesabımı Sil</a>
+                        </li>
+                        <li>
+                            <strong>İzin Yönetimi:</strong> 
+                            <a href="{% url 'corpus:consent_management' %}">İzinlerimi Yönet</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card border-primary mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-envelope"></i> Yazılı Başvuru</h5>
+                </div>
+                <div class="card-body">
+                    <p>Diğer haklarınız için yazılı başvuru yapabilirsiniz:</p>
+                    <ul>
+                        <li><strong>E-posta:</strong> <a href="mailto:kvkk@ocrchestra.tr">kvkk@ocrchestra.tr</a></li>
+                        <li><strong>Kimlik Doğrulama:</strong> Başvuru sırasında kimlik teyidi gereklidir</li>
+                        <li><strong>Yanıt Süresi:</strong> En geç 30 gün içinde yanıt verilir</li>
+                        <li><strong>Ücret:</strong> Başvurular ücretsizdir (işlem maliyeti talep edilebilir)</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <h3>9. Veri Güvenliği Önlemleri</h3>
+            
+            <p>KVKK m. 12 uyarınca alınan teknik ve idari tedbirler:</p>
+            
+            <h5>9.1. Teknik Tedbirler</h5>
+            <ul>
+                <li>SSL/TLS şifreleme ile veri iletimi</li>
+                <li>Güvenli şifre saklama (Argon2)</li>
+                <li>Firewall ve ağ güvenliği</li>
+                <li>Düzenli güvenlik güncellemeleri</li>
+                <li>Veri yedekleme</li>
+            </ul>
+            
+            <h5>9.2. İdari Tedbirler</h5>
+            <ul>
+                <li>Veri erişim yetkilendirme sistemi</li>
+                <li>Personel gizlilik eğitimleri</li>
+                <li>Veri işleme envanteri</li>
+                <li>Veri güvenliği politikaları</li>
+                <li>Veri ihlali müdahale planı</li>
+            </ul>
+            
+            <h3>10. Şikayet Hakkı</h3>
+            
+            <div class="alert alert-info">
+                <h6><i class="fas fa-balance-scale"></i> Kişisel Verileri Koruma Kurulu'na Şikayet</h6>
+                <p>
+                    Başvurunuzun reddedilmesi, verilen cevabın yetersiz bulunması veya süresinde 
+                    başvuruya cevap verilmemesi halinde, <strong>Kişisel Verileri Koruma Kurulu'na 
+                    şikayette bulunma hakkınız</strong> vardır.
+                </p>
+                <p class="mb-0">
+                    <strong>İletişim:</strong> 
+                    <a href="https://www.kvkk.gov.tr" target="_blank">www.kvkk.gov.tr</a>
+                </p>
+            </div>
+            
+            <h3>11. Değişiklikler</h3>
+            
+            <p>
+                Bu aydınlatma metni, mevzuat değişiklikleri veya veri işleme faaliyetlerindeki 
+                değişiklikler nedeniyle güncellenebilir. Güncellemeler platform üzerinden duyurulur 
+                ve kullanıcılar bilgilendirilir.
+            </p>
+            
+            <hr class="my-5">
+            
+            <div class="text-center">
+                <p class="text-muted">
+                    <small>
+                        Bu aydınlatma metni KVKK'nın 10. maddesi uyarınca hazırlanmıştır.<br>
+                        Son Güncelleme: {{ last_updated }}
+                    </small>
+                </p>
+                <a href="{% url 'corpus:privacy_settings' %}" class="btn btn-primary">
+                    <i class="fas fa-shield-alt"></i> Gizlilik Ayarlarına Dön
+                </a>
+                <a href="{% url 'corpus:gdpr_privacy_policy' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-file-contract"></i> Gizlilik Politikası
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

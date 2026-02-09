@@ -264,6 +264,33 @@ CELERY_TIMEZONE = 'Europe/Istanbul'
 CELERY_TASK_ALWAYS_EAGER = True  # Run tasks synchronously in development (no Redis needed)
 CELERY_TASK_EAGER_PROPAGATES = True
 
+# Celery Beat Schedule (Periodic Tasks)
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    # GDPR/KVKK Data Retention Tasks
+    'cleanup-expired-data-exports': {
+        'task': 'corpus.tasks.cleanup_expired_data_exports',
+        'schedule': crontab(hour=2, minute=0),  # Daily at 2 AM
+        'options': {'description': 'Delete expired data export files (30-day retention)'}
+    },
+    'process-pending-deletions': {
+        'task': 'corpus.tasks.process_pending_deletions',
+        'schedule': crontab(hour=3, minute=0),  # Daily at 3 AM
+        'options': {'description': 'Process account deletions past grace period (7 days)'}
+    },
+    'cleanup-inactive-accounts': {
+        'task': 'corpus.tasks.cleanup_inactive_accounts',
+        'schedule': crontab(day_of_month=1, hour=4, minute=0),  # 1st of month at 4 AM
+        'options': {'description': 'Notify inactive accounts (2+ years)'}
+    },
+    'cleanup-old-tasks': {
+        'task': 'corpus.tasks.cleanup_old_tasks',
+        'schedule': crontab(hour=1, minute=0),  # Daily at 1 AM
+        'options': {'description': 'Clean up old processing tasks (7 days)'}
+    },
+}
+
 
 # OCRchestra specific settings
 GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')

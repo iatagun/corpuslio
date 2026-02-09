@@ -1,0 +1,390 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}Gizlilik Politikası{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="mb-0">İçindekiler</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="#introduction" class="list-group-item list-group-item-action">Giriş</a>
+                    <a href="#data-collection" class="list-group-item list-group-item-action">Toplanan Veriler</a>
+                    <a href="#data-usage" class="list-group-item list-group-item-action">Veri Kullanımı</a>
+                    <a href="#data-sharing" class="list-group-item list-group-item-action">Veri Paylaşımı</a>
+                    <a href="#data-security" class="list-group-item list-group-item-action">Veri Güvenliği</a>
+                    <a href="#user-rights" class="list-group-item list-group-item-action">Kullanıcı Hakları</a>
+                    <a href="#cookies" class="list-group-item list-group-item-action">Çerezler</a>
+                    <a href="#changes" class="list-group-item list-group-item-action">Değişiklikler</a>
+                    <a href="#contact" class="list-group-item list-group-item-action">İletişim</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <h1>Gizlilik Politikası</h1>
+            <p class="text-muted">
+                <strong>Versiyon:</strong> {{ policy_version }} | 
+                <strong>Son Güncelleme:</strong> {{ last_updated }}
+            </p>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Bu Gizlilik Politikası, OCRchestra Corpus Platform'un kişisel verilerinizi nasıl topladığını, 
+                kullandığını, koruduğunu ve paylaştığını açıklar. KVKK (6698 sayılı Kanun) ve GDPR uyumludur.
+            </div>
+            
+            <hr>
+            
+            <!-- 1. Introduction -->
+            <section id="introduction" class="mb-5">
+                <h2>1. Giriş</h2>
+                <p>
+                    OCRchestra Corpus Platform ("Platform", "biz", "bizim"), Türkçe dil araştırmaları ve korpus 
+                    linguistiği çalışmaları için geliştirilmiş bir akademik platformdur. Platformumuz, araştırmacıların 
+                    metin analizi ve korpus sorguları yapmasına olanak tanır.
+                </p>
+                <p>
+                    Gizliliğiniz ve kişisel verilerinizin korunması bizim için son derece önemlidir. Bu politika, 
+                    <strong>6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK)</strong> ve 
+                    <strong>Avrupa Birliği Genel Veri Koruma Yönetmeliği (GDPR)</strong> hükümlerine uygun olarak 
+                    hazırlanmıştır.
+                </p>
+            </section>
+            
+            <!-- 2. Data Collection -->
+            <section id="data-collection" class="mb-5">
+                <h2>2. Toplanan Kişisel Veriler</h2>
+                
+                <h4>2.1. Hesap Oluşturma Sırasında</h4>
+                <ul>
+                    <li><strong>Kimlik Bilgileri:</strong> Ad, soyad, kullanıcı adı</li>
+                    <li><strong>İletişim Bilgileri:</strong> E-posta adresi</li>
+                    <li><strong>Akademik Bilgiler:</strong> Kurum, bölüm, araştırma alanı (isteğe bağlı)</li>
+                </ul>
+                
+                <h4>2.2. Platform Kullanımı Sırasında</h4>
+                <ul>
+                    <li><strong>Teknik Veriler:</strong> IP adresi, tarayıcı türü, işletim sistemi</li>
+                    <li><strong>Kullanım Verileri:</strong> Arama sorguları, doküman yüklemeleri, export işlemleri</li>
+                    <li><strong>Log Kayıtları:</strong> Platform etkileşim kayıtları, API kullanımı</li>
+                    <li><strong>Çerez Verileri:</strong> Oturum yönetimi ve tercihler için çerezler</li>
+                </ul>
+                
+                <h4>2.3. İçerik Verileri</h4>
+                <ul>
+                    <li>Yüklediğiniz belgeler ve metinler</li>
+                    <li>Oluşturduğunuz korpus koleksiyonları</li>
+                    <li>Doküman etiketleri ve meta verileri</li>
+                </ul>
+            </section>
+            
+            <!-- 3. Data Usage -->
+            <section id="data-usage" class="mb-5">
+                <h2>3. Verilerin Kullanım Amaçları</h2>
+                
+                <h4>3.1. Hizmet Sunumu</h4>
+                <ul>
+                    <li>Platform fonksiyonlarının sağlanması</li>
+                    <li>Kullanıcı kimlik doğrulaması ve oturum yönetimi</li>
+                    <li>Sorgu işleme ve analiz hizmetleri</li>
+                    <li>API erişimi ve entegrasyonları</li>
+                </ul>
+                
+                <h4>3.2. İyileştirme ve Geliştirme</h4>
+                <ul>
+                    <li>Platform performansının optimize edilmesi</li>
+                    <li>Hata tespiti ve düzeltme</li>
+                    <li>Yeni özelliklerin geliştirilmesi</li>
+                    <li>Kullanıcı deneyiminin iyileştirilmesi</li>
+                </ul>
+                
+                <h4>3.3. Güvenlik ve Uyum</h4>
+                <ul>
+                    <li>Güvenlik tehditlerine karşı koruma</li>
+                    <li>Kötüye kullanım tespiti ve önleme</li>
+                    <li>Yasal yükümlülüklere uyum</li>
+                    <li>Veri bütünlüğünün sağlanması</li>
+                </ul>
+                
+                <h4>3.4. İletişim</h4>
+                <ul>
+                    <li>Sistem bildirimleri (hesap durumu, güvenlik uyarıları)</li>
+                    <li>Platform güncellemeleri</li>
+                    <li>Teknik destek (kullanıcı talebi üzerine)</li>
+                </ul>
+                
+                <div class="alert alert-success mt-3">
+                    <strong><i class="fas fa-check-circle"></i> Taahhüdümüz:</strong> 
+                    Verileriniz yalnızca yukarıda belirtilen amaçlar için kullanılır. 
+                    İzniniz olmadan başka amaçlarla kullanılmaz.
+                </div>
+            </section>
+            
+            <!-- 4. Data Sharing -->
+            <section id="data-sharing" class="mb-5">
+                <h2>4. Veri Paylaşımı ve Aktarımı</h2>
+                
+                <h4>4.1. Üçüncü Taraflarla Paylaşım</h4>
+                <p>
+                    Kişisel verileriniz <strong>üçüncü taraflarla paylaşılmaz</strong>, satılmaz veya kiralanmaz.
+                </p>
+                
+                <h4>4.2. İstisnai Durumlar</h4>
+                <p>Verileriniz yalnızca aşağıdaki durumlarda paylaşılabilir:</p>
+                <ul>
+                    <li><strong>Yasal Zorunluluk:</strong> Mahkeme kararı, resmi talep</li>
+                    <li><strong>Hizmet Sağlayıcılar:</strong> Teknik altyapı (hosting) - sözleşmeye bağlı, sınırlı erişim</li>
+                    <li><strong>Güvenlik:</strong> Platform güvenliğini tehdit eden durumlarda</li>
+                </ul>
+                
+                <h4>4.3. Veri Aktarımı</h4>
+                <p>
+                    Verileriniz <strong>Türkiye sınırları içinde</strong> saklanır. Yurtdışına aktarım yapılması 
+                    durumunda KVKK ve GDPR hükümlerine uygun şekilde işlem yapılır ve açık izniniz alınır.
+                </p>
+            </section>
+            
+            <!-- 5. Data Security -->
+            <section id="data-security" class="mb-5">
+                <h2>5. Veri Güvenliği</h2>
+                
+                <p>Verilerinizin güvenliği için aldığımız önlemler:</p>
+                
+                <h4>5.1. Teknik Önlemler</h4>
+                <ul>
+                    <li><strong>SSL/TLS Şifreleme:</strong> Tüm veri iletimi şifrelenmiştir</li>
+                    <li><strong>Firewall Koruması:</strong> Ağ seviyesi güvenlik</li>
+                    <li><strong>Güvenli Şifre Hash'leme:</strong> Argon2 algoritması ile şifre koruması</li>
+                    <li><strong>SQL Injection Koruması:</strong> Parameterized queries kullanımı</li>
+                    <li><strong>XSS/CSRF Koruması:</strong> Content Security Policy ve token tabanlı koruma</li>
+                    <li><strong>Rate Limiting:</strong> Kötüye kullanım  önleme</li>
+                </ul>
+                
+                <h4>5.2. İdari Önlemler</h4>
+                <ul>
+                    <li>Veri erişim kontrolü ve yetkilendirme</li>
+                    <li>Düzenli güvenlik denetimleri</li>
+                    <li>Personel eğitimleri</li>
+                    <li>Veri sızıntısı müdahale planı</li>
+                </ul>
+                
+                <h4>5.3. Veri Saklama Süresi</h4>
+                <ul>
+                    <li><strong>Aktif Hesaplar:</strong> Hesap aktif olduğu sürece</li>
+                    <li><strong>İnaktif Hesaplar:</strong> 2 yıl (uyarı ile)</li>
+                    <li><strong>Silinmiş Hesaplar:</strong> 30 gün (kurtarma süresi), sonra kalıcı silme</li>
+                    <li><strong>Log Kayıtları:</strong> 1 yıl (yasal gereklilik)</li>
+                </ul>
+            </section>
+            
+            <!-- 6. User Rights -->
+            <section id="user-rights" class="mb-5">
+                <h2>6. Kullanıcı Hakları (KVKK/GDPR)</h2>
+                
+                <p>Kişisel verileriniz üzerinde aşağıdaki haklara sahipsiniz:</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-eye text-primary"></i> Erişim Hakkı</h5>
+                                <p class="card-text">
+                                    Hangi verilerinizin işlendiğini öğrenme hakkı.
+                                </p>
+                                <a href="{% url 'corpus:privacy_settings' %}" class="btn btn-sm btn-primary">
+                                    Verilerime Eriş
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-download text-success"></i> Taşınabilirlik Hakkı</h5>
+                                <p class="card-text">
+                                    Verilerinizi yapılandırılmış formatta (JSON/CSV) indirme hakkı.
+                                </p>
+                                <a href="{% url 'corpus:request_data_export' %}" class="btn btn-sm btn-success">
+                                    Verilerimi İndir
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-edit text-warning"></i> Düzeltme Hakkı</h5>
+                                <p class="card-text">
+                                    Yanlış veya eksik bilgilerinizi düzeltme hakkı.
+                                </p>
+                                <a href="{% url 'corpus:profile' %}" class="btn btn-sm btn-warning">
+                                    Profilimi Düzenle
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-trash text-danger"></i> Silme/Unutulma Hakkı</h5>
+                                <p class="card-text">
+                                    Verilerinizin silinmesini talep etme hakkı.
+                                </p>
+                                <a href="{% url 'corpus:request_account_deletion' %}" class="btn btn-sm btn-danger">
+                                    Hesabımı Sil
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-ban text-secondary"></i> İtiraz Hakkı</h5>
+                                <p class="card-text">
+                                    Veri işlemeye itiraz etme hakkı.
+                                </p>
+                                <a href="mailto:privacy@ocrchestra.tr" class="btn btn-sm btn-secondary">
+                                    İtiraz Et
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-hand-paper text-info"></i> İzin Geri Çekme</h5>
+                                <p class="card-text">
+                                    Verdiğiniz izinleri geri çekme hakkı.
+                                </p>
+                                <a href="{% url 'corpus:consent_management' %}" class="btn btn-sm btn-info">
+                                    İzinlerimi Yönet
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning mt-3">
+                    <strong><i class="fas fa-clock"></i> Yanıt Süresi:</strong> 
+                    Talepleriniz en geç <strong>30 gün</strong> içinde yanıtlanır.
+                </div>
+            </section>
+            
+            <!-- 7. Cookies -->
+            <section id="cookies" class="mb-5">
+                <h2>7. Çerezler (Cookies)</h2>
+                
+                <h4>7.1. Kullandığımız Çerezler</h4>
+                <table class="table table-bordered">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Çerez Türü</th>
+                            <th>Amaç</th>
+                            <th>Süre</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Oturum Çerezleri</strong></td>
+                            <td>Giriş yapma, oturum yönetimi</td>
+                            <td>Oturum süresi (max 1 saat)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tercih Çerezleri</strong></td>
+                            <td>Dil, tema, ayar tercihleri</td>
+                            <td>1 yıl</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Güvenlik Çerezleri</strong></td>
+                            <td>CSRF koruması, güvenlik</td>
+                            <td>Oturum süresi</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Analitik Çerezler</strong></td>
+                            <td>Platform kullanım analizi (anonim)</td>
+                            <td>1 yıl (izinle)</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <p>
+                    Çerez tercihlerinizi <a href="{% url 'corpus:consent_management' %}">İzin Yönetimi</a> 
+                    sayfasından değiştirebilirsiniz.
+                </p>
+            </section>
+            
+            <!-- 8. Changes -->
+            <section id="changes" class="mb-5">
+                <h2>8. Politika Değişiklikleri</h2>
+                <p>
+                    Bu Gizlilik Politikası zaman zaman güncellenebilir. Önemli değişiklikler yapıldığında:
+                </p>
+                <ul>
+                    <li>E-posta ile bilgilendirilirsiniz</li>
+                    <li>Platform'da duyuru yapılır</li>
+                    <li>Yeni politika onayınız istenir (gerekirse)</li>
+                    <li>30 gün önceden bildirim yapılır</li>
+                </ul>
+                <p>
+                    <strong>Son Güncelleme:</strong> {{ last_updated }}<br>
+                    <strong>Versiyon:</strong> {{ policy_version }}
+                </p>
+            </section>
+            
+            <!-- 9. Contact -->
+            <section id="contact" class="mb-5">
+                <h2>9. İletişim</h2>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Veri Sorumlusu</h5>
+                        <p class="card-text">
+                            <strong>Unvan:</strong> OCRchestra Corpus Platform<br>
+                            <strong>E-posta:</strong> <a href="mailto:privacy@ocrchestra.tr">privacy@ocrchestra.tr</a><br>
+                            <strong>İletişim:</strong> Gizlilik ve veri koruma ile ilgili tüm talepleriniz için
+                        </p>
+                        
+                        <hr>
+                        
+                        <h5 class="card-title">KVK Kurulu'na Başvuru</h5>
+                        <p class="card-text mb-0">
+                            Talebinizin reddedilmesi, eksik yanıtlanması veya süresinde yanıtlanmaması durumunda, 
+                            <strong>Kişisel Verileri Koruma Kurulu'na</strong> şikayette bulunma hakkınız vardır.
+                        </p>
+                        <p class="mb-0">
+                            <small><a href="https://www.kvkk.gov.tr" target="_blank">www.kvkk.gov.tr</a></small>
+                        </p>
+                    </div>
+                </div>
+            </section>
+            
+            <hr>
+            
+            <div class="text-center mb-4">
+                <a href="{% url 'corpus:privacy_settings' %}" class="btn btn-primary">
+                    <i class="fas fa-shield-alt"></i> Gizlilik Ayarlarına Dön
+                </a>
+                <a href="{% url 'corpus:gdpr_terms' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-file-contract"></i> Kullanım Koşulları
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.sticky-top {
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+}
+</style>
+{% endblock %}

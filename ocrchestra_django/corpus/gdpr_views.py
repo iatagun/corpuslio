@@ -69,7 +69,7 @@ def request_data_export(request):
     # GET request - show form
     context = {
         'active_tab': 'privacy',
-        'pending_requests': DataExportRequest.objects.filter(
+        'pending_exports': DataExportRequest.objects.filter(
             user=request.user,
             status__in=['pending', 'processing']
         ).count(),
@@ -293,7 +293,7 @@ def consent_management(request):
     # GET - show current consents
     consent_service = ConsentManagementService(request.user)
     
-    consents = {
+    current_consents = {
         'data_processing': consent_service.get_consent('data_processing'),
         'marketing': consent_service.get_consent('marketing'),
         'third_party': consent_service.get_consent('third_party'),
@@ -304,7 +304,7 @@ def consent_management(request):
     
     context = {
         'active_tab': 'privacy',
-        'consents': consents,
+        'current_consents': current_consents,
         'consent_history': consent_history,
     }
     return render(request, 'corpus/gdpr/consent_management.html', context)
@@ -359,7 +359,7 @@ def privacy_policy(request):
 def terms_of_service(request):
     """Terms of service page."""
     context = {
-        'terms_version': '1.0',
+        'policy_version': '1.0',
         'last_updated': '2026-02-09',
     }
     return render(request, 'corpus/gdpr/terms_of_service.html', context)
@@ -368,7 +368,7 @@ def terms_of_service(request):
 def kvkk_notice(request):
     """KVKK (Turkish GDPR) notice page."""
     context = {
-        'notice_version': '1.0',
+        'policy_version': '1.0',
         'last_updated': '2026-02-09',
     }
     return render(request, 'corpus/gdpr/kvkk_notice.html', context)
