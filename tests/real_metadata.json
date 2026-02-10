@@ -1,8 +1,0 @@
-{
-  "document_id": "real-test-001",
-  "pages": [1],
-  "page_files": ["tests/sample_page.png"],
-  "plan": [
-    {"action": "ocr.run", "args": {"pages": [1]}}
-  ]
-}
