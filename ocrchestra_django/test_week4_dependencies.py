@@ -330,7 +330,7 @@ def test_7_export_conllu(document, analysis, user):
         print(f"✓ Decoded to {len(text)} characters")
         
         # Check watermark
-        assert "OCRchestra Platform" in text, "Watermark missing"
+        assert "CorpusLIO Platform" in text, "Watermark missing"
         print("✓ Watermark present")
         
         # Check content

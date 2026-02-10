@@ -1,4 +1,4 @@
-// OCRchestra Django - JavaScript
+// CorpusLIO Django - JavaScript
 // Auto-fading messages
 document.addEventListener('DOMContentLoaded', function () {
     // Auto-close messages after 5 seconds

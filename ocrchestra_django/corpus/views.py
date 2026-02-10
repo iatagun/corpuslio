@@ -12,8 +12,7 @@ from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 
 from .models import Document, ProcessingTask, Analysis, Tag, Content, CorpusMetadata
-from .forms import DocumentUploadForm
-from .tasks import process_document_task
+# Upload form removed; uploads are handled via admin/import_corpus
 from .services import CorpusService
 from .services import CorpusService
 from .collections import Collection
@@ -193,104 +192,7 @@ def library_view(request):
 
 
 
-@require_http_methods(["GET", "POST"])
-def upload_view(request):
-    """Handle corpus file upload and import (supports batch upload of VRT/CoNLL-U files)."""
-    if request.method == 'POST':
-        files = request.FILES.getlist('files')
-        
-        if not files:
-            messages.error(request, '❌ Lütfen en az bir dosya seçin.')
-            return redirect('corpus:upload')
-        
-        # Get corpus import options
-        auto_detect = request.POST.get('auto_detect_format') == 'on'
-        validate_format = request.POST.get('validate_format') == 'on'
-        skip_duplicates = request.POST.get('skip_duplicates') == 'on'
-        
-        # Metadata
-        metadata = {
-            'author': request.POST.get('author', ''),
-            'date': request.POST.get('date', ''),
-            'source': request.POST.get('source', ''),
-            'genre': request.POST.get('genre', ''),
-            'language': request.POST.get('language', 'tr'),
-            'publisher': request.POST.get('publisher', ''),
-        }
-        
-        processed_count = 0
-        failed_count = 0
-        
-        for uploaded_file in files:
-            try:
-                # Validate file extension
-                import os
-                from django.conf import settings
-                ext = os.path.splitext(uploaded_file.name)[1].lower()
-                if ext not in settings.ALLOWED_DOCUMENT_EXTENSIONS:
-                    messages.warning(request, f'⚠️ {uploaded_file.name}: Desteklenmeyen format')
-                    failed_count += 1
-                    continue
-                
-                # Import corpus file
-                try:
-                    from django.core.management import call_command
-                    import tempfile
-                    
-                    # Save uploaded file to temp location
-                    # On Windows, we must close the file before opening it again in another handle
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp_file:
-                        for chunk in uploaded_file.chunks():
-                            tmp_file.write(chunk)
-                        tmp_path = tmp_file.name
-                    
-                    try:
-                        # Call import_corpus command
-                        # We pass the logged-in user so they own the document
-                        call_command(
-                            'import_corpus',
-                            tmp_path,
-                            title=metadata.get('source', uploaded_file.name),
-                            author=metadata.get('author', ''),
-                            genre=metadata.get('genre', 'other'),
-                            user=request.user.username,
-                            skip_duplicates=skip_duplicates,
-                            format=ext[1:].replace('txt', 'vrt'), # Map txt to vrt or auto
-                            validate=validate_format
-                        )
-                        processed_count += 1
-                    finally:
-                        # Clean up temp file
-                        if os.path.exists(tmp_path):
-                            os.unlink(tmp_path)
-                        
-                except Exception as e:
-                    messages.error(request, f'❌ {uploaded_file.name}: İmport hatası - {str(e)}')
-                    failed_count += 1
-                    continue
-                    
-            except Exception as e:
-                messages.error(request, f'❌ {uploaded_file.name}: {str(e)}')
-                failed_count += 1
-        
-        # Summary message
-        if processed_count > 0:
-            messages.success(
-                request,
-                f'✅ {processed_count} dosya başarıyla yüklendi ve işleme alındı!'
-            )
-        if failed_count > 0:
-            messages.warning(request, f'⚠️ {failed_count} dosya yüklenemedi.')
-        
-        return redirect('corpus:library')
-    else:
-        form = DocumentUploadForm()
-    
-    context = {
-        'form': form,
-        'active_tab': 'upload'
-    }
-    return render(request, 'corpus/upload.html', context)
+# Note: Upload functionality removed from public UI; imports are handled via admin/import_corpus.
 
 
 @ratelimit(key='user_or_ip', rate='100/d', method='GET')

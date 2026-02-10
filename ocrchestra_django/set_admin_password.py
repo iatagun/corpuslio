@@ -21,7 +21,7 @@ try:
     print(f"  Username: admin")
     print(f"  Password: admin123")
 except User.DoesNotExist:
-    admin = User.objects.create_superuser('admin', 'admin@ocrchestra.com', 'admin123')
+    admin = User.objects.create_superuser('admin', 'admin@corpuslio.com', 'admin123')
     admin.first_name = 'Admin'
     admin.last_name = 'User'
     admin.save()

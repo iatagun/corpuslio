@@ -44,7 +44,7 @@ def test_citation_generation():
     
     # We'll manually check the format
     expected_parts = [
-        "OCRchestra National Corpus Platform",
+        "CorpusLIO National Corpus Platform",
         "Exported by:",
         "Date:",
         "Document:",

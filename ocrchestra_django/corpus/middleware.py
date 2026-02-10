@@ -331,10 +331,10 @@ class ExportLogMiddleware(MiddlewareMixin):
         username = request.user.username if request.user.is_authenticated else 'Anonymous'
         
         return (
-            f"OCRchestra Corpus Platform - "
+            f"CorpusLIO Corpus Platform - "
             f"Export by {username} on {current_date}. "
-            f"Please cite: OCRchestra (2024). Turkish Corpus Analysis Platform. "
-            f"Retrieved from https://ocrchestra.com"
+            f"Please cite: CorpusLIO (2024). Turkish Corpus Analysis Platform. "
+            f"Retrieved from https://corpuslio.com"
         )
     
     def get_client_ip(self, request):

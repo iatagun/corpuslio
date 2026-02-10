@@ -61,7 +61,7 @@ def test_export_service():
     # Test 1: Citation generation
     print("\n1. Testing citation generation...")
     citation = service.generate_citation()
-    assert "OCRchestra" in citation
+    assert "CorpusLIO" in citation
     assert user.username in citation
     print(f"   ✅ Citation generated: {citation[:100]}...")
     
@@ -73,7 +73,7 @@ def test_export_service():
         ]
         csv_content = service.export_concordance_csv(sample_results)
         assert isinstance(csv_content, bytes)
-        assert b'OCRchestra' in csv_content  # Watermark check
+        assert b'CorpusLIO' in csv_content  # Watermark check
         assert b'test' in csv_content
         print(f"   ✅ CSV export successful ({len(csv_content)} bytes)")
     except Exception as e:
@@ -86,7 +86,7 @@ def test_export_service():
         json_content = service.export_concordance_json(sample_results)
         assert isinstance(json_content, bytes)
         assert b'metadata' in json_content
-        assert b'OCRchestra' in json_content
+        assert b'CorpusLIO' in json_content
         print(f"   ✅ JSON export successful ({len(json_content)} bytes)")
     except Exception as e:
         print(f"   ❌ JSON export failed: {e}")

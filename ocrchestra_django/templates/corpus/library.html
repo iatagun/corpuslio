@@ -2,7 +2,7 @@
 {% load auth_extras %}
 {% load corpus_extras %}
 
-{% block title %}Korpus Kütüphanesi - CorpusIO{% endblock %}
+{% block title %}Korpus Kütüphanesi - CorpusLIO{% endblock %}
 
 {% block content %}
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
@@ -32,7 +32,7 @@
                 {{ corpus.document.get_word_count }} token
             </span>
             <span
-                style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-secondary); font-weight:500; font-size:0.85rem;">
+                style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-primary); font-weight:500; font-size:0.85rem;">
                 <span class="material-icons" style="font-size:16px;">article</span>
                 {{ corpus.sentence_count }} cümle
             </span>
@@ -48,14 +48,14 @@
         <div class="corpus-metadata" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;">
             {% if corpus.global_metadata.author %}
             <span class="metadata-badge"
-                style="background:var(--bg-accent); color:var(--text-primary); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
+                style="background:var(--accent-primary); color:var(--text-main); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
                 <span class="material-icons" style="font-size:12px; vertical-align:middle;">person</span>
                 {{ corpus.global_metadata.author }}
             </span>
             {% endif %}
             {% if corpus.global_metadata.genre %}
             <span class="metadata-badge"
-                style="background:var(--bg-secondary); color:var(--text-primary); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
+                style="background:var(--bg-surface); color:var(--text-main); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
                 <span class="material-icons" style="font-size:12px; vertical-align:middle;">category</span>
                 {{ corpus.global_metadata.genre|title }}
             </span>
@@ -191,4 +191,18 @@
             });
         });
     });
-    {% endblock %}
+        // Force library page to use 'auto' theme to respect system preference
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                // Override only for this page to fix inconsistent saved values
+                localStorage.setItem('theme', 'auto');
+                if (typeof setTheme === 'function') {
+                    setTheme('auto');
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'auto');
+                }
+            } catch (e) {
+                console.warn('Failed to set theme auto for library page', e);
+            }
+        });
+        {% endblock %}

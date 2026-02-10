@@ -294,11 +294,12 @@
             </div>
             
             <div class="checkbox-wrapper">
-                <input type="checkbox" id="use_lemma" name="use_lemma" {% if use_lemma %}checked{% endif %}>
+                <input type="checkbox" id="use_lemma" name="use_lemma" value="true" {% if use_lemma %}checked{% endif %}>
                 <label for="use_lemma" style="margin: 0;">
                     {% trans "Kök (Lemma) Kullan (işaretli değilse yüzey formu kullanılır)" %}
                 </label>
             </div>
+            <input type="hidden" name="analyze" value="true">
             
             <button type="submit" class="analyze-button">
                 📊 {% trans "Analiz Et" %}
@@ -383,8 +384,8 @@
                     </div>
                     <div class="pos-bar-container">
                         <div class="pos-bar-fill" 
-                             style="width: {% widthratio count pos_distribution.values|first 100 %}%;">
-                            {% widthratio count pos_distribution.values|first 100 %}%
+                             style="width: {% widthratio count pos_max 100 %}%;">
+                            {% widthratio count pos_max 100 %}%
                         </div>
                     </div>
                 </div>

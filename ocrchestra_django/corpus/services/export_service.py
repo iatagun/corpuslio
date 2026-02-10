@@ -49,7 +49,7 @@ class ExportService:
             doc_title = "全 Corpus"
         
         citation = (
-            f"OCRchestra National Corpus Platform\n"
+            f"CorpusLIO National Corpus Platform\n"
             f"Exported by: {self.user.username}\n"
             f"Date: {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}\n"
             f"Document: {doc_title}\n"
@@ -60,8 +60,8 @@ class ExportService:
         
         citation += (
             f"\n"
-            f"Citation: OCRchestra Corpus ({self.timestamp.year}). "
-            f"Retrieved from OCRchestra Platform on {self.timestamp.strftime('%B %d, %Y')}.\n"
+            f"Citation: CorpusLIO Corpus ({self.timestamp.year}). "
+            f"Retrieved from CorpusLIO Platform on {self.timestamp.strftime('%B %d, %Y')}.\n"
             f"Please cite this source in academic publications."
         )
         
@@ -203,7 +203,7 @@ class ExportService:
         
         data = {
             'metadata': {
-                'platform': 'OCRchestra National Corpus',
+                'platform': 'CorpusLIO National Corpus',
                 'exported_by': self.user.username,
                 'export_date': self.timestamp.isoformat(),
                 'document': doc_title,
@@ -236,7 +236,7 @@ class ExportService:
         
         data = {
             'metadata': {
-                'platform': 'OCRchestra National Corpus',
+                'platform': 'CorpusLIO National Corpus',
                 'exported_by': self.user.username,
                 'export_date': self.timestamp.isoformat(),
                 'document': doc_title,
@@ -269,7 +269,7 @@ class ExportService:
         
         data = {
             'metadata': {
-                'platform': 'OCRchestra National Corpus',
+                'platform': 'CorpusLIO National Corpus',
                 'exported_by': self.user.username,
                 'export_date': self.timestamp.isoformat(),
                 'document': doc_title,
@@ -444,7 +444,7 @@ class ExportService:
         citation = self.generate_citation()
         watermark_lines = [
             "# ========================================",
-            "# CoNLL-U Export from OCRchestra Platform",
+            "# CoNLL-U Export from CorpusLIO Platform",
             "# ========================================",
         ]
         

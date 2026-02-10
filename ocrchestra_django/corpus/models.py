@@ -217,13 +217,25 @@ class UserProfile(models.Model):
         from datetime import date
         
         today = date.today()
-        
+
         # Reset if new month
         if self.export_last_reset.month != today.month or self.export_last_reset.year != today.year:
             self.export_used_mb = Decimal('0.00')
             self.export_last_reset = today
-        
-        self.export_used_mb += Decimal(str(size_mb))
+
+        # Ensure size_mb is a Decimal and round up to 2 decimal places
+        try:
+            from decimal import ROUND_UP
+            delta = Decimal(str(size_mb))
+            if delta > 0:
+                # charge at least 0.01 MB granularity
+                delta = delta.quantize(Decimal('0.01'), rounding=ROUND_UP)
+            else:
+                delta = Decimal('0.00')
+        except Exception:
+            delta = Decimal('0.00')
+
+        self.export_used_mb += delta
         self.save(update_fields=['export_used_mb', 'export_last_reset'])
     
     def reset_export_quota_if_needed(self):
@@ -236,6 +248,20 @@ class UserProfile(models.Model):
             self.export_used_mb = Decimal('0.00')
             self.export_last_reset = today
             self.save(update_fields=['export_used_mb', 'export_last_reset'])
+
+    def get_export_quota_mb(self):
+        """Return the user's monthly export quota in MB.
+
+        Returns 0 to indicate 'unlimited' for superusers or roles configured as unlimited.
+        """
+        # Superusers have unlimited quota
+        if self.user.is_superuser:
+            return 0
+
+        try:
+            return int(self.export_quota_mb or 0)
+        except Exception:
+            return 0
     
     def generate_api_key(self):
         """Generate unique API key for developer role."""

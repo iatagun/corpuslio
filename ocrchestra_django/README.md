@@ -1,4 +1,4 @@
-# OCRchestra Django
+# CorpusLIO Django
 
 Modern Django-based Turkish corpus platform with AI-powered linguistic analysis.
 

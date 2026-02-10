@@ -303,6 +303,7 @@ def frequency_view(request):
         'min_length': min_length,
         'frequencies': frequencies,
         'pos_distribution': pos_dist,
+        'pos_max': max(pos_dist.values()) if pos_dist else 1,
         'execution_time': execution_time,
         'collections': collections,
         'active_tab': 'statistics',

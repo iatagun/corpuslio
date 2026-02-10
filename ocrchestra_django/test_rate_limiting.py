@@ -127,7 +127,7 @@ def test_export_logging():
             row_count=100,
             file_size_bytes=int(size_mb * 1024 * 1024),
             watermark_applied=True,
-            citation_text='OCRchestra Test Export',
+            citation_text='CorpusLIO Test Export',
             quota_before_mb=quota_before,
             quota_after_mb=quota_after
         )
@@ -291,7 +291,7 @@ def show_admin_stats():
 
 if __name__ == '__main__':
     print("\n" + "="*60)
-    print("🚀 OCRchestra Rate Limiting & Audit Logging Test Suite")
+    print("🚀 CorpusLIO Rate Limiting & Audit Logging Test Suite")
     print("="*60)
     
     try:

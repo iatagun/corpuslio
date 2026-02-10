@@ -54,7 +54,8 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
+    # Google provider temporarily disabled during troubleshooting
+    # 'allauth.socialaccount.providers.google',
     
     # Local apps
     'corpus',
@@ -168,6 +169,12 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
+# Allauth convenience settings
+# If True, social login will proceed on GET (no intermediate confirmation page).
+SOCIALACCOUNT_LOGIN_ON_GET = True
+# Automatically create a local user account when signing up via social providers.
+SOCIALACCOUNT_AUTO_SIGNUP = True
+
 # Note: You must install `django-allauth` (pip install django-allauth)
 # and configure a Google OAuth2 app in Google Cloud Console.
 # Create a SocialApp in Django admin (Sites -> Social applications) with
@@ -256,7 +263,7 @@ REST_FRAMEWORK = {
 
 # DRF Spectacular settings
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'OCRchestra Corpus API',
+    'TITLE': 'CorpusLIO Corpus API',
     'DESCRIPTION': 'REST API for Turkish National Corpus Platform - VRT, CoNLL-U, and linguistic analysis',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,

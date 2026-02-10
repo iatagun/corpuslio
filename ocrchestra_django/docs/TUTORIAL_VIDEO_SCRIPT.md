@@ -294,7 +294,7 @@ response = requests.get(
 ### [Screen: Back to homepage]
 
 **Narrator:**  
-"That's OCRchestra - your comprehensive Turkish corpus platform."
+"That's CorpusLIO - your comprehensive Turkish corpus platform."
 
 **[Show use cases section with 4 cards]**
 
@@ -304,19 +304,19 @@ response = requests.get(
 **[Show academic citation section]**
 
 **Narrator:**  
-"Start exploring today at ocrchestra.tr - and don't forget to cite the platform in your publications."
+"Start exploring today at corpuslio.tr - and don't forget to cite the platform in your publications."
 
 **[Screen: Contact information and social media icons appear]**
 
 **Narrator:**  
-"Questions? Contact us at support@ocrchestra.tr or join our community on GitHub and Twitter."
+"Questions? Contact us at support@corpuslio.tr or join our community on GitHub and Twitter."
 
-**[Fade to OCRchestra logo]**
+**[Fade to CorpusLIO logo]**
 
 **Narrator:**  
 "İyi araştırmalar! Happy researching!"
 
-**[End screen: OCRchestra logo + website URL]**
+**[End screen: CorpusLIO logo + website URL]**
 
 ---
 
@@ -326,7 +326,7 @@ response = requests.get(
 - [ ] Use 1920x1080 resolution
 - [ ] Enable cursor highlighting
 - [ ] Disable notifications/popups
-- [ ] Use test account: demo@ocrchestra.tr
+- [ ] Use test account: demo@corpuslio.tr
 - [ ] Pre-populate sample data (documents, collections)
 - [ ] Test all features before recording
 - [ ] Record in quiet environment

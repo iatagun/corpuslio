@@ -49,7 +49,6 @@ urlpatterns = [
     # Main pages
     path('', views.home_view, name='home'),
     path('library/', views.library_view, name='library'),
-    path('upload/', views.upload_view, name='upload'),
     path('analysis/<int:doc_id>/', views.analysis_view, name='analysis'),  # Backwards-compat: document-level analysis
     # path('analysis/<int:doc_id>/download/', views.download_search_results, name='download_results'),  # Disabled
     # path('ngrams/<int:doc_id>/', analysis_views.ngrams_view, name='ngrams'),  # Disabled: Use corpus-wide ngram

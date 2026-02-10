@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
-from .models import Document, Analysis, QueryLog, ExportLog
+from .models import Document, Analysis, QueryLog, ExportLog, UserProfile
 from collections import Counter
 from datetime import datetime, timedelta
 import json
@@ -31,11 +31,26 @@ def dashboard_view(request):
         if upload_date in upload_trend:
             upload_trend[upload_date] += 1
     
-    # Format distribution
+    # Format distribution - prefer explicit `Document.format` field, fallback to filename extension
     format_counts = {}
     for doc in Document.objects.all():
-        ext = doc.filename.split('.')[-1].upper() if '.' in doc.filename else 'UNKNOWN'
-        format_counts[ext] = format_counts.get(ext, 0) + 1
+        # Normalize format: use `format` field if populated
+        fmt = (getattr(doc, 'format', None) or '').strip()
+        if fmt:
+            key = fmt.upper()
+        else:
+            # Fallback: extract extension from filename
+            key = doc.filename.split('.')[-1].upper() if '.' in (doc.filename or '') else 'UNKNOWN'
+
+        # Map some common variants to friendly labels
+        if key in ('TXT', 'VRT', 'CONLLU', 'CONLL-U', 'CONLLU'):
+            key = key.replace('CONLL-U', 'CONLLU')
+        elif key == 'PDF':
+            key = 'PDF'
+        elif key in ('DOC', 'DOCX'):
+            key = 'DOCX'
+
+        format_counts[key] = format_counts.get(key, 0) + 1
     
     # Genre distribution (keeping for compatibility)
     genre_counts = {}
@@ -116,21 +131,24 @@ def user_dashboard_view(request):
     except ImportError:
         has_api = False
     
-    # User's documents
-    user_docs = Document.objects.filter(uploaded_by=user)
+    # User's documents (uploaded_by may not exist on all schemas)
+    try:
+        user_docs = Document.objects.filter(uploaded_by=user)
+    except Exception:
+        user_docs = Document.objects.none()
     total_docs = user_docs.count()
-    
-    # User's queries
+
+    # User's queries (use created_at field)
     user_queries = QueryLog.objects.filter(user=user)
     total_queries = user_queries.count()
-    queries_today = user_queries.filter(timestamp__date=today).count()
-    recent_queries = user_queries.order_by('-timestamp')[:10]
-    
-    # User's exports
+    queries_today = user_queries.filter(created_at__date=today).count()
+    recent_queries = user_queries.order_by('-created_at')[:10]
+
+    # User's exports (use created_at and correct field names)
     user_exports = ExportLog.objects.filter(user=user)
     total_exports = user_exports.count()
-    exports_today = user_exports.filter(timestamp__date=today).count()
-    recent_exports = user_exports.order_by('-timestamp')[:10]
+    exports_today = user_exports.filter(created_at__date=today).count()
+    recent_exports = user_exports.order_by('-created_at')[:10]
     
     # API Keys statistics (if available)
     api_stats = None
@@ -147,14 +165,23 @@ def user_dashboard_view(request):
             'recent_keys': user_api_keys.order_by('-created_at')[:5]
         }
     
-    # User quotas from profile
-    profile = user.userprofile
+    # User quotas from profile (ensure profile exists)
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    monthly_query_limit = profile.get_query_limit()
+    if monthly_query_limit and monthly_query_limit > 0:
+        monthly_query_limit = monthly_query_limit * 30
+    else:
+        monthly_query_limit = 0
+
+    # export_quota_mb is monthly; use it as a fallback for daily display
+    daily_export_limit = int(profile.export_quota_mb or 0)
+
     quotas = {
-        'monthly_query_limit': profile.monthly_query_limit,
-        'daily_export_limit': profile.daily_export_limit,
+        'monthly_query_limit': monthly_query_limit,
+        'daily_export_limit': daily_export_limit,
         'queries_this_month': user_queries.filter(
-            timestamp__year=today.year,
-            timestamp__month=today.month
+            created_at__year=today.year,
+            created_at__month=today.month
         ).count(),
         'exports_today': exports_today,
     }
@@ -169,45 +196,58 @@ def user_dashboard_view(request):
         query_timeline.append({'date': date.strftime('%Y-%m-%d'), 'count': count})
     
     # Query types distribution
-    for query in user_queries.filter(timestamp__gte=thirty_days_ago):
+    for query in user_queries.filter(created_at__gte=thirty_days_ago):
         query_type_counts[query.query_type or 'basic'] += 1
     
     # Export format distribution
     export_format_counts = Counter()
-    for export in user_exports.filter(timestamp__gte=thirty_days_ago):
-        export_format_counts[export.export_format] += 1
+    for export in user_exports.filter(created_at__gte=thirty_days_ago):
+        export_format_counts[export.format] += 1
     
     # Recent activity (combined queries + exports + uploads)
     activities = []
     
     # Add recent queries
-    for query in user_queries.order_by('-timestamp')[:10]:
+    for query in user_queries.order_by('-created_at')[:10]:
         activities.append({
             'type': 'query',
-            'timestamp': query.timestamp,
+            'timestamp': query.created_at,
             'description': f"Searched: {query.query[:50]}...",
             'icon': 'search',
-            'results': query.results_count
+            'results': getattr(query, 'result_count', 0)
         })
     
     # Add recent exports
-    for export in user_exports.order_by('-timestamp')[:10]:
+    for export in user_exports.order_by('-created_at')[:10]:
+        # Derive a sensible title for the exported document
+        doc_title = ''
+        if export.document:
+            if getattr(export.document, 'metadata', None):
+                doc_title = export.document.metadata.get('title') or export.document.filename
+            else:
+                doc_title = getattr(export.document, 'filename', '')
+
         activities.append({
             'type': 'export',
-            'timestamp': export.timestamp,
-            'description': f"Exported {export.document.title[:40]} as {export.export_format.upper()}",
+            'timestamp': export.created_at,
+            'description': f"Exported {doc_title[:40]} as {export.format.upper()}",
             'icon': 'download',
-            'format': export.export_format
+            'format': export.format
         })
     
     # Add recent uploads
-    for doc in user_docs.order_by('-uploaded_at')[:10]:
+    for doc in user_docs.order_by('-upload_date')[:10]:
+        if getattr(doc, 'metadata', None):
+            title_text = doc.metadata.get('title') or doc.filename
+        else:
+            title_text = doc.filename
+
         activities.append({
             'type': 'upload',
-            'timestamp': doc.uploaded_at,
-            'description': f"Uploaded: {doc.title[:50]}",
+            'timestamp': doc.upload_date,
+            'description': f"Uploaded: {title_text[:50]}",
             'icon': 'upload_file',
-            'document': doc.title
+            'document': title_text
         })
     
     # Sort activities by timestamp (most recent first)

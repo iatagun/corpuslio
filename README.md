@@ -1,4 +1,4 @@
-# OCRchestra - Turkish Corpus Platform
+# CorpusLIO - Turkish Corpus Platform
 
 Modern Django-based Turkish corpus platform with AI-powered linguistic analysis.
 
@@ -18,68 +18,58 @@ cp .env.example .env
 python manage.py migrate
 
 # Create admin user
+````markdown
+# CorpusLIO - Turkish Corpus Platform (Current status)
+
+Bu repo: Django tabanlı Türkçe korpus platformu gelişimi için çalışma kopyasıdır. Aşağıda güncel durum ve önemli notlar yer alır (2026-02-10).
+
+## Hızlı Başlangıç
+
+```bash
+cd ocrchestra_django
+pip install -r requirements.txt
+
+# Ortam
+cp .env.example .env
+# .env içindeki ayarları düzenleyin
+
+# Veritabanı
+python manage.py migrate
+
+# Yönetici oluşturun
 python manage.py createsuperuser
 
-# Run server
+# Geliştirme sunucusu
 python manage.py runserver
 ```
 
-Visit: **http://localhost:8000**
+Adres: http://localhost:8000
 
-## 📁 Project Structure
+## Önemli Güncellemeler (mevcut durum)
+- UI upload butonu ve `upload` sayfası kaldırıldı — belge yükleme artık yalnızca Django admin veya `import_corpus` management command ile yapılmalıdır.
+- Site varsayılan olarak **dark theme** olarak zorlandı; tema/language seçimleri arayüzden gizlendi.
+- Parsers (CoNLL-U / VRT) ve import pipeline güncellendi — `Content` ve `Analysis` kayıtları oluşturuluyor.
+- `reparse_document` ve `fix_missing_analysis` management command'leri eklendi; mevcut belgeler için backfill/reparse işlemleri mümkün.
+- Frekans, kollokasyon ve arama CTA'ları iyileştirildi; `corpus statistics` sayfasına hızlı arama butonları eklendi.
+- Export watermark ve meta verilerinde kullanıcıya gösterilen marka adı `CorpusLIO` olarak güncellendi.
 
-```
-OCRchestra/
-├── ocrchestra_django/        # Django web application
-│   ├── manage.py
-│   ├── corpus/               # Main app
-│   ├── api/                  # REST API
-│   ├── templates/            # HTML templates
-│   └── static/               # CSS, JS
-│
-├── ocrchestra/               # Core NLP modules (shared)
-│   ├── orchestrator.py
-│   ├── groq_client.py
-│   ├── search_engine.py
-│   └── ...
-│
-├── scripts/                  # Utility scripts
-├── tests/                    # Tests
-└── README.md                 # This file
-```
+## Yapılacaklar / Bilinmesi Gerekenler
+- Tüm kullanıcıya görünen "OCRchestra" metinleri tam taranıp `CorpusLIO` olarak merkezileştirilmeli (henüz tamamlanmadı).
+- Marka adını merkezi bir ayar (`settings.BRAND_NAME`) içine taşıma önerisi var.
+- Tam test kümesi çalıştırılmalı; şu anda `test_export_service.py` gibi bazı testler başarılı şekilde çalıştırıldı ama tam test çalıştırılmadı.
+- Değişiklikler commit/push edilmedi — isterseniz ben commit ve push yapabilirim.
 
-## 🎨 Features
+## Kısa Notlar (teknik)
+- Upload endpoint: silindi (URL/şablon/view kaldırıldı). Admin veya `python manage.py import_corpus <file>` ile içe aktarma yapınız.
+- Yönetici tarafı import komutları Windows için geçici dosya oluşturma ve temizleme içerir.
 
-### Core Features
-- ✅ Modern dark theme with glassmorphism
-- ✅ Document upload (PDF, DOCX, TXT, images)
-- ✅ AI-powered analysis (Groq API)
-- ✅ Async processing (Celery)
-- ✅ KWIC concordance search
-- ✅ REST API
-- ✅ Export to VRT, JSON, CSV, Excel, CoNLL-U
+## Teknoloji
+- Backend: Django
+- Async (opsiyonel): Celery + Redis
+- NLP araçları: yerel parserlar ve harici analiz entegrasyonları
 
-### Week 4: Dependency Parsing (CoNLL-U Support)
-- ✅ 10-column CoNLL-U format parser/serializer
-- ✅ Interactive D3.js dependency tree visualization
-- ✅ Pattern-based dependency queries ("NOUN:nsubj>VERB")
-- ✅ Morphological feature search (Case, Number, Person)
-- ✅ Chart.js statistics dashboard (POS/deprel distributions)
-- ✅ Watermarked CoNLL-U export with citation headers
-- ✅ Turkish Universal Dependencies support (15+ relations)
-
-## 📖 Documentation
-
-See [`ocrchestra_django/README.md`](ocrchestra_django/README.md) for detailed setup instructions.
-
-## 🛠️ Technology Stack
-
-- **Backend**: Django 5.0
-- **API**: Django REST Framework
-- **Async**: Celery + Redis
-- **NLP**: Groq API
-- **Database**: SQLite (dev) / PostgreSQL (prod)
-
-## 📝 License
-
+## Lisans
 MIT
+
+````
+## 🛠️ Technology Stack

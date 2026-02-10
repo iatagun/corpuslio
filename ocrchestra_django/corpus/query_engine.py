@@ -357,19 +357,44 @@ class CorpusQueryEngine:
             List of words with frequencies
         """
         field = 'lemma' if use_lemma else 'form'
-        
-        # Count frequencies
-        freq_list = self.base_queryset.exclude(
-            upos='PUNCT'
-        ).values(field).annotate(
+
+        # Base queryset excluding punctuation
+        base = self.base_queryset.exclude(upos='PUNCT')
+
+        # Total tokens to compute percentages
+        try:
+            total_tokens = base.count() or 1
+        except Exception:
+            total_tokens = 1
+
+        # Count frequencies and also gather a representative POS tag
+        freq_qs = base.values(field).annotate(
             count=Count('id')
         ).order_by('-count')[:limit]
-        
-        # Filter by length
-        results = [
-            {'word': item[field], 'frequency': item['count']}
-            for item in freq_list
-            if item[field] and len(item[field]) >= min_length
-        ]
-        
+
+        results = []
+        for item in freq_qs:
+            word = item.get(field)
+            if not word or len(word) < min_length:
+                continue
+
+            frequency = item.get('count', 0)
+
+            # Determine the most common POS for this token/lemma
+            pos_q = base.filter(**{f"{field}__iexact": word}).values('upos').annotate(c=Count('id')).order_by('-c')
+            pos = pos_q[0]['upos'] if pos_q and pos_q[0].get('upos') else ''
+
+            # If using lemma, include lemma explicitly; otherwise lemma == word
+            lemma = word if use_lemma else ''
+
+            percentage = (frequency / total_tokens) * 100
+
+            results.append({
+                'word': word,
+                'lemma': lemma,
+                'pos': pos,
+                'frequency': frequency,
+                'percentage': round(percentage, 4)
+            })
+
         return results
