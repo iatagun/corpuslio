@@ -27,7 +27,7 @@ import hashlib
 from typing import Dict, List, Tuple, Optional
 from xml.etree import ElementTree as ET
 from django.db import transaction
-from corpus.models import Document, Sentence, Token, CorpusMetadata
+from corpus.models import Document, Sentence, Token, CorpusMetadata, Content, Analysis
 
 
 class VRTParser:
@@ -300,5 +300,43 @@ class VRTParser:
                 pass
         
         document.save()
-        
+
+        # Create Content record (cleaned text)
+        try:
+            cleaned_text = "\n\n".join([s['text'] for s in parse_result['sentences'] if s.get('text')])
+            Content.objects.update_or_create(
+                document=document,
+                defaults={
+                    'raw_text': cleaned_text,
+                    'cleaned_text': cleaned_text
+                }
+            )
+        except Exception:
+            pass
+
+        # Create Analysis record (basic token-level analysis)
+        try:
+            analysis_data = []
+            for s_idx, s in enumerate(parse_result['sentences'], start=1):
+                for tok in s.get('tokens', []):
+                    analysis_data.append({
+                        'word': tok.get('form', ''),
+                        'lemma': tok.get('lemma', ''),
+                        'pos': tok.get('upos', ''),
+                        'vrt_attributes': tok.get('vrt_attributes', {}),
+                        'sentence_index': s_idx,
+                        'token_index': tok.get('index')
+                    })
+
+            Analysis.objects.update_or_create(
+                document=document,
+                defaults={
+                    'data': analysis_data,
+                    'has_dependencies': False,
+                    'conllu_data': []
+                }
+            )
+        except Exception:
+            pass
+
         return metadata

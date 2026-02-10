@@ -84,12 +84,17 @@ class Command(BaseCommand):
         self.stdout.write(f'Format: {file_format.upper()}')
         self.stdout.write(f'User: {user.username}')
         
+        # Ensure None values are converted to empty strings to satisfy NOT NULL DB columns
+        author_val = options.get('author') or ''
+        genre_val = options.get('genre') or ''
+        language_val = options.get('language') or 'tr'
+
         document = Document.objects.create(
             filename=title,
             format=file_format,
-            language=options.get('language', 'tr'),
-            author=options.get('author', ''),
-            genre=options.get('genre', ''),
+            language=language_val,
+            author=author_val,
+            genre=genre_val,
             processed=False,
         )
         

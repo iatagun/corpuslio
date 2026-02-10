@@ -54,9 +54,9 @@ class DocumentAdmin(admin.ModelAdmin):
                 if not obj.format:
                     ext = os.path.splitext(obj.file.name)[1].lower()
                     if ext in ['.vrt', '.xml']:
-                        obj.format = 'VRT'
+                        obj.format = 'vrt'
                     elif ext in ['.conllu', '.conll']:
-                        obj.format = 'CONLLU'
+                        obj.format = 'conllu'
                     obj.save()
                 
                 # Run import command
@@ -68,8 +68,8 @@ class DocumentAdmin(admin.ModelAdmin):
                     author=obj.author or '',
                     genre=obj.genre or 'other',
                     user=request.user.username,
-                    format='vrt' if obj.format == 'VRT' else 'conllu',
-                    validate=False # Admin users might upload trusted files
+                    format=obj.format or 'conllu',
+                    skip_checks=True  # Admin users might upload trusted files
                 )
                 
                 # Refresh from db to get processed status if updated by command
