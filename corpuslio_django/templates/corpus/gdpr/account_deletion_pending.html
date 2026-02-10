@@ -1,0 +1,75 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}Bekleyen Silme Talebi{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'corpus:privacy_settings' %}">Gizlilik Ayarları</a></li>
+                    <li class="breadcrumb-item active">Bekleyen Talep</li>
+                </ol>
+            </nav>
+            
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Zaten Aktif Bir Silme Talebiniz Var
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle"></i> Mevcut Talep</h5>
+                        <p class="mb-0">
+                            Daha önce oluşturduğunuz bir hesap silme talebi bulunmaktadır. 
+                            Yeni bir talep oluşturmadan önce mevcut talebinizi iptal etmelisiniz.
+                        </p>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Talep Tarihi:</strong><br>
+                            {{ existing_request.requested_at|date:"d.m.Y H:i" }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Durum:</strong><br>
+                            {% if existing_request.status == 'pending' %}
+                            <span class="badge badge-secondary">Beklemede</span>
+                            {% elif existing_request.status == 'grace_period' %}
+                            <span class="badge badge-warning">Bekleme Süresi</span>
+                            {% elif existing_request.status == 'processing' %}
+                            <span class="badge badge-info">İşleniyor</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if existing_request.is_in_grace_period %}
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-clock"></i> Bekleme Süresi Aktif</h6>
+                        <p>
+                            Hesabınız <strong>{{ existing_request.grace_period_ends_at|date:"d.m.Y H:i" }}</strong> 
+                            tarihinde silinecektir.
+                        </p>
+                        <p class="mb-0">
+                            <strong>Kalan Süre:</strong> {{ existing_request.grace_period_ends_at|timeuntil }}
+                        </p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'corpus:privacy_settings' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Geri Dön
+                        </a>
+                        <a href="{% url 'corpus:account_deletion_status' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-eye"></i> Talep Durumunu Görüntüle
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

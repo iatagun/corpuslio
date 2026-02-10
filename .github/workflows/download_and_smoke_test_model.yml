@@ -40,7 +40,7 @@ jobs:
       - name: Smoke-load model via ModelLoader
         run: |
           python - <<'PY'
-          from ocrchestra.model_loader import ModelLoader
+          from corpuslio.model_loader import ModelLoader
           import os
           p = os.getenv('MODEL_DIR','models/qwen2.5-7b-instruct')
           loader = ModelLoader()

@@ -1,0 +1,381 @@
+{% extends "corpus/base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Kollokasyon Analizi" %} - CorpusLIO{% endblock %}
+
+{% block extra_css %}
+<style>
+    .collocation-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .analysis-card {
+        background: var(--bg-surface);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-subtle);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-main);
+        font-size: 0.875rem;
+    }
+    
+    .form-group input,
+    .form-group select {
+        padding: 0.75rem;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        background: var(--bg-base);
+        color: var(--text-main);
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+    }
+    
+    .analyze-button {
+        background: var(--accent-primary);
+        color: white;
+        padding: 0.875rem 2rem;
+        border: none;
+        border-radius: var(--radius-md);
+        font-size: 0.9375rem;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+    
+    .analyze-button:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+    }
+    
+    .collocation-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+    
+    .export-buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+    
+    .btn-export {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid var(--border-subtle);
+        background: var(--bg-base);
+        color: var(--text-main);
+    }
+    
+    .btn-export:hover {
+        background: var(--bg-surface-hover);
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+        transform: translateY(-1px);
+    }
+    
+    .btn-export .material-icons {
+        font-size: 18px;
+    }
+    
+    .collocation-table thead {
+        background: var(--bg-base);
+        color: var(--text-main);
+    }
+    
+    .collocation-table th {
+        padding: 0.875rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border-bottom: 2px solid var(--border-subtle);
+    }
+    
+    .collocation-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--border-subtle);
+        color: var(--text-main);
+    }
+    
+    .collocation-table tbody tr:hover {
+        background: var(--bg-base);
+    }
+    
+    .rank-badge {
+        background: var(--accent-primary);
+        color: white;
+        padding: 4px 10px;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        font-size: 0.75rem;
+        display: inline-block;
+        min-width: 30px;
+        text-align: center;
+    }
+    
+    .frequency-bar {
+        background: var(--accent-primary);
+        height: 8px;
+        border-radius: var(--radius-sm);
+        opacity: 0.7;
+        transition: width 0.3s ease;
+    }
+    
+    .frequency-cell {
+        font-weight: 600;
+        color: var(--accent-primary);
+    }
+    
+    .position-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        margin: 0 2px;
+        border-radius: var(--radius-sm);
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .position-left {
+        background: var(--bg-surface-hover);
+        color: var(--text-secondary);
+    }
+    
+    .position-right {
+        background: var(--accent-success);
+        color: white;
+        opacity: 0.8;
+    }
+    
+    .stats-banner {
+        background: var(--bg-base);
+        padding: 1rem;
+        border-radius: var(--radius-lg);
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        border: 1px solid var(--border-subtle);
+    }
+    
+    .stat-item {
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--accent-primary);
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+    }
+    
+    .rate-limit-warning {
+        background: var(--bg-surface);
+        border-left: 4px solid var(--accent-danger);
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: var(--radius-md);
+        color: var(--text-main);
+    }
+    
+    .help-text {
+        background: var(--bg-base);
+        border-left: 4px solid var(--accent-primary);
+        padding: 1rem;
+        margin-top: 1rem;
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="collocation-container">
+    <h1>🔗 {% trans "Kollokasyon Analizi" %}</h1>
+    <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+        {% trans "Anahtar kelime ile birlikte sıklıkla kullanılan kelimeleri bulun." %}
+    </p>
+    
+    {% if request.limited %}
+    <div class="rate-limit-warning">
+        <strong>⚠️ {% trans "Hız Limiti Aşıldı" %}</strong><br>
+        {% trans "Saatte en fazla 50 analiz yapabilirsiniz. Lütfen biraz bekleyin." %}
+    </div>
+    {% endif %}
+    
+    <div class="analysis-card">
+        <h2>⚙️ {% trans "Analiz Parametreleri" %}</h2>
+        
+        <form method="get" action="{% url 'corpus:collocation' %}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="keyword">{% trans "Anahtar Kelime" %} <span style="color: red;">*</span></label>
+                    <input type="text" 
+                           id="keyword" 
+                           name="keyword" 
+                           value="{{ keyword }}" 
+                           placeholder="{% trans 'Örnek: kahve, kitap, gitmek' %}"
+                           required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="window">{% trans "Pencere Boyutu (±token)" %}</label>
+                    <input type="number" 
+                           id="window" 
+                           name="window" 
+                           value="{{ window_size|default:5 }}" 
+                           min="1" 
+                           max="10">
+                </div>
+                
+                <div class="form-group">
+                    <label for="min_freq">{% trans "Minimum Frekans" %}</label>
+                    <input type="number" 
+                           id="min_freq" 
+                           name="min_freq" 
+                           value="{{ min_frequency|default:2 }}" 
+                           min="1" 
+                           max="100">
+                </div>
+                
+                <div class="form-group">
+                    <label for="collection">{% trans "Koleksiyon Filtresi" %}</label>
+                    <select id="collection" name="collection">
+                        <option value="">{% trans "Tüm Dokümanlar" %}</option>
+                        {% for coll in collections %}
+                        <option value="{{ coll.id }}">{{ coll.name }} ({{ coll.document_count }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <button type="submit" class="analyze-button">
+                📊 {% trans "Analiz Et" %}
+            </button>
+        </form>
+        
+        <div class="help-text">
+            <strong>💡 {% trans "İpucu:" %}</strong>
+            {% trans "Pencere boyutu, anahtar kelimenin sağında ve solunda kontrol edilecek token sayısını belirler. Örneğin, pencere boyutu 5 ise, anahtar kelimenin ±5 token bağlamında diğer kelimeler aranır." %}
+        </div>
+    </div>
+    
+    {% if collocates %}
+    <div class="analysis-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2>📈 {% trans "Sonuçlar" %}</h2>
+            {% if user.is_authenticated %}
+            <div class="export-buttons">
+                <a href="{% url 'corpus:export_collocation_results' %}?{{ request.GET.urlencode }}" 
+                   class="btn-export" 
+                   title="CSV formatında indir (su damgalı)">
+                    <span class="material-icons">download</span> CSV İndir
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="stats-banner">
+            <div class="stat-item">
+                <div class="stat-value">{{ collocates|length }}</div>
+                <div class="stat-label">{% trans "Kollokat" %}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ total_collocates }}</div>
+                <div class="stat-label">{% trans "Toplam Eşdizim" %}</div>
+            </div>
+            {% if execution_time %}
+            <div class="stat-item">
+                <div class="stat-value">{{ execution_time|floatformat:0 }}<span style="font-size: 0.8rem;">ms</span></div>
+                <div class="stat-label">{% trans "Analiz Süresi" %}</div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <table class="collocation-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">{% trans "Sıra" %}</th>
+                    <th>{% trans "Kollokat" %}</th>
+                    <th style="width: 120px;">{% trans "Frekans" %}</th>
+                    <th style="width: 200px;">{% trans "Görsel" %}</th>
+                    <th style="width: 150px;">{% trans "Pozisyon" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in collocates %}
+                <tr>
+                    <td>
+                        <span class="rank-badge">#{{ forloop.counter }}</span>
+                    </td>
+                    <td style="font-weight: 600; font-size: 1.1rem;">
+                        {{ item.lemma }}
+                    </td>
+                    <td class="frequency-cell">
+                        {{ item.frequency }}
+                    </td>
+                    <td>
+                        <div class="frequency-bar" 
+                             style="width: {% widthratio item.frequency collocates.0.frequency 100 %}%;"></div>
+                    </td>
+                    <td>
+                        <span class="position-badge position-left">
+                            ← {{ item.positions.left }}
+                        </span>
+                        <span class="position-badge position-right">
+                            {{ item.positions.right }} →
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% elif keyword %}
+    <div class="analysis-card" style="text-align: center; padding: 3rem;">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">🔍</div>
+        <h3>{% trans "Kollokat Bulunamadı" %}</h3>
+        <p style="color: var(--text-secondary);">
+            {% trans "Bu anahtar kelime için yeterli eşdizim bulunamadı. Minimum frekansı düşürmeyi veya farklı bir kelime denemeyi düşünün." %}
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -15,7 +15,7 @@ import traceback
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from ocrchestra.model_loader import ModelLoader
+from corpuslio.model_loader import ModelLoader
 
 
 def main():

@@ -7,11 +7,11 @@ import argparse
 import sys
 from pathlib import Path
 
-# Ensure project root is on sys.path so `ocrchestra` package can be imported
+# Ensure project root is on sys.path so `corpuslio` package can be imported
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from ocrchestra.orchestrator import Orchestrator
+from corpuslio.orchestrator import Orchestrator
 
 
 def main():

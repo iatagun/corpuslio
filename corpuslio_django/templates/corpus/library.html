@@ -1,0 +1,208 @@
+{% extends "corpus/base.html" %}
+{% load auth_extras %}
+{% load corpus_extras %}
+
+{% block title %}Korpus Kütüphanesi - CorpusLIO{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+    <h2><span class="material-icons" style="vertical-align:middle; margin-right:0.5rem;">library_books</span> Korpus
+        Kütüphanesi</h2>
+    <span class="badge" style="background:var(--bg-surface); color:var(--text-secondary);">
+        {{ page_obj.paginator.count }} korpus dosyası
+    </span>
+</div>
+{% if corpora %}
+<div class="documents-grid">
+    {% for corpus in corpora %}
+    <div class="card document-card">
+        <h3>{{ corpus.original_filename|basename }}</h3>
+        <p class="meta">
+            <span class="format-badge">{{ corpus.get_source_format_display }}</span>
+            <span class="date" style="display:flex; align-items:center; gap:0.25rem;">
+                <span class="material-icons" style="font-size:14px;">calendar_today</span>
+                {{ corpus.imported_at|date:"d.m.Y" }}
+            </span>
+        </p>
+
+        <p class="status">
+            <span
+                style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-primary); font-weight:500; font-size:0.85rem;">
+                <span class="material-icons" style="font-size:16px;">analytics</span>
+                {{ corpus.document.get_word_count }} token
+            </span>
+            <span
+                style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-primary); font-weight:500; font-size:0.85rem;">
+                <span class="material-icons" style="font-size:16px;">article</span>
+                {{ corpus.sentence_count }} cümle
+            </span>
+            <span
+                style="display:flex; align-items:center; gap:0.25rem; color:var(--text-secondary); font-weight:500; font-size:0.85rem;">
+                <span class="material-icons" style="font-size:16px;">psychology</span>
+                {{ corpus.unique_lemmas }} lemma
+            </span>
+        </p>
+
+        <!-- Corpus Metadata -->
+        {% if corpus.global_metadata %}
+        <div class="corpus-metadata" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;">
+            {% if corpus.global_metadata.author %}
+            <span class="metadata-badge"
+                style="background:var(--accent-primary); color:var(--text-main); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
+                <span class="material-icons" style="font-size:12px; vertical-align:middle;">person</span>
+                {{ corpus.global_metadata.author }}
+            </span>
+            {% endif %}
+            {% if corpus.global_metadata.genre %}
+            <span class="metadata-badge"
+                style="background:var(--bg-surface); color:var(--text-main); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
+                <span class="material-icons" style="font-size:12px; vertical-align:middle;">category</span>
+                {{ corpus.global_metadata.genre|title }}
+            </span>
+            {% endif %}
+            {% if corpus.global_metadata.date %}
+            <span class="metadata-badge"
+                style="background:var(--bg-surface); color:var(--text-secondary); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
+                <span class="material-icons" style="font-size:12px; vertical-align:middle;">event</span>
+                {{ corpus.global_metadata.date }}
+            </span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="actions">
+            {% if request.user.is_authenticated %}
+            <a href="{% url 'corpus:corpus_search' %}?corpus={{ corpus.id }}" class="btn btn-primary btn-small">
+                <span class="material-icons" style="font-size:16px;">search</span>
+                Ara
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="pagination" style="display:flex; justify-content:center; align-items:center; gap:1rem; margin-top:2rem;">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+        class="btn btn-outline">
+        <span class="material-icons" style="font-size:16px;">chevron_left</span>
+        Önceki
+    </a>
+    {% endif %}
+
+    <span class="pagination-info" style="color:var(--text-secondary);">
+        Sayfa {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+        class="btn btn-outline">
+        Sonraki
+        <span class="material-icons" style="font-size:16px;">chevron_right</span>
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="alert alert-info" style="display:flex; align-items:center; gap:0.5rem;">
+    <span class="material-icons">info</span>
+    <p>Kütüphane boş. Yönetici panelinden corpus dosyaları import edilebilir.</p>
+</div>
+{% endif %}
+
+<style>
+    .documents-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .pagination {
+        margin-top: 2rem;
+    }
+
+    .pagination-info {
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        background: var(--bg-surface);
+        border-radius: var(--radius-sm);
+    }
+</style>
+
+<script>
+    // Set selected values from URL parameters
+    document.addEventListener('DOMContentLoaded', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+
+        // Author select
+        const author = urlParams.get('author');
+        if (author) {
+            const select = document.getElementById('authorSelect');
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === author) {
+                    select.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // Genre select
+        const genre = urlParams.get('genre');
+        if (genre) {
+            const select = document.getElementById('genreSelect');
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === genre) {
+                    select.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // Format select
+        const format = urlParams.get('format');
+        if (format) {
+            const select = document.getElementById('formatSelect');
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === format) {
+                    select.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+    });
+
+    // Auto-submit form when select changes for better UX
+    document.addEventListener('DOMContentLoaded', function () {
+        // Auto-submit on filter changes
+        document.querySelectorAll('select[name="author"], select[name="genre"], select[name="format"]').forEach(select => {
+            select.addEventListener('change', function () {
+                this.form.submit();
+            });
+        });
+    });
+        // Force library page to use 'auto' theme to respect system preference
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                // Override only for this page to fix inconsistent saved values
+                localStorage.setItem('theme', 'auto');
+                if (typeof setTheme === 'function') {
+                    setTheme('auto');
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'auto');
+                }
+            } catch (e) {
+                console.warn('Failed to set theme auto for library page', e);
+            }
+        });
+        {% endblock %}

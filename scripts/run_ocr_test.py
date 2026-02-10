@@ -14,7 +14,7 @@ from pathlib import Path as _P
 ROOT = _P(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from ocrchestra.experts import ocr_expert
+from corpuslio.experts import ocr_expert
 
 
 def main():

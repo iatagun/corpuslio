@@ -1,0 +1,407 @@
+{% extends "corpus/base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Frekans Analizi" %} - OCRchestra{% endblock %}
+
+{% block extra_css %}
+<style>
+    .frequency-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .analysis-card {
+        background: var(--bg-surface);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-subtle);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .two-column-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+    }
+    
+    @media (max-width: 968px) {
+        .two-column-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-main);
+        font-size: 0.875rem;
+    }
+    
+    .form-group input,
+    .form-group select {
+        padding: 0.75rem;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        background: var(--bg-base);
+        color: var(--text-main);
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+    }
+    
+    .checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        margin-top: 1rem;
+    }
+    
+    .checkbox-wrapper input {
+        margin-right: 0.5rem;
+    }
+    
+    .analyze-button {
+        background: var(--accent-warning);
+        color: white;
+        padding: 0.875rem 2rem;
+        border: none;
+        border-radius: var(--radius-md);
+        font-size: 0.9375rem;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+    
+    .analyze-button:hover {
+        background: var(--accent-warning-hover);
+        transform: translateY(-1px);
+    }
+    
+    .frequency-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+    
+    .frequency-table thead {
+        background: var(--bg-base);
+        color: var(--text-main);
+    }
+    
+    .frequency-table th {
+        padding: 0.875rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border-bottom: 2px solid var(--border-subtle);
+    }
+    
+    .frequency-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--border-subtle);
+        color: var(--text-main);
+    }
+    
+    .frequency-table tbody tr:hover {
+        background: var(--bg-base);
+    }
+    
+    .rank-badge {
+        background: var(--accent-warning);
+        color: white;
+        padding: 4px 10px;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        font-size: 0.75rem;
+        display: inline-block;
+        min-width: 30px;
+        text-align: center;
+    }
+    
+    .word-cell {
+        font-family: 'Courier New', monospace;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+    
+    .frequency-bar {
+        background: var(--accent-warning);
+        height: 8px;
+        border-radius: var(--radius-sm);
+        opacity: 0.7;
+        transition: width 0.3s ease;
+    }
+    
+    .frequency-number {
+        font-weight: 700;
+        color: var(--accent-warning);
+        font-size: 0.875rem;
+    }
+    
+    .pos-chart {
+        background: var(--bg-surface);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-subtle);
+        padding: 1.5rem;
+    }
+    
+    .pos-bar-item {
+        margin-bottom: 1rem;
+    }
+    
+    .pos-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .pos-tag {
+        font-weight: 700;
+        color: var(--text-main);
+    }
+    
+    .pos-count {
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+    
+    .pos-bar-container {
+        background: var(--bg-base);
+        height: 24px;
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+    }
+    
+    .pos-bar-fill {
+        height: 100%;
+        background: var(--accent-primary);
+        display: flex;
+        align-items: center;
+        padding-left: 0.5rem;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 600;
+        transition: width 0.5s ease;
+        opacity: 0.9;
+    }
+    
+    .stats-banner {
+        background: var(--bg-base);
+        padding: 1rem;
+        border-radius: var(--radius-lg);
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        border: 1px solid var(--border-subtle);
+    }
+    
+    .stat-item {
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--accent-warning);
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+    }
+    
+    .rate-limit-warning {
+        background: var(--bg-surface);
+        border-left: 4px solid var(--accent-danger);
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: var(--radius-md);
+        color: var(--text-main);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="frequency-container">
+    <h1>📈 {% trans "Frekans Analizi" %}</h1>
+    <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+        {% trans "Korpustaki kelimelerin kullanım sıklığını ve morfolojik etiket (POS) dağılımını analiz edin." %}
+    </p>
+    
+    {% if request.limited %}
+    <div class="rate-limit-warning">
+        <strong>⚠️ {% trans "Hız Limiti Aşıldı" %}</strong><br>
+        {% trans "Saatte en fazla 50 analiz yapabilirsiniz. Lütfen biraz bekleyin." %}
+    </div>
+    {% endif %}
+    
+    <div class="analysis-card">
+        <h2>⚙️ {% trans "Analiz Parametreleri" %}</h2>
+        
+        <form method="get" action="{% url 'corpus:frequency' %}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="limit">{% trans "Gösterilecek Kelime Sayısı" %}</label>
+                    <input type="number" 
+                           id="limit" 
+                           name="limit" 
+                           value="{{ limit|default:100 }}" 
+                           min="10" 
+                           max="500">
+                </div>
+                
+                <div class="form-group">
+                    <label for="min_length">{% trans "Minimum Kelime Uzunluğu" %}</label>
+                    <input type="number" 
+                           id="min_length" 
+                           name="min_length" 
+                           value="{{ min_length|default:1 }}" 
+                           min="1" 
+                           max="20">
+                </div>
+                
+                <div class="form-group">
+                    <label for="collection">{% trans "Koleksiyon Filtresi" %}</label>
+                    <select id="collection" name="collection">
+                        <option value="">{% trans "Tüm Dokümanlar" %}</option>
+                        {% for coll in collections %}
+                        <option value="{{ coll.id }}">{{ coll.name }} ({{ coll.document_count }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="checkbox-wrapper">
+                <input type="checkbox" id="use_lemma" name="use_lemma" value="true" {% if use_lemma %}checked{% endif %}>
+                <label for="use_lemma" style="margin: 0;">
+                    {% trans "Kök (Lemma) Kullan (işaretli değilse yüzey formu kullanılır)" %}
+                </label>
+            </div>
+            <input type="hidden" name="analyze" value="true">
+            
+            <button type="submit" class="analyze-button">
+                📊 {% trans "Analiz Et" %}
+            </button>
+        </form>
+    </div>
+    
+    {% if frequencies %}
+    {% if user.is_authenticated %}
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+        <a href="{% url 'corpus:export_frequency' %}?{{ request.GET.urlencode }}" 
+           class="btn-export" 
+           title="CSV formatında indir (su damgalı)">
+            <span class="material-icons">download</span> CSV İndir
+        </a>
+    </div>
+    {% endif %}
+    <div class="stats-banner">
+        <div class="stat-item">
+            <div class="stat-value">{{ frequencies|length }}</div>
+            <div class="stat-label">{% trans "Benzersiz Kelime" %}</div>
+        </div>
+        {% if pos_distribution %}
+        <div class="stat-item">
+            <div class="stat-value">{{ pos_distribution|length }}</div>
+            <div class="stat-label">{% trans "POS Kategorisi" %}</div>
+        </div>
+        {% endif %}
+        {% if execution_time %}
+        <div class="stat-item">
+            <div class="stat-value">{{ execution_time|floatformat:0 }}<span style="font-size: 0.8rem;">ms</span></div>
+            <div class="stat-label">{% trans "Analiz Süresi" %}</div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="two-column-layout">
+        <!-- Frequency List -->
+        <div class="analysis-card">
+            <h2>📋 {% trans "Kelime Frekans Listesi" %}</h2>
+            <table class="frequency-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">{% trans "Sıra" %}</th>
+                        <th>{% trans "Kelime" %}</th>
+                        <th style="width: 120px;">{% trans "Frekans" %}</th>
+                        <th style="width: 200px;">{% trans "Oran" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in frequencies %}
+                    <tr>
+                        <td>
+                            <span class="rank-badge">#{{ forloop.counter }}</span>
+                        </td>
+                        <td class="word-cell">
+                            {{ item.word }}
+                        </td>
+                        <td class="frequency-number">
+                            {{ item.frequency }}
+                        </td>
+                        <td>
+                            <div class="frequency-bar" 
+                                 style="width: {% widthratio item.frequency frequencies.0.frequency 100 %}%;"></div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- POS Distribution -->
+        {% if pos_distribution %}
+        <div class="analysis-card">
+            <h2>🏷️ {% trans "POS Etiket Dağılımı" %}</h2>
+            <div class="pos-chart">
+                {% for pos, count in pos_distribution.items %}
+                <div class="pos-bar-item">
+                    <div class="pos-label">
+                        <span class="pos-tag">{{ pos }}</span>
+                        <span class="pos-count">{{ count }}</span>
+                    </div>
+                    <div class="pos-bar-container">
+                        <div class="pos-bar-fill" 
+                             style="width: {% widthratio count pos_max 100 %}%;">
+                            {% widthratio count pos_max 100 %}%
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="analysis-card" style="text-align: center; padding: 3rem;">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">📊</div>
+        <h3>{% trans "Analiz Sonucu Yok" %}</h3>
+        <p style="color: var(--text-secondary);">
+            {% trans "Analiz parametrelerini ayarlayıp 'Analiz Et' butonuna tıklayın." %}
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

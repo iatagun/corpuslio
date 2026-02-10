@@ -1,0 +1,328 @@
+{% extends "corpus/base.html" %}
+{% load static %}
+
+{% block title %}Terms of Service{% endblock %}
+
+{% block extra_css %}
+<style>
+    .terms-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+    
+    .terms-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    
+    .terms-header h1 {
+        font-size: 36px;
+        margin: 0 0 10px 0;
+        font-weight: 700;
+    }
+    
+    .terms-content {
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        line-height: 1.8;
+    }
+    
+    .terms-content h2 {
+        color: #111827;
+        font-size: 24px;
+        margin: 40px 0 20px 0;
+        padding-top: 20px;
+        border-top: 2px solid #e5e7eb;
+    }
+    
+    .terms-content h2:first-child {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
+    }
+    
+    .terms-content h3 {
+        color: #374151;
+        font-size: 18px;
+        margin: 25px 0 15px 0;
+    }
+    
+    .terms-content p {
+        color: #4b5563;
+        margin-bottom: 15px;
+    }
+    
+    .terms-content ul,
+    .terms-content ol {
+        color: #4b5563;
+        margin: 15px 0;
+        padding-left: 30px;
+    }
+    
+    .terms-content li {
+        margin-bottom: 10px;
+    }
+    
+    .highlight-box {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 25px 0;
+    }
+    
+    .last-updated {
+        color: #6b7280;
+        font-size: 14px;
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 30px;
+        border-top: 1px solid #e5e7eb;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="terms-container">
+    <div class="terms-header">
+        <h1>📜 Terms of Service</h1>
+        <p style="margin: 0; opacity: 0.9;">CorpusLIO Corpus Platform</p>
+    </div>
+    
+    <div class="terms-content">
+        <h2>1. Acceptance of Terms</h2>
+        <p>
+            By accessing and using the CorpusLIO Corpus Platform ("Platform"), you agree to be bound by these Terms of Service 
+            ("Terms"). If you do not agree to these Terms, please do not use the Platform.
+        </p>
+        
+        <div class="highlight-box">
+            <strong>Important:</strong> These Terms constitute a legally binding agreement between you and CorpusLIO. 
+            Please read them carefully.
+        </div>
+        
+        <h2>2. User Accounts</h2>
+        
+        <h3>2.1 Registration</h3>
+        <ul>
+            <li>You must provide accurate and complete information when creating an account</li>
+            <li>You are responsible for maintaining the security of your account credentials</li>
+            <li>You must be at least 18 years old or have parental consent</li>
+            <li>One person or entity may only maintain one account</li>
+        </ul>
+        
+        <h3>2.2 User Roles</h3>
+        <p>The Platform supports different user roles with varying permissions:</p>
+        <ul>
+            <li><strong>Guest:</strong> Limited read-only access</li>
+            <li><strong>Student:</strong> Basic corpus access with quotas</li>
+            <li><strong>Researcher:</strong> Extended access and export rights</li>
+            <li><strong>Faculty:</strong> Advanced features and higher quotas</li>
+            <li><strong>Admin:</strong> Full platform access and management</li>
+        </ul>
+        
+        <h2>3. Acceptable Use</h2>
+        
+        <h3>3.1 Permitted Uses</h3>
+        <p>You may use the Platform for:</p>
+        <ul>
+            <li>Linguistic research and corpus analysis</li>
+            <li>Educational purposes and language learning</li>
+            <li>Academic publication and citation (with proper attribution)</li>
+            <li>Creating derivative works for research (subject to license terms)</li>
+        </ul>
+        
+        <h3>3.2 Prohibited Uses</h3>
+        <p>You may NOT:</p>
+        <ul>
+            <li>Use the Platform for commercial purposes without written permission</li>
+            <li>Redistribute corpus data in violation of license terms</li>
+            <li>Attempt to circumvent rate limits, quotas, or access controls</li>
+            <li>Upload malicious content, spam, or illegal material</li>
+            <li>Scrape, crawl, or automatically extract data without authorization</li>
+            <li>Reverse engineer, decompile, or hack the Platform</li>
+            <li>Impersonate other users or share account credentials</li>
+            <li>Upload content containing hate speech, harassment, or violence</li>
+        </ul>
+        
+        <h2>4. User Content</h2>
+        
+        <h3>4.1 Your Uploads</h3>
+        <p>
+            When you upload documents to the Platform:
+        </p>
+        <ul>
+            <li>You retain ownership of your content</li>
+            <li>You grant us a license to store, process, and display your content</li>
+            <li>You represent that you have the right to upload the content</li>
+            <li>You are responsible for ensuring content does not violate any laws or third-party rights</li>
+        </ul>
+        
+        <h3>4.2 Content License</h3>
+        <p>
+            By uploading content, you grant CorpusLIO a non-exclusive, worldwide, royalty-free license to:
+        </p>
+        <ul>
+            <li>Store and process your content for platform functionality</li>
+            <li>Create anonymized versions for privacy protection</li>
+            <li>Generate statistics and linguistic analysis</li>
+            <li>Include in research corpora (with your explicit consent only)</li>
+        </ul>
+        
+        <h3>4.3 Corpus Data</h3>
+        <p>
+            Documents in shared collections are subject to specific license terms (CC BY, CC BY-SA, etc.). 
+            You must comply with these licenses when using or citing corpus data.
+        </p>
+        
+        <h2>5. Privacy and Data Protection</h2>
+        
+        <p>
+            Your privacy is governed by our <a href="{% url 'corpus:privacy_policy' %}">Privacy Policy</a>, which is 
+            incorporated into these Terms. Key points:
+        </p>
+        <ul>
+            <li>We comply with KVKK (Turkish Personal Data Protection Law) and GDPR</li>
+            <li>Personal data in corpus texts will be anonymized upon request</li>
+            <li>You can export or delete your data at any time</li>
+            <li>We use watermarks on exports to prevent unauthorized distribution</li>
+        </ul>
+        
+        <h2>6. Rate Limits and Quotas</h2>
+        
+        <p>To ensure fair use and platform stability:</p>
+        <ul>
+            <li><strong>Query limits:</strong> Vary by user role (e.g., 1000 queries/month for students)</li>
+            <li><strong>Export limits:</strong> Vary by user role (e.g., 50 exports/day for researchers)</li>
+            <li><strong>Upload limits:</strong> File size and document count restrictions apply</li>
+            <li><strong>API limits:</strong> Rate limiting on API endpoints (where applicable)</li>
+        </ul>
+        
+        <p>
+            Exceeding quotas may result in temporary restrictions. Contact us if you need higher limits for 
+            legitimate research purposes.
+        </p>
+        
+        <h2>7. Intellectual Property</h2>
+        
+        <h3>7.1 Platform Ownership</h3>
+        <p>
+            The Platform, including its code, design, features, and trademarks, is owned by CorpusLIO and protected 
+            by copyright and other intellectual property laws.
+        </p>
+        
+        <h3>7.2 Corpus Licenses</h3>
+        <p>
+            Corpus documents have individual licenses (e.g., Creative Commons). You must:
+        </p>
+        <ul>
+            <li>Check the license before using corpus data</li>
+            <li>Provide proper attribution when citing</li>
+            <li>Comply with license restrictions (commercial use, derivatives, etc.)</li>
+        </ul>
+        
+        <h3>7.3 Citations</h3>
+        <p>When citing CorpusLIO data in academic work, use:</p>
+        <blockquote style="background: #f9fafb; padding: 15px; border-left: 3px solid #667eea; margin: 20px 0;">
+            [Author/Institution], [Year]. [Corpus/Document Title]. CorpusLIO Corpus Platform. 
+            Available at: [URL]. Accessed: [Date].
+        </blockquote>
+        
+        <h2>8. Disclaimer of Warranties</h2>
+        
+        <p>
+            THE PLATFORM IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND. WE DO NOT GUARANTEE:
+        </p>
+        <ul>
+            <li>Uninterrupted or error-free operation</li>
+            <li>Accuracy or completeness of corpus data</li>
+            <li>Fitness for a particular purpose</li>
+            <li>That corpus data is free from errors or biases</li>
+        </ul>
+        
+        <h2>9. Limitation of Liability</h2>
+        
+        <p>
+            TO THE MAXIMUM EXTENT PERMITTED BY LAW, CORPUSLIO SHALL NOT BE LIABLE FOR:
+        </p>
+        <ul>
+            <li>Indirect, incidental, or consequential damages</li>
+            <li>Loss of data, profits, or research results</li>
+            <li>Third-party content or user-uploaded material</li>
+            <li>Service interruptions or data loss</li>
+        </ul>
+        
+        <h2>10. Indemnification</h2>
+        
+        <p>
+            You agree to indemnify and hold harmless CorpusLIO from any claims, damages, or expenses arising from:
+        </p>
+        <ul>
+            <li>Your use of the Platform</li>
+            <li>Your uploaded content</li>
+            <li>Your violation of these Terms</li>
+            <li>Your violation of any third-party rights</li>
+        </ul>
+        
+        <h2>11. Account Termination</h2>
+        
+        <h3>11.1 By You</h3>
+        <p>
+            You may delete your account at any time through your <a href="{% url 'corpus:privacy_dashboard' %}">Privacy Dashboard</a>. 
+            A 30-day grace period applies before permanent deletion.
+        </p>
+        
+        <h3>11.2 By Us</h3>
+        <p>
+            We may suspend or terminate your account if you:
+        </p>
+        <ul>
+            <li>Violate these Terms</li>
+            <li>Engage in abusive or illegal behavior</li>
+            <li>Attempt to compromise platform security</li>
+            <li>Provide false information</li>
+        </ul>
+        
+        <h2>12. Changes to Terms</h2>
+        
+        <p>
+            We may modify these Terms at any time. We will notify you of material changes via email or platform notification. 
+            Your continued use after changes constitutes acceptance of the new Terms.
+        </p>
+        
+        <h2>13. Governing Law</h2>
+        
+        <p>
+            These Terms are governed by the laws of the Republic of Turkey. Any disputes shall be resolved in Turkish courts.
+        </p>
+        
+        <h2>14. Contact Information</h2>
+        
+        <p>
+            For questions about these Terms, contact us at:<br>
+            <strong>Email:</strong> legal@corpuslio.com<br>
+            <strong>Address:</strong> [Your Address]
+        </p>
+        
+        <h2>15. Severability</h2>
+        
+        <p>
+            If any provision of these Terms is found invalid or unenforceable, the remaining provisions shall continue 
+            in full force and effect.
+        </p>
+        
+        <div class="last-updated">
+            Last Updated: {{ "now"|date:"F d, Y" }}<br>
+            Version 1.0
+        </div>
+    </div>
+</div>
+{% endblock %}

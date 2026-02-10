@@ -1,0 +1,69 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}CSRF Verification Failed{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-shield-alt"></i> CSRF Verification Failed
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h5>Request Blocked</h5>
+                        <p class="mb-0">{{ message }}</p>
+                        {% if reason %}
+                        <p class="mt-2 mb-0"><strong>Reason:</strong> {{ reason }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <h5>Why did this happen?</h5>
+                    <ul>
+                        <li>Your session may have expired</li>
+                        <li>You may have been inactive for too long</li>
+                        <li>Your browser may be blocking cookies</li>
+                        <li>You may have opened this page in a new tab after a long time</li>
+                    </ul>
+                    
+                    <h5>What can you do?</h5>
+                    <ul>
+                        <li><strong>Refresh the page</strong> and try again</li>
+                        <li>Make sure <strong>cookies are enabled</strong> in your browser</li>
+                        <li>Try <strong>logging out and logging in</strong> again</li>
+                        <li>Clear your browser cache and cookies</li>
+                    </ul>
+                    
+                    <div class="mt-4">
+                        <a href="javascript:history.back()" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Go Back
+                        </a>
+                        <a href="{% url 'corpus:home' %}" class="btn btn-primary">
+                            <i class="fas fa-home"></i> Go to Home
+                        </a>
+                        <a href="{% url 'corpus:login' %}" class="btn btn-success">
+                            <i class="fas fa-sign-in-alt"></i> Login Again
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5>Security Information</h5>
+                    <p>
+                        CSRF (Cross-Site Request Forgery) protection helps keep your account secure 
+                        by preventing malicious websites from performing actions on your behalf.
+                    </p>
+                    <p class="mb-0">
+                        If you continue to experience this issue, please contact support.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

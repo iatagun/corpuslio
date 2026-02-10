@@ -1,0 +1,260 @@
+<!-- htmlhint-disable -->
+<!-- @ts-nocheck -->{% extends "corpus/base.html" %}
+{% load static %}
+
+{% block title %}Anonymization Report - {{ document.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+    
+    .report-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+    
+    .report-header h1 {
+        font-size: 32px;
+        margin: 0 0 10px 0;
+        font-weight: 700;
+    }
+    
+    .report-header .subtitle {
+        opacity: 0.9;
+        font-size: 16px;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        margin-top: 15px;
+        font-size: 14px;
+    }
+    
+    .status-anonymized {
+        background: #10b981;
+        color: white;
+    }
+    
+    .status-public {
+        background: #3b82f6;
+        color: white;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        border-left: 4px solid;
+    }
+    
+    .stat-card.blue { border-left-color: #3b82f6; }
+    .stat-card.green { border-left-color: #10b981; }
+    .stat-card.purple { border-left-color: #8b5cf6; }
+    .stat-card.orange { border-left-color: #f59e0b; }
+    
+    .stat-label {
+        font-size: 13px;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+    
+    .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: #111827;
+    }
+    
+    .entities-table {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        margin-bottom: 30px;
+    }
+    
+    .entities-table h2 {
+        font-size: 24px;
+        margin: 0 0 20px 0;
+        color: #111827;
+    }
+    
+    .entity-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .entity-row:last-child {
+        border-bottom: none;
+    }
+    
+    .entity-type {
+        font-weight: 600;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .entity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+    
+    .entity-count {
+        font-size: 24px;
+        font-weight: 700;
+        color: #667eea;
+    }
+    
+    .json-view {
+        background: #1f2937;
+        color: #f3f4f6;
+        padding: 25px;
+        border-radius: 12px;
+        overflow-x: auto;
+        font-family: 'Monaco', 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+    }
+    
+    .btn-secondary {
+        background: #e5e7eb;
+        color: #374151;
+    }
+    
+    .btn-secondary:hover {
+        background: #d1d5db;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <div class="report-header">
+        <h1>🔒 Anonymization Report</h1>
+        <div class="subtitle">{{ document.title }}</div>
+        <span class="status-badge status-{% if document.privacy_status == 'anonymized' %}anonymized{% else %}public{% endif %}">
+            {{ privacy_status }}
+        </span>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <div class="stat-label">Total Entities</div>
+            <div class="stat-value">{{ report.total_entities }}</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-label">Original Length</div>
+            <div class="stat-value">{{ report.original_length }}</div>
+        </div>
+        <div class="stat-card purple">
+            <div class="stat-label">Anonymized Length</div>
+            <div class="stat-value">{{ report.anonymized_length }}</div>
+        </div>
+        <div class="stat-card orange">
+            <div class="stat-label">Entity Types</div>
+            <div class="stat-value">{{ report.entity_stats|length }}</div>
+        </div>
+    </div>
+    
+    <div class="entities-table">
+        <h2>📊 Masked Entities Breakdown</h2>
+        
+        {% for entity_type, count in report.entity_stats.items %}
+        <div class="entity-row">
+            <div class="entity-type">
+                <div class="entity-icon" style="background: 
+                    {% if entity_type == 'PERSON' %}#fef3c7{% elif entity_type == 'EMAIL' %}#dbeafe
+                    {% elif entity_type == 'PHONE' %}#d1fae5{% elif entity_type == 'TC_ID' %}#fce7f3
+                    {% elif entity_type == 'IP' %}#e0e7ff{% elif entity_type == 'CREDIT_CARD' %}#ffe4e6
+                    {% else %}#f3f4f6{% endif %};">
+                    {% if entity_type == 'PERSON' %}👤
+                    {% elif entity_type == 'EMAIL' %}📧
+                    {% elif entity_type == 'PHONE' %}📱
+                    {% elif entity_type == 'TC_ID' %}🆔
+                    {% elif entity_type == 'IP' %}💻
+                    {% elif entity_type == 'CREDIT_CARD' %}💳
+                    {% else %}🔒{% endif %}
+                </div>
+                <span>{{ entity_type }}</span>
+            </div>
+            <div class="entity-count">{{ count }}</div>
+        </div>
+        {% empty %}
+        <p style="color: #6b7280; font-style: italic;">No entities were masked.</p>
+        {% endfor %}
+    </div>
+    
+    <div class="entities-table">
+        <h2>📝 Full Report (JSON)</h2>
+        <pre class="json-view">{{ report|safe }}</pre>
+    </div>
+    
+    <div class="action-buttons">
+        <a href="{% url 'corpus:library' %}" class="btn btn-primary">
+            ← Back to Library
+        </a>
+        <a href="{% url 'corpus:export_user_data' %}" class="btn btn-secondary">
+            📥 Export My Data
+        </a>
+    </div>
+</div>
+{% endblock %}

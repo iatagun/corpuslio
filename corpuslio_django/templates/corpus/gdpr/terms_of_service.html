@@ -1,0 +1,201 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}Kullanım Koşulları{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+            <h1>Kullanım Koşulları</h1>
+            <p class="text-muted">
+                <strong>Versiyon:</strong> {{ policy_version }} | 
+                <strong>Son Güncelleme:</strong> {{ last_updated }}
+            </p>
+            
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                Bu platformu kullanarak aşağıdaki kullanım koşullarını kabul etmiş olursunuz. 
+                Lütfen dikkatlice okuyunuz.
+            </div>
+            
+            <hr>
+            
+            <h3>1. Genel Bilgiler</h3>
+            <p>
+                CorpusLIO Corpus Platform ("Platform"), Türkçe dil araştırmaları ve korpus lingvistiği 
+                çalışmaları için geliştirilmiş akademik bir platformdur. Platform kullanımı, bu koşullara uygun 
+                şekilde yapılmalıdır.
+            </p>
+            
+            <h3>2. Kullanıcı Hesapları</h3>
+            
+            <h5>2.1. Hesap Oluşturma</h5>
+            <ul>
+                <li>Platform'u kullanmak için bir hesap oluşturmalısınız</li>
+                <li>Doğru, eksiksiz ve güncel bilgiler sağlamakla yükümlüsünüz</li>
+                <li>Hesap güvenliğinden siz sorumlusunuz</li>
+                <li>Hesap paylaşımı yasaktır</li>
+            </ul>
+            
+            <h5>2.2. Hesap Türleri ve Roller</h5>
+            <ul>
+                <li><strong>Misafir:</strong> Sınırlı okuma erişimi</li>
+                <li><strong>Araştırmacı:</strong> Doküman yükleme, sorgu ve analiz</li>
+                <li><strong>Gözden Geçirici:</strong> İçerik onaylama yetkisi</li>
+                <li><strong>Yönetici:</strong> Tam yönetim yetkisi</li>
+            </ul>
+            
+            <h3>3. Kabul Edilebilir Kullanım</h3>
+            
+            <h5>3.1. İzin Verilen Kullanımlar</h5>
+            <ul>
+                <li>Akademik araştırma ve eğitim amaçlı kullanım</li>
+                <li>Dil bilimsel analizler ve korpus sorguları</li>
+                <li>Eğitim materyali olarak kullanım</li>
+                <li>Non-profit araştırma projeleri</li>
+            </ul>
+            
+            <h5>3.2. Yasak Kullanımlar</h5>
+            <div class="alert alert-danger">
+                <strong>Aşağıdaki faaliyetler kesinlikle yasaktır:</strong>
+                <ul class="mb-0">
+                    <li>Telif hakkı ihlali içeren materyallerin yüklenmesi</li>
+                    <li>Kötü niyetli yazılımlar, virüsler veya zararlı kod yüklenmesi</li>
+                    <li>Platform altyapısına saldırı veya yetkisiz erişim denemeleri</li>
+                    <li>Otomatik araçlarla (bot, scraper) platform verisinin toplanması</li>
+                    <li>Platform kaynaklarının aşırı/kötüye kullanımı</li>
+                    <li>Diğer kullanıcıların rahatsız edilmesi veya taciz edilmesi</li>
+                    <li>Spam, reklam veya ticari amaçlı kullanım</li>
+                    <li>Yasa dışı içerik yüklenmesi veya paylaşılması</li>
+                </ul>
+            </div>
+            
+            <h3>4. İçerik ve Fikri Mülkiyet</h3>
+            
+            <h5>4.1. Kullanıcı İçeriği</h5>
+            <ul>
+                <li>Yüklediğiniz içerikten siz sorumlusunuz</li>
+                <li>Gerekli telif hakkı ve izinlere sahip olmalısınız</li>
+                <li>Platform, yasadışı veya telif hakkı ihlali içeren içeriği kaldırma hakkını saklı tutar</li>
+            </ul>
+            
+            <h5>4.2. Platform İçeriği</h5>
+            <ul>
+                <li>Platform yazılımı ve arayüzü telif hakkı ile korunmaktadır</li>
+                <li>Platform logolarını ve markalarını izinsiz kullanamazsınız</li>
+                <li>Platform kaynak kodunu izinsiz kullanabilir veya dağıtamazsınız</li>
+            </ul>
+            
+            <h5>4.3. Korpus Verileri</h5>
+            <ul>
+                <li>Platform'daki açık korpus verileri akademik kullanıma açıktır</li>
+                <li>Kullanırken Platform'a atıf yapmalısınız</li>
+                <li>Ticari kullanım için özel izin gereklidir</li>
+            </ul>
+            
+            <h3>5. Veri Saklama ve Yedekleme</h3>
+            
+            <ul>
+                <li>Platform, verilerinizi korumaya çalışır ancak <strong>kayıp garantisi vermez</strong></li>
+                <li>Önemli verilerinizi düzenli olarak yedeklemelisiniz</li>
+                <li>Platform, teknik arızalar nedeniyle veri kaybından sorumlu tutulamaz</li>
+                <li>Hesap silme durumunda veriler kalıcı olarak silinir</li>
+            </ul>
+            
+            <h3>6. Hizmet Düzeyi ve Erişilebilirlik</h3>
+            
+            <ul>
+                <li>Platform, kesintisiz hizmet garantisi vermez</li>
+                <li>Bakım, güncelleme veya acil durumlar nedeniyle servis durdurulabilir</li>
+                <li>Planlı bakımlar önceden duyurulur</li>
+                <li>Platform, hizmet kalitesini artırmak için değişiklik yapma hakkını saklı tutar</li>
+            </ul>
+            
+            <h3>7. Sorumluluk Sınırlamaları</h3>
+            
+            <div class="alert alert-warning">
+                <strong>Önemli:</strong>
+                <ul class="mb-0">
+                    <li>Platform <strong>"OLDUĞU GİBİ"</strong> sunulmaktadır</li>
+                    <li>Hata, kesinti veya veri kaybı garantisi verilmez</li>
+                    <li>Platform kullanımından doğan zararlardan sorumlu değiliz</li>
+                    <li>Üçüncü taraf bağlantıları kendi sorumluluğunuzdadır</li>
+                </ul>
+            </div>
+            
+            <h3>8. Hesap Askıya Alma ve Sonlandırma</h3>
+            
+            <h5>8.1. Platform Tarafından</h5>
+            <p>Platform, aşağıdaki durumlarda hesabınızı askıya alabilir veya sonlandırabilir:</p>
+            <ul>
+                <li>Kullanım koşullarının ihlali</li>
+                <li>Yasadışı faaliyetler</li>
+                <li>Diğer kullanıcılara zarar verme</li>
+                <li>Güvenlik tehdidi oluşturma</li>
+            </ul>
+            
+            <h5>8.2. Kullanıcı Tarafından</h5>
+            <ul>
+                <li>Hesabınızı istediğiniz zaman silebilirsiniz (7 gün bekleme süresi)</li>
+                <li>Silme işlemi geri alınamaz</li>
+                <li>Hesap silme için: <a href="{% url 'corpus:request_account_deletion' %}">Hesap Silme</a></li>
+            </ul>
+            
+            <h3>9. Gizlilik ve Veri Koruma</h3>
+            
+            <p>
+                Kişisel verileriniz, <a href="{% url 'corpus:gdpr_privacy_policy' %}">Gizlilik Politikamız</a> 
+                uyarınca işlenmektedir. KVKK ve GDPR hükümlerine tam uyumluyuz.
+            </p>
+            
+            <h3>10. Değişiklikler</h3>
+            
+            <ul>
+                <li>Kullanım koşulları zaman zaman güncellenebilir</li>
+                <li>Önemli değişiklikler e-posta ile bildirilir</li>
+                <li>Güncellenmiş koşullar yayınlandıktan sonra platform kullanımı, kabul anlamına gelir</li>
+                <li>Kabul etmiyorsanız, platformu kullanmayı bırakmalısınız</li>
+            </ul>
+            
+            <h3>11. Uygulanacak Hukuk</h3>
+            
+            <ul>
+                <li><strong>Uygulanacak Hukuk:</strong> Türkiye Cumhuriyeti Kanunları</li>
+                <li><strong>Yetki:</strong> İstanbul Mahkemeleri ve İcra Daireleri</li>
+                <li><strong>Dil:</strong> Türkçe metinler esas alınır</li>
+            </ul>
+            
+            <h3>12. İletişim</h3>
+            
+            <div class="card">
+                <div class="card-body">
+                    <p>
+                        Kullanım koşulları hakkında sorularınız için:
+                    </p>
+                    <ul class="mb-0">
+                        <li><strong>E-posta:</strong> <a href="mailto:legal@corpuslio.tr">legal@corpuslio.tr</a></li>
+                        <li><strong>Destek:</strong> <a href="mailto:support@corpuslio.tr">support@corpuslio.tr</a></li>
+                        <li><strong>Gizlilik:</strong> <a href="mailto:privacy@corpuslio.tr">privacy@corpuslio.tr</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <hr class="my-5">
+            
+            <div class="text-center">
+                <p class="text-muted">
+                    <small>
+                        Son Güncelleme: {{ last_updated }} | Versiyon: {{ policy_version }}
+                    </small>
+                </p>
+                <a href="{% url 'corpus:privacy_settings' %}" class="btn btn-primary">
+                    <i class="fas fa-shield-alt"></i> Gizlilik Ayarlarına Dön
+                </a>
+                <a href="{% url 'corpus:gdpr_privacy_policy' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-file-contract"></i> Gizlilik Politikası
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

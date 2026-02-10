@@ -1,0 +1,464 @@
+<!-- htmlhint-disable -->
+<!-- @ts-nocheck -->
+{% extends "corpus/base.html" %}
+
+{% block title %}Bağımlılık Ağacı - {{ document.filename }}{% endblock %}
+
+{% block content %}
+<div class="analysis-header">
+    <h2>🌳 Bağımlılık Ağacı - Cümle {{ sentence_id|add:1 }}</h2>
+    <div class="document-meta">
+        <a href="{% url 'corpus:dependency_search' document_id=document.id %}" class="back-link">
+            <span class="material-icons">arrow_back</span> Aramaya Dön
+        </a>
+        <span>{{ document.filename }}</span>
+    </div>
+</div>
+
+<!-- Sentence Navigator -->
+<div class="card sentence-navigator">
+    <div class="navigator-controls">
+        {% if sentence_id > 0 %}
+        <a href="{% url 'corpus:dependency_tree_page' document_id=document.id sentence_id=sentence_id|add:-1 %}" 
+           class="nav-btn">
+            <span class="material-icons">navigate_before</span>
+            Önceki Cümle
+        </a>
+        {% else %}
+        <button class="nav-btn" disabled>
+            <span class="material-icons">navigate_before</span>
+            Önceki Cümle
+        </button>
+        {% endif %}
+        
+        <span class="sentence-counter">
+            Cümle {{ sentence_id|add:1 }} / {{ sentence_count }}
+        </span>
+        
+        {% if sentence_id|add:1 < sentence_count %}
+        <a href="{% url 'corpus:dependency_tree_page' document_id=document.id sentence_id=sentence_id|add:1 %}" 
+           class="nav-btn">
+            Sonraki Cümle
+            <span class="material-icons">navigate_next</span>
+        </a>
+        {% else %}
+        <button class="nav-btn" disabled>
+            Sonraki Cümle
+            <span class="material-icons">navigate_next</span>
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Tree Visualization -->
+<div class="card tree-card">
+    <div class="tree-controls">
+        <h3>Bağımlılık Ağacı Görselleştirmesi</h3>
+        <div class="control-buttons">
+            <button onclick="resetZoom()" class="btn btn-sm">
+                <span class="material-icons">zoom_out_map</span>
+                Sıfırla
+            </button>
+            <button onclick="downloadSVG()" class="btn btn-sm">
+                <span class="material-icons">download</span>
+                SVG İndir
+            </button>
+        </div>
+    </div>
+    
+    <div id="tree-container"></div>
+    
+    <div class="legend">
+        <h4>Açıklama:</h4>
+        <div class="legend-items">
+            <div class="legend-item">
+                <div class="circle root-node"></div>
+                <span>Kök (Root)</span>
+            </div>
+            <div class="legend-item">
+                <div class="circle regular-node"></div>
+                <span>Normal Token</span>
+            </div>
+            <div class="legend-item">
+                <div class="line"></div>
+                <span>Bağımlılık İlişkisi</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Token Details Table -->
+<div class="card tokens-table">
+    <h3>📝 Cümle Detayları</h3>
+    <div id="sentence-text" class="sentence-display"></div>
+    <div id="tokens-detail"></div>
+</div>
+
+<style>
+.sentence-navigator {
+    margin-bottom: 2rem;
+}
+
+.navigator-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: white;
+    text-decoration: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.nav-btn:hover:not(:disabled) {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.nav-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.sentence-counter {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.tree-card {
+    margin-bottom: 2rem;
+    min-height: 600px;
+}
+
+.tree-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.control-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+#tree-container {
+    width: 100%;
+    height: 500px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fafafa;
+}
+
+.legend {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.legend h4 {
+    margin-bottom: 1rem;
+}
+
+.legend-items {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+}
+
+.root-node {
+    background: #ef4444;
+}
+
+.regular-node {
+    background: #3b82f6;
+}
+
+.line {
+    width: 30px;
+    height: 2px;
+    background: #666;
+}
+
+.sentence-display {
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+
+.token-word {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    margin: 0.25rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.token-word:hover {
+    background: var(--primary-light);
+}
+
+.token-word.selected {
+    background: var(--primary-color);
+    color: white;
+}
+
+#tokens-detail table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#tokens-detail th {
+    background: var(--bg-secondary);
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid var(--border-color);
+}
+
+#tokens-detail td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+#tokens-detail tbody tr:hover {
+    background: var(--bg-secondary);
+}
+
+.node {
+    cursor: pointer;
+}
+
+.node circle {
+    stroke: #333;
+    stroke-width: 2px;
+}
+
+.node text {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.link {
+    fill: none;
+    stroke: #666;
+    stroke-width: 2px;
+}
+
+.link-label {
+    font-size: 10px;
+    fill: #8b5cf6;
+    font-weight: 600;
+}
+</style>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+// Tree data from backend
+const treeData = {{ tree_data_json|safe }};
+
+// Render dependency tree
+function renderTree() {
+    const container = document.getElementById('tree-container');
+    const width = container.clientWidth;
+    const height = 500;
+    
+    // Clear existing
+    container.innerHTML = '';
+    
+    // Create SVG
+    const svg = d3.select('#tree-container')
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .call(d3.zoom().on('zoom', (event) => {
+            g.attr('transform', event.transform);
+        }))
+        .append('g')
+        .attr('transform', 'translate(40,40)');
+    
+    const g = svg;
+    
+    // Create tree layout
+    const treeLayout = d3.tree()
+        .size([width - 100, height - 100]);
+    
+    // Convert tree data to hierarchy
+    const root = d3.hierarchy(treeData.tree, d => d.children);
+    
+    // Compute tree layout
+    const treeNodes = treeLayout(root);
+    
+    // Draw links
+    g.selectAll('.link')
+        .data(treeNodes.links())
+        .enter()
+        .append('path')
+        .attr('class', 'link')
+        .attr('d', d3.linkVertical()
+            .x(d => d.x)
+            .y(d => d.y));
+    
+    // Draw link labels (deprel)
+    g.selectAll('.link-label')
+        .data(treeNodes.links())
+        .enter()
+        .append('text')
+        .attr('class', 'link-label')
+        .attr('x', d => (d.source.x + d.target.x) / 2)
+        .attr('y', d => (d.source.y + d.target.y) / 2 - 5)
+        .attr('text-anchor', 'middle')
+        .text(d => d.target.data.token.deprel);
+    
+    // Draw nodes
+    const nodes = g.selectAll('.node')
+        .data(treeNodes.descendants())
+        .enter()
+        .append('g')
+        .attr('class', 'node')
+        .attr('transform', d => `translate(${d.x},${d.y})`)
+        .on('click', (event, d) => showTokenDetails(d.data.token));
+    
+    // Node circles
+    nodes.append('circle')
+        .attr('r', 8)
+        .style('fill', d => d.data.token.head === 0 ? '#ef4444' : '#3b82f6');
+    
+    // Node labels (word forms)
+    nodes.append('text')
+        .attr('dy', -15)
+        .attr('text-anchor', 'middle')
+        .text(d => d.data.token.form);
+    
+    // POS tags
+    nodes.append('text')
+        .attr('dy', 25)
+        .attr('text-anchor', 'middle')
+        .style('font-size', '10px')
+        .style('fill', '#666')
+        .text(d => d.data.token.upos);
+}
+
+// Show token details
+function showTokenDetails(token) {
+    console.log('Token clicked:', token);
+    // Highlight in sentence
+    highlightToken(token.id);
+}
+
+// Display sentence with clickable words
+function displaySentence() {
+    const sentenceDiv = document.getElementById('sentence-text');
+    const tokens = getAllTokens(treeData.tree);
+    
+    sentenceDiv.innerHTML = '<strong>Cümle:</strong> ' + treeData.sentence_text;
+}
+
+// Display tokens table
+function displayTokensTable() {
+    const tokens = getAllTokens(treeData.tree);
+    const tableHtml = `
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Form</th>
+                    <th>Lemma</th>
+                    <th>UPOS</th>
+                    <th>Features</th>
+                    <th>Head</th>
+                    <th>Deprel</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tokens.map(t => `
+                    <tr>
+                        <td>${t.id}</td>
+                        <td><strong>${t.form}</strong></td>
+                        <td>${t.lemma}</td>
+                        <td>${t.upos}</td>
+                        <td>${formatFeatures(t.feats)}</td>
+                        <td>${t.head}</td>
+                        <td>${t.deprel}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+    
+    document.getElementById('tokens-detail').innerHTML = tableHtml;
+}
+
+// Helper: Get all tokens from tree
+function getAllTokens(node, tokens = []) {
+    tokens.push(node.token);
+    if (node.children) {
+        node.children.forEach(child => getAllTokens(child, tokens));
+    }
+    return tokens.sort((a, b) => a.id - b.id);
+}
+
+// Helper: Format features
+function formatFeatures(feats) {
+    if (!feats || Object.keys(feats).length === 0) return '-';
+    return Object.entries(feats)
+        .map(([k, v]) => `${k}=${v}`)
+        .join('|');
+}
+
+// Reset zoom
+function resetZoom() {
+    renderTree();
+}
+
+// Download SVG
+function downloadSVG() {
+    const svg = document.querySelector('#tree-container svg');
+    const serializer = new XMLSerializer();
+    const source = serializer.serializeToString(svg);
+    const blob = new Blob([source], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dependency_tree_sentence_{{ sentence_id }}.svg';
+    a.click();
+}
+
+// Initialize
+renderTree();
+displaySentence();
+displayTokensTable();
+
+// Redraw on window resize
+window.addEventListener('resize', () => {
+    renderTree();
+});
+</script>
+{% endblock %}

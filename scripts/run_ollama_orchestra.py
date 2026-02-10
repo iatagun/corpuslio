@@ -17,7 +17,7 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from ocrchestra import OllamaOrchestrator
+from corpuslio import OllamaOrchestrator
 
 
 def main():

@@ -4,8 +4,8 @@ import sys
 import django
 
 # Setup Django
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'ocrchestra_django'))
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ocrchestra_django.settings')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'corpuslio_django'))
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'corpuslio_django.settings')
 django.setup()
 
 from corpus.models import Tag, Document

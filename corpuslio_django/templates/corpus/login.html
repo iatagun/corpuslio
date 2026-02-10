@@ -1,0 +1,79 @@
+{% load static %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap - CorpusIO</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- auth page layout handled via static/css/styles.css -->
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="left">
+                <h1>CorpusIO</h1>
+                <p>Hesabınıza giriş yapın — korpusa erişim ve analizlerinize başlayın.</p>
+                <div class="muted">Güvenli oturum açma ve kişisel projeleriniz</div>
+            </div>
+
+            <div class="right">
+                <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+                    <!-- Google login temporarily disabled -->
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="error-message">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" class="auth-form">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="username">Kullanıcı Adı veya E-posta</label>
+                        <input type="text" id="username" name="username" required autofocus>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Şifre</label>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input type="password" id="password" name="password" required style="flex:1;">
+                            <button type="button" id="togglePassword" class="btn btn-outline">Göster</button>
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <button type="submit" class="btn btn-primary">Giriş Yap</button>
+                        <a href="/password-reset/" class="btn btn-outline">Şifremi Unuttum</a>
+                    </div>
+                    <div class="register-link" style="margin-top:12px; text-align:center; color:var(--text-secondary);">
+                        Hesabınız yok mu? <a href="{% url 'corpus:register' %}">Kayıt Olun</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            const pwd = document.getElementById('password');
+            const toggle = document.getElementById('togglePassword');
+            if(pwd && toggle){
+                toggle.addEventListener('click', function(){
+                    if(pwd.type === 'password'){
+                        pwd.type = 'text';
+                        toggle.textContent = 'Gizle';
+                    } else {
+                        pwd.type = 'password';
+                        toggle.textContent = 'Göster';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

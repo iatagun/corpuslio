@@ -1,0 +1,142 @@
+"""
+Django settings for corpuslio_django project.
+"""
+
+from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+import mimetypes
+# Force CSS content type (Fix for Windows registry issues)
+mimetypes.add_type("text/css", ".css", True)
+
+# Additional fix for Windows 10/11 where registry entry might be missing/corrupt
+if os.name == 'nt':
+    import mimetypes
+    mimetypes.init()
+    if '.css' not in mimetypes.types_map or mimetypes.types_map['.css'] != 'text/css':
+        mimetypes.types_map['.css'] = 'text/css'
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-1w#1kzyj_d0pbw#54nbkj$qk-)df_y$4+^2)=mp+4n6wn(@7zl')
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+
+ALLOWED_HOSTS = ['*']
+
+
+# Application definition
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    
+    # Third party
+    'rest_framework',
+    'drf_spectacular',
+    # Authentication
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    # Google provider temporarily disabled during troubleshooting
+    # 'allauth.socialaccount.providers.google',
+    
+    # Local apps
+    'corpus',
+    'api',
+]
+
+MIDDLEWARE = [
+    # Security middleware (Week 10)
+    'corpus.security_middleware.SecurityHeadersMiddleware',
+    'corpus.security_middleware.ContentSecurityPolicyMiddleware',
+    'corpus.security_middleware.RequestValidationMiddleware',
+    
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',  # i18n support
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
+    # Session security (Week 10)
+    'corpus.security_middleware.SessionSecurityMiddleware',
+    
+    # Custom middleware for query logging and export tracking
+    'corpus.middleware.QueryLogMiddleware',
+    'corpus.middleware.ExportLogMiddleware',
+]
+
+ROOT_URLCONF = 'corpuslio_django.urls'
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / 'templates'],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.template.context_processors.i18n',  # i18n support
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = 'corpuslio_django.wsgi.application'
+
+import dj_database_url
+
+# Database
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+
+# Default: SQLite (for local dev without Docker)
+# Production: PostgreSQL (via DATABASE_URL env var)
+DATABASES = {
+    'default': dj_database_url.config(
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
+        conn_max_age=600
+    )
+}
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/4.2/howto/static-files/
+
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# (Remaining settings unchanged - project-local settings preserved)

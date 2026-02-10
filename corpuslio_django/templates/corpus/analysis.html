@@ -1,0 +1,718 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}{{ document.filename }} - Analiz{% endblock %}
+
+{% block content %}
+<div class="analysis-header">
+    <h2>📊 {{ document.filename }}</h2>
+    <div class="document-meta">
+        <span class="badge badge-success">{{ document.format }}</span>
+        <span>{{ document.upload_date|date:"d.m.Y H:i" }}</span>
+        <span>{{ document.get_word_count }} kelime</span>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+{% if document.analysis.has_dependencies %}
+<div class="quick-actions">
+    <a href="{% url 'corpus:dependency_search' document_id=document.id %}" class="action-btn dependency-btn">
+        <span class="material-icons">account_tree</span>
+        <div class="action-text">
+            <strong>Bağımlılık Analizi</strong>
+            <small>CoNLL-U format arama ve görselleştirme</small>
+        </div>
+    </a>
+</div>
+{% endif %}
+
+<!-- Statistics Overview -->
+{% if stats %}
+{% load auth_extras pos_extras %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon"><span class="material-icons">text_fields</span></div>
+        <div class="stat-number">{{ stats.token_count }}</div>
+        <div class="stat-label">Token</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon"><span class="material-icons">pending_actions</span></div>
+        <div class="stat-number">{{ stats.type_count }}</div>
+        <div class="stat-label">Benzersiz Kelime</div>
+    </div>
+
+    {% if request.user|can_see_advanced_stats %}
+    <div class="stat-card">
+        <div class="stat-icon"><span class="material-icons">functions</span></div>
+        <div class="stat-number">{{ stats.ttr|floatformat:3 }}</div>
+        <div class="stat-label">TTR (Type-Token Ratio)</div>
+    </div>
+    {% else %}
+    <div class="stat-card" style="opacity: 0.5; position: relative;" title="Üye olun görüntülemek için">
+        <div class="stat-icon"><span class="material-icons">lock</span></div>
+        <div class="stat-number">•••</div>
+        <div class="stat-label">TTR - Üye Özelliği</div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+
+
+<!-- MEB Pedagogical Metrics -->
+{% if document.metadata.readability and request.user|can_see_advanced_stats %}
+<div class="card metrics-card">
+    <h3>🎓 Pedagojik Analiz (MEB)</h3>
+    <div class="readability-grid">
+        <!-- Ateşman Score -->
+        <div class="score-box">
+            <h4>Ateşman Okunabilirlik</h4>
+            <div class="score-value">{{ document.metadata.readability.scores.atesman.score }}</div>
+            <div
+                class="score-badge {% if document.metadata.readability.scores.atesman.score >= 80 %}easy{% elif document.metadata.readability.scores.atesman.score >= 60 %}medium{% else %}hard{% endif %}">
+                {{ document.metadata.readability.scores.atesman.level }}
+            </div>
+            <p class="score-desc">0 (Zor) - 100 (Kolay)</p>
+        </div>
+
+        <!-- Çetinkaya-Uzun Score -->
+        <div class="score-box">
+            <h4>Çetinkaya-Uzun</h4>
+            <div class="score-value">{{ document.metadata.readability.scores.cetinkaya.score }}</div>
+            <p class="score-desc">Eğitsel Metin Uygunluğu</p>
+        </div>
+
+        <!-- Detailed Stats -->
+        <div class="stats-list">
+            <div class="stat-item">
+                <span>Hece Sayısı:</span>
+                <strong>{{ document.metadata.readability.metrics.syllable_count }}</strong>
+            </div>
+            <div class="stat-item">
+                <span>Ort. Cümle Uzunluğu:</span>
+                <strong>{{ document.metadata.readability.metrics.avg_sentence_len_word }} kelime</strong>
+            </div>
+            <div class="stat-item">
+                <span>Ort. Kelime Uzunluğu:</span>
+                <strong>{{ document.metadata.readability.metrics.avg_word_len_syllable }} hece</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .metrics-card {
+        background: linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8));
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .readability-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 2rem;
+        margin-top: 1rem;
+    }
+
+    .score-box {
+        text-align: center;
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+    }
+
+    .score-value {
+        font-size: 3rem;
+        font-weight: 800;
+        color: #f8fafc;
+        line-height: 1;
+        margin: 0.5rem 0;
+    }
+
+    .score-badge {
+        display: inline-block;
+        padding: 0.25rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .score-badge.easy {
+        background: rgba(34, 197, 94, 0.2);
+        color: #4ade80;
+    }
+
+    .score-badge.medium {
+        background: rgba(234, 179, 8, 0.2);
+        color: #facc15;
+    }
+
+    .score-badge.hard {
+        background: rgba(239, 68, 68, 0.2);
+        color: #f87171;
+    }
+
+    .stats-list {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 0.5rem;
+        color: #cbd5e1;
+    }
+
+    @media (max-width: 768px) {
+        .readability-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endif %}
+
+<!-- Document Preview -->
+<div class="card preview-card" style="margin-bottom: 2rem;">
+    <h3>📄 Belge Önizleme</h3>
+    <div class="document-content"
+        style="background: var(--bg-surface); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-subtle); max-height: 400px; overflow-y: auto; white-space: pre-wrap; font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--text-main);">
+        {{ preview_text|default:"İçerik işleniyor veya mevcut değil..." }}
+    </div>
+    {% if is_preview_limited %}
+    <div class="preview-overlay"
+        style="margin-top: 1rem; text-align: center; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+        <p style="margin-bottom: 0.5rem; font-weight: 500; color: var(--accent-primary);">Bu belgenin devamını görmek
+            için üye olun.</p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <a href="{% url 'corpus:login' %}" class="btn btn-primary btn-small">Giriş Yap</a>
+            <a href="{% url 'corpus:register' %}" class="btn btn-outline btn-small">Kayıt Ol</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Search Form -->
+<div class="card search-card">
+    <h3>🔍 KWIC Concordance Arama</h3>
+
+    <form method="GET" class="search-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="search_type" class="form-label">Arama Tipi</label>
+                <div class="custom-select" id="search_type_select" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                    {% with sel=request.GET.search_type|default:'word' %}
+                    <button type="button" class="custom-select-trigger" aria-label="Arama Tipi">{% if sel == 'word' %}Kelime{% elif sel == 'lemma' %}Kök (Lemma){% elif sel == 'pos' %}Kelime Türü (POS){% else %}Gelişmiş{% endif %}</button>
+                    <ul class="custom-select-options" role="listbox" tabindex="-1">
+                        <li role="option" data-value="word" {% if sel == 'word' %}aria-selected="true"{% endif %}>Kelime</li>
+                        <li role="option" data-value="lemma" {% if sel == 'lemma' %}aria-selected="true"{% endif %}>Kök (Lemma)</li>
+                        <li role="option" data-value="pos" {% if sel == 'pos' %}aria-selected="true"{% endif %}>Kelime Türü (POS)</li>
+                        <li role="option" data-value="advanced" {% if sel == 'advanced' %}aria-selected="true"{% endif %}>Gelişmiş</li>
+                    </ul>
+                    <input type="hidden" name="search_type" id="search_type_value" value="{{ sel }}">
+                    {% endwith %}
+                </div>
+            </div>
+
+            <div class="form-group" id="query-group">
+                <label for="query" class="form-label">Arama Terimi</label>
+                <input type="text" name="query" id="query" value="{{ request.GET.query }}" class="form-control"
+                    placeholder="arama...">
+            </div>
+
+            <div class="form-group">
+                <label for="context_size" class="form-label">Bağlam Boyutu</label>
+                <input type="number" name="context_size" id="context_size"
+                    value="{{ request.GET.context_size|default:5 }}" min="1" max="20" class="form-control">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-check">
+                <input type="checkbox" name="case_sensitive" id="case_sensitive" value="true">
+                <label for="case_sensitive">Büyük/küçük harf duyarlı</label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" name="regex" id="regex" value="true">
+                <label for="regex">RegEx kullan</label>
+            </div>
+        </div>
+
+        <button type="submit" class="btn">Ara</button>
+        <a href="{% url 'corpus:analysis' document.id %}" class="btn btn-secondary">Temizle</a>
+        {% if request.GET.query %}
+        {% if request.user|can_export %}
+        <a href="{% url 'corpus:download_results' document.id %}?{{ request.GET.urlencode }}" class="btn btn-success">⬇️
+            CSV İndir</a>
+        {% endif %}
+        {% endif %}
+    </form>
+    <script>
+        (function(){
+            var cs = document.getElementById('search_type_select');
+            if(!cs) return;
+            var trigger = cs.querySelector('.custom-select-trigger');
+            var list = cs.querySelector('.custom-select-options');
+            var hidden = document.getElementById('search_type_value');
+            var options = Array.from(list.querySelectorAll('li'));
+
+            function open(){ 
+                cs.classList.add('open'); 
+                cs.setAttribute('aria-expanded','true'); 
+                list.setAttribute('aria-hidden','false');
+            }
+            function close(){ 
+                cs.classList.remove('open'); 
+                cs.setAttribute('aria-expanded','false'); 
+                list.setAttribute('aria-hidden','true');
+            }
+
+            trigger.addEventListener('click', function(e){ 
+                e.stopPropagation();
+                if(cs.classList.contains('open')) close(); else open(); 
+            });
+
+            options.forEach(function(opt){
+                opt.addEventListener('click', function(e){
+                    e.stopPropagation();
+                    options.forEach(function(o){ o.removeAttribute('aria-selected'); });
+                    opt.setAttribute('aria-selected','true');
+                    hidden.value = opt.getAttribute('data-value');
+                    trigger.textContent = opt.textContent;
+                    close();
+                });
+            });
+
+            document.addEventListener('click', function(ev){ 
+                if(!cs.contains(ev.target)) close(); 
+            });
+        })();
+    </script>
+</div>
+
+<!-- Search Results -->
+{% if search_results %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0;">📝 Sonuçlar ({{ search_results|length }} eşleşme)</h3>
+        
+        {% if request.user|can_export %}
+        <div class="export-dropdown" style="position: relative;">
+            <button class="btn btn-primary btn-small" id="export-concordance-btn" style="display: flex; align-items: center; gap: 0.3rem;">
+                <span class="material-icons" style="font-size: 16px;">download</span>
+                Export Results
+                <span class="material-icons" style="font-size: 16px;">arrow_drop_down</span>
+            </button>
+            <div class="export-menu" id="export-concordance-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.5rem; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0.5rem; min-width: 180px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 100;">
+                <a href="{% url 'corpus:export_concordance_watermarked' document.id %}?query={{ request.GET.query|urlencode }}&format=csv" class="export-menu-item" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 4px; text-decoration: none; color: var(--text-main); transition: background 0.2s;">
+                    <span class="material-icons" style="font-size: 18px; color: #10b981;">grid_on</span>
+                    <span>CSV (Watermarked)</span>
+                </a>
+                <a href="{% url 'corpus:export_concordance_watermarked' document.id %}?query={{ request.GET.query|urlencode }}&format=json" class="export-menu-item" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 4px; text-decoration: none; color: var(--text-main); transition: background 0.2s;">
+                    <span class="material-icons" style="font-size: 18px; color: #f59e0b;">code</span>
+                    <span>JSON (Watermarked)</span>
+                </a>
+                <a href="{% url 'corpus:export_concordance_watermarked' document.id %}?query={{ request.GET.query|urlencode }}&format=excel" class="export-menu-item" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 4px; text-decoration: none; color: var(--text-main); transition: background 0.2s;">
+                    <span class="material-icons" style="font-size: 18px; color: #3b82f6;">table_chart</span>
+                    <span>Excel (Watermarked)</span>
+                </a>
+            </div>
+        </div>
+        
+        <script>
+        (function(){
+            const btn = document.getElementById('export-concordance-btn');
+            const menu = document.getElementById('export-concordance-menu');
+            if(btn && menu) {
+                btn.addEventListener('click', function(e){
+                    e.stopPropagation();
+                    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+                });
+                document.addEventListener('click', function(){
+                    menu.style.display = 'none';
+                });
+                menu.addEventListener('click', function(e){
+                    e.stopPropagation();
+                });
+            }
+        })();
+        </script>
+        
+        <style>
+        .export-menu-item:hover {
+            background: rgba(59, 130, 246, 0.1) !important;
+        }
+        </style>
+        {% endif %}
+    </div>
+
+    <div class="concordance-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Sol Bağlam</th>
+                    <th class="keyword-col">Anahtar Kelime</th>
+                    <th>Sağ Bağlam</th>
+                    <th>POS</th>
+                    <th>Lemma</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in search_results %}
+                <tr>
+                    <td class="left-context">{{ result.left_context }}</td>
+                    <td class="keyword"><strong>{{ result.keyword }}</strong></td>
+                    <td class="right-context">{{ result.right_context }}</td>
+                    <td><span class="pos-tag pos-{{ result.pos|pos_class }}" title="{{ result.pos|default:'-' }}">{{ result.pos|default:"-" }}</span></td>
+                    <td>{{ result.lemma|default:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Pagination Controls -->
+{% if search_results.has_other_pages %}
+<div class="pagination-container" style="display:flex; justify-content:center; margin-top:2rem;">
+    <div class="pagination" style="display:flex; gap:0.5rem; align-items:center;">
+        {% if search_results.has_previous %}
+        <a href="?page=1&query={{ request.GET.query }}&search_type={{ request.GET.search_type }}&context_size={{ request.GET.context_size|default:5 }}&case_sensitive={{ request.GET.case_sensitive }}&regex={{ request.GET.regex }}"
+            class="btn btn-outline btn-small">&laquo; İlk</a>
+        <a href="?page={{ search_results.previous_page_number }}&query={{ request.GET.query }}&search_type={{ request.GET.search_type }}&context_size={{ request.GET.context_size|default:5 }}&case_sensitive={{ request.GET.case_sensitive }}&regex={{ request.GET.regex }}"
+            class="btn btn-outline btn-small">&lsaquo; Önceki</a>
+        {% endif %}
+
+        <span class="current" style="color:var(--text-secondary); font-size:0.9rem; margin:0 1rem;">
+            Sayfa {{ search_results.number }} / {{ search_results.paginator.num_pages }}
+            <span style="opacity:0.6">({{ search_results.paginator.count }} sonuç)</span>
+        </span>
+
+        {% if search_results.has_next %}
+        <a href="?page={{ search_results.next_page_number }}&query={{ request.GET.query }}&search_type={{ request.GET.search_type }}&context_size={{ request.GET.context_size|default:5 }}&case_sensitive={{ request.GET.case_sensitive }}&regex={{ request.GET.regex }}"
+            class="btn btn-outline btn-small">Sonraki &rsaquo;</a>
+        <a href="?page={{ search_results.paginator.num_pages }}&query={{ request.GET.query }}&search_type={{ request.GET.search_type }}&context_size={{ request.GET.context_size|default:5 }}&case_sensitive={{ request.GET.case_sensitive }}&regex={{ request.GET.regex }}"
+            class="btn btn-outline btn-small">Son &raquo;</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% load auth_extras %}
+{% if request.user|can_export %}
+<!-- Export Options -->
+<div class="card">
+    <h3 style="display:flex; align-items:center; gap:0.5rem;">
+        <span class="material-icons">download</span>
+        Dışa Aktarma
+    </h3>
+    <p style="color:var(--text-secondary); font-size:0.875rem; margin-bottom:1rem;">
+        Analiz verilerini farklı formatlarda indirin
+    </p>
+
+    <div style="display:flex; flex-direction:column; gap:1rem;">
+        <!-- Advanced Formats -->
+        <div>
+            <h4 style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:0.5rem;">
+                Gelişmiş Formatlar
+            </h4>
+            <div class="export-buttons">
+                <a href="{% url 'corpus:export_pdf' document.id %}" class="btn btn-primary btn-small">
+                    <span class="material-icons" style="font-size:16px;">picture_as_pdf</span>
+                    PDF Rapor
+                </a>
+                <a href="{% url 'corpus:export_excel' document.id %}" class="btn btn-success btn-small">
+                    <span class="material-icons" style="font-size:16px;">table_chart</span>
+                    Excel İstatistik
+                </a>
+                <a href="{% url 'corpus:export_csv' document.id %}?type=full" class="btn btn-small">
+                    <span class="material-icons" style="font-size:16px;">grid_on</span>
+                    CSV (Tam Veri)
+                </a>
+            </div>
+        </div>
+
+        <!-- CSV Variants -->
+        <div>
+            <h4 style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:0.5rem;">
+                CSV Varyantları
+            </h4>
+            <div class="export-buttons">
+                <a href="{% url 'corpus:export_csv' document.id %}?type=words" class="btn btn-outline btn-small">
+                    Kelime Frekansları
+                </a>
+                <a href="{% url 'corpus:export_csv' document.id %}?type=lemmas" class="btn btn-outline btn-small">
+                    Kök Frekansları
+                </a>
+                <a href="{% url 'corpus:export_csv' document.id %}?type=pos" class="btn btn-outline btn-small">
+                    POS Dağılımı
+                </a>
+            </div>
+        </div>
+
+        <!-- Corpus Formats -->
+        <div>
+            <h4 style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:0.5rem;">
+                Korpus Formatları
+            </h4>
+            <div class="export-buttons">
+                <a href="{% url 'corpus:export' document.id %}?format=json" class="btn btn-outline btn-small">JSON</a>
+                <a href="{% url 'corpus:export' document.id %}?format=vrt" class="btn btn-outline btn-small">VRT</a>
+                <a href="{% url 'corpus:export' document.id %}?format=conllu"
+                    class="btn btn-outline btn-small">CoNLL-U</a>
+            </div>
+        </div>
+
+        <!-- Watermarked Exports (Week 3) -->
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle);">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <span class="material-icons" style="font-size: 18px; color: #3b82f6;">verified</span>
+                <h4 style="font-size: 0.875rem; color: var(--text-secondary); margin: 0;">Watermarked Exports</h4>
+                <span style="font-size: 0.75rem; background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 0.125rem 0.5rem; border-radius: 12px; font-weight: 500;">NEW</span>
+            </div>
+            <p style="color: var(--text-tertiary); font-size: 0.75rem; margin-bottom: 0.75rem; line-height: 1.4;">
+                📌 Attribution included • 🔒 Quota tracked • 📊 Recommended for research
+            </p>
+            <div class="export-buttons">
+                <a href="{% url 'corpus:export_frequency_watermarked' document.id %}?format=csv" class="btn btn-primary btn-small" style="display: flex; align-items: center; gap: 0.3rem;">
+                    <span class="material-icons" style="font-size: 16px;">grid_on</span>
+                    Frequency CSV
+                </a>
+                <a href="{% url 'corpus:export_frequency_watermarked' document.id %}?format=json" class="btn btn-small" style="display: flex; align-items: center; gap: 0.3rem;">
+                    <span class="material-icons" style="font-size: 16px;">code</span>
+                    Frequency JSON
+                </a>
+                <a href="{% url 'corpus:export_frequency_watermarked' document.id %}?format=excel" class="btn btn-success btn-small" style="display: flex; align-items: center; gap: 0.3rem;">
+                    <span class="material-icons" style="font-size: 16px;">table_chart</span>
+                    Frequency Excel
+                </a>
+            </div>
+            <a href="{% url 'corpus:export_history' %}" style="display: inline-flex; align-items: center; gap: 0.3rem; margin-top: 0.75rem; font-size: 0.75rem; color: var(--accent-primary); text-decoration: none; transition: opacity 0.2s;">
+                <span class="material-icons" style="font-size: 14px;">history</span>
+                View Export History & Quota
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Analysis -->
+<div class="card">
+    <h3 style="display:flex; align-items:center; gap:0.5rem;">
+        <span class="material-icons">science</span>
+        Ek Analizler
+    </h3>
+    <div class="export-buttons">
+        <a href="{% url 'corpus:ngrams' document.id %}" class="btn">N-gram & Kolokasyon</a>
+        <a href="{% url 'corpus:wordcloud' document.id %}" class="btn">Frekans Grafikleri</a>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    .analysis-header {
+        margin-bottom: 2rem;
+    }
+
+    .document-meta {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-top: 1rem;
+        color: #94a3b8;
+        font-size: 14px;
+    }
+
+    .search-card {
+        margin-bottom: 2rem;
+    }
+
+    .search-form .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #cbd5e1;
+    }
+
+    .form-check input[type="checkbox"] {
+        width: auto;
+    }
+
+    .concordance-table {
+        overflow-x: auto;
+    }
+
+    .concordance-table table {
+        width: 100%;
+        font-size: 14px;
+    }
+
+    .left-context {
+        text-align: right;
+        color: #94a3b8;
+    }
+
+    .keyword {
+        text-align: center;
+        color: #14b8a6;
+        font-weight: 700;
+        white-space: nowrap;
+        padding: 0 1rem;
+    }
+
+    .keyword-col {
+        text-align: center;
+    }
+
+    .right-context {
+        text-align: left;
+        color: #94a3b8;
+    }
+
+    .pos-tag {
+        background: rgba(99, 102, 241, 0.2);
+        color: #818cf8;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .export-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    /* Stats Grid - Modern Design */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 1rem;
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .stat-icon .material-icons {
+        font-size: 2rem;
+        color: var(--text-on-primary, #ffffff);
+    }
+
+    /* Theme-aware icon colors */
+    body[data-theme="light"] .stat-icon .material-icons {
+        color: #1a1a1a;
+    }
+
+    body[data-theme="dark"] .stat-icon .material-icons {
+        color: #ffffff;
+    }
+
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 700;
+        color: var(--accent-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+</style>
+
+
+<style>
+.quick-actions {
+    margin: 1.5rem 0;
+    display: flex;
+    gap: 1rem;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    text-decoration: none;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+}
+
+.action-btn .material-icons {
+    font-size: 32px;
+}
+
+.action-text {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.action-text strong {
+    font-size: 1.1rem;
+}
+
+.action-text small {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+</style>
+
+<script>
+    // Show/hide query field based on search type
+    document.getElementById('search_type').addEventListener('change', function (e) {
+        const queryGroup = document.getElementById('query-group');
+        if (e.target.value === 'pos') {
+            queryGroup.style.display = 'none';
+        } else {
+            queryGroup.style.display = 'block';
+        }
+    });
+</script>
+{% endblock %}

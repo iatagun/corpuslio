@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OCRchestra Execution Plan",
+  "type": "object",
+  "required": ["version", "plan", "metadata"],
+  "properties": {
+    "version": {"type": "string"},
+    "plan": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "step_id": {"type": "string"},
+          "action": {"type": "string"},
+          "parameters": {"type": "object"}
+        },
+        "required": ["step_id", "action"]
+      }
+    },
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": false
+}
