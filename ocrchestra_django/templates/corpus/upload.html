@@ -12,7 +12,8 @@
             <span id="uploadStatus">Hazırlanıyor...</span>
             <span id="uploadPercent">0%</span>
         </div>
-        <div style="width: 100%; max-width: 400px; background: var(--bg-surface); border-radius: 8px; overflow: hidden; height: 8px;">
+        <div
+            style="width: 100%; max-width: 400px; background: var(--bg-surface); border-radius: 8px; overflow: hidden; height: 8px;">
             <div id="uploadProgressBar" class="progress-bar" style="width: 0%;"></div>
         </div>
     </div>
@@ -27,15 +28,17 @@
         <div class="file-upload-section">
             <div class="form-group">
                 <label class="form-label">Derlem Dosyası Seçin</label>
-                
+
                 <!-- Drag & Drop Zone -->
                 <div class="drag-drop-zone" id="dragDropZone">
                     <div class="drag-drop-icon">
-                        <span class="material-icons" style="font-size: 4rem; color: var(--accent-primary);">cloud_upload</span>
+                        <span class="material-icons"
+                            style="font-size: 4rem; color: var(--accent-primary);">cloud_upload</span>
                     </div>
                     <div class="drag-drop-text">Dosyaları buraya sürükleyin</div>
                     <div class="drag-drop-or">veya</div>
-                    <button type="button" class="btn btn-primary" onclick="document.getElementById('{{ form.file.id_for_label }}').click();">
+                    <button type="button" class="btn btn-primary"
+                        onclick="document.getElementById('{{ form.file.id_for_label }}').click();">
                         <span class="material-icons">folder_open</span> Dosya Seç
                     </button>
                     <div class="drag-drop-hint">CoNLL-U, VRT, TXT (Maksimum 50MB)</div>
@@ -44,7 +47,7 @@
                 <!-- Hidden file input -->
                 <input type="file" name="files" id="{{ form.file.id_for_label }}" multiple class="form-control"
                     accept="{{ form.file.field.widget.attrs.accept }}" style="display: none;">
-                
+
                 <!-- File Preview List -->
                 <div id="filePreviewList" class="file-preview-list"></div>
             </div>
@@ -64,7 +67,8 @@
 
                 <!-- Row 2: MEB Specifics -->
                 <div class="form-group">
-                    <label for="{{ form.grade_level.id_for_label }}" class="form-label">{{ form.grade_level.label }}</label>
+                    <label for="{{ form.grade_level.id_for_label }}" class="form-label">{{ form.grade_level.label
+                        }}</label>
                     {{ form.grade_level }}
                 </div>
 
@@ -80,7 +84,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="{{ form.publication_year.id_for_label }}" class="form-label">{{ form.publication_year.label }}</label>
+                    <label for="{{ form.publication_year.id_for_label }}" class="form-label">{{
+                        form.publication_year.label }}</label>
                     {{ form.publication_year }}
                 </div>
 
@@ -272,7 +277,7 @@
     dragDropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dragDropZone.classList.remove('drag-over');
-        
+
         const files = Array.from(e.dataTransfer.files);
         handleFiles(files);
     });
@@ -288,7 +293,7 @@
         files.forEach(file => {
             // Validate
             const validation = validateFile(file);
-            
+
             // Check if file already added
             const exists = selectedFiles.find(f => f.name === file.name && f.size === file.size);
             if (exists) {
@@ -317,9 +322,16 @@
 
     // Validate file
     function validateFile(file) {
-        // Check file type
+        // Check file type (MIME) - lax check
+        const ext = file.name.split('.').pop().toLowerCase();
+        const allowedExts = ['txt', 'conll', 'conllu', 'vrt', 'xml'];
+
+        // If MIME type is unknown (common for custom extensions), check extension
         if (!ALLOWED_TYPES[file.type]) {
-            return { valid: false, error: 'Desteklenmeyen dosya türü' };
+            // Fallback to extension check
+            if (!allowedExts.includes(ext)) {
+                return { valid: false, error: 'Desteklenmeyen dosya türü' };
+            }
         }
 
         // Check file size
@@ -342,10 +354,10 @@
     // Update preview
     function updatePreview() {
         filePreviewList.innerHTML = '';
-        
+
         selectedFiles.forEach((item, index) => {
             const fileInfo = ALLOWED_TYPES[item.file.type] || { icon: 'insert_drive_file', class: '' };
-            
+
             const previewItem = document.createElement('div');
             previewItem.className = 'file-preview-item';
             previewItem.innerHTML = `
@@ -371,13 +383,13 @@
                     <span class="material-icons">close</span>
                 </button>
             `;
-            
+
             filePreviewList.appendChild(previewItem);
         });
     }
 
     // Remove file
-    window.removeFile = function(index) {
+    window.removeFile = function (index) {
         const fileName = selectedFiles[index].file.name;
         selectedFiles.splice(index, 1);
         updatePreview();
@@ -397,9 +409,9 @@
     }
 
     // Form submission with progress
-    uploadForm.addEventListener('submit', function(e) {
+    uploadForm.addEventListener('submit', function (e) {
         const validFiles = selectedFiles.filter(f => f.valid);
-        
+
         if (validFiles.length === 0) {
             toastError('Lütfen en az bir geçerli dosya seçin!', 'Dosya seçilmedi');
             e.preventDefault();
@@ -408,7 +420,7 @@
 
         // Show loading overlay
         loadingOverlay.classList.remove('hidden');
-        
+
         // Simulate upload progress
         let progress = 0;
         const interval = setInterval(() => {
@@ -420,7 +432,7 @@
             }
             progressBar.style.width = progress + '%';
             uploadPercent.textContent = Math.round(progress) + '%';
-            
+
             if (progress < 30) {
                 uploadStatus.textContent = 'Dosyalar yükleniyor...';
             } else if (progress < 60) {

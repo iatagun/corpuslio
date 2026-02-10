@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}CorpusIO{% endblock %}</title>
+    <title>{% block title %}CorpusLIO{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=4">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -18,7 +18,7 @@
     <aside class="sidebar">
         <div class="sidebar-header">
             <a href="{% url 'corpus:home' %}" class="logo-link">
-                <h2 class="sidebar-logo"><span class="material-icons">graphic_eq</span> CorpusIO</h2>
+                <h2 class="sidebar-logo"><span class="material-icons">graphic_eq</span> CorpusLIO</h2>
             </a>
         </div>
 
@@ -35,13 +35,18 @@
 
             {% load auth_extras %}
             {% if user.is_authenticated %}
-            <a href="{% url 'corpus:corpus_search' %}" class="nav-item {% if active_tab == 'search' %}active{% endif %}">
+            <a href="{% url 'corpus:corpus_search' %}"
+                class="nav-item {% if active_tab == 'search' %}active{% endif %}">
                 <span class="material-icons nav-icon">search</span>
                 <span class="nav-text">Korpus Arama</span>
             </a>
             {% endif %}
 
             {% if user.is_authenticated %}
+            <a href="{% url 'corpus:upload' %}" class="nav-item {% if active_tab == 'upload' %}active{% endif %}">
+                <span class="material-icons nav-icon">cloud_upload</span>
+                <span class="nav-text">Dosya Yükle</span>
+            </a>
             <a href="{% url 'corpus:collections' %}"
                 class="nav-item {% if active_tab == 'collections' %}active{% endif %}">
                 <span class="material-icons nav-icon">collections_bookmark</span>
@@ -108,8 +113,8 @@
                             {% get_current_language as LANGUAGE_CODE %}
                             {% get_available_languages as LANGUAGES %}
                             {% for lang_code, lang_name in LANGUAGES %}
-                            <button type="submit" name="language" value="{{ lang_code }}" 
-                                    class="language-option {% if LANGUAGE_CODE == lang_code %}active{% endif %}">
+                            <button type="submit" name="language" value="{{ lang_code }}"
+                                class="language-option {% if LANGUAGE_CODE == lang_code %}active{% endif %}">
                                 <span class="flag-icon">{% if lang_code == 'tr' %}🇹🇷{% else %}🇬🇧{% endif %}</span>
                                 <span>{{ lang_name }}</span>
                             </button>
@@ -212,7 +217,8 @@
                         <span class="material-icons">search</span>
                         <input type="text" id="searchInput" class="search-modal-input"
                             placeholder="Belgeler ve koleksiyonlarda ara..." autocomplete="off">
-                        <div class="custom-select" id="searchType" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                        <div class="custom-select" id="searchType" role="combobox" aria-haspopup="listbox"
+                            aria-expanded="false">
                             <button type="button" class="custom-select-trigger" aria-label="Arama Tipi">Basit</button>
                             <ul class="custom-select-options" role="listbox" tabindex="-1">
                                 <li role="option" data-value="basic" aria-selected="true">Basit</li>
@@ -253,24 +259,24 @@
                         </div>
                     </div>
                     <script>
-                        (function(){
+                        (function () {
                             // Custom select for search type
                             var cs = document.getElementById('searchType');
-                            if(!cs) return;
+                            if (!cs) return;
                             var trigger = cs.querySelector('.custom-select-trigger');
                             var list = cs.querySelector('.custom-select-options');
                             var hidden = document.getElementById('searchTypeValue');
                             var options = Array.from(list.querySelectorAll('li'));
 
-                            function open(){ cs.classList.add('open'); cs.setAttribute('aria-expanded','true'); list.setAttribute('aria-hidden','false'); list.focus(); }
-                            function close(){ cs.classList.remove('open'); cs.setAttribute('aria-expanded','false'); list.setAttribute('aria-hidden','true'); trigger.focus(); }
+                            function open() { cs.classList.add('open'); cs.setAttribute('aria-expanded', 'true'); list.setAttribute('aria-hidden', 'false'); list.focus(); }
+                            function close() { cs.classList.remove('open'); cs.setAttribute('aria-expanded', 'false'); list.setAttribute('aria-hidden', 'true'); trigger.focus(); }
 
-                            trigger.addEventListener('click', function(e){ if(cs.classList.contains('open')) close(); else open(); });
+                            trigger.addEventListener('click', function (e) { if (cs.classList.contains('open')) close(); else open(); });
 
-                            options.forEach(function(opt){
-                                opt.addEventListener('click', function(){
-                                    options.forEach(function(o){ o.removeAttribute('aria-selected'); });
-                                    opt.setAttribute('aria-selected','true');
+                            options.forEach(function (opt) {
+                                opt.addEventListener('click', function () {
+                                    options.forEach(function (o) { o.removeAttribute('aria-selected'); });
+                                    opt.setAttribute('aria-selected', 'true');
                                     hidden.value = opt.getAttribute('data-value');
                                     trigger.textContent = opt.textContent;
                                     close();
@@ -278,23 +284,23 @@
                             });
 
                             // keyboard support
-                            list.addEventListener('keydown', function(e){
-                                var idx = options.findIndex(function(o){ return o.getAttribute('aria-selected')==='true'; });
-                                if(e.key === 'ArrowDown'){
+                            list.addEventListener('keydown', function (e) {
+                                var idx = options.findIndex(function (o) { return o.getAttribute('aria-selected') === 'true'; });
+                                if (e.key === 'ArrowDown') {
                                     e.preventDefault();
-                                    var next = options[(idx+1) % options.length]; next.focus();
-                                } else if(e.key === 'ArrowUp'){
+                                    var next = options[(idx + 1) % options.length]; next.focus();
+                                } else if (e.key === 'ArrowUp') {
                                     e.preventDefault();
-                                    var prev = options[(idx-1+options.length) % options.length]; prev.focus();
-                                } else if(e.key === 'Enter'){
+                                    var prev = options[(idx - 1 + options.length) % options.length]; prev.focus();
+                                } else if (e.key === 'Enter') {
                                     e.preventDefault(); document.activeElement.click();
-                                } else if(e.key === 'Escape'){
+                                } else if (e.key === 'Escape') {
                                     e.preventDefault(); close();
                                 }
                             });
 
                             // close on outside click
-                            document.addEventListener('click', function(ev){ if(!cs.contains(ev.target)) close(); });
+                            document.addEventListener('click', function (ev) { if (!cs.contains(ev.target)) close(); });
                         })();
                     </script>
                 </div>
@@ -305,7 +311,7 @@
 
         <!-- Footer -->
         <footer class="footer">
-            <p>&copy; 2026 CorpusIO - Modern Türkçe Korpus Analizi Platformu</p>
+            <p>&copy; 2026 CorpusLIO - Modern Türkçe Korpus Analizi Platformu</p>
             <div class="footer-links">
                 <a href="/api/docs/" target="_blank">API Dokümanları</a>
                 <a href="https://github.com/iatagun/OCRchestra" target="_blank">GitHub</a>
@@ -316,6 +322,38 @@
     {% block extra_js %}{% endblock %}
 
     <script>
+        // Simple Toast Notification Function
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+
+            let icon = 'info';
+            if (type === 'success') icon = 'check_circle';
+            if (type === 'error' || type === 'warning') icon = 'error';
+
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <span class="material-icons toast-icon">${icon}</span>
+                    <span class="toast-message">${message}</span>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <span class="material-icons">close</span>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.style.animation = 'slideOut 0.3s forwards';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 5000);
+        }
         // Theme Management
         function initTheme() {
             const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -413,17 +451,17 @@
                 if (!processedMessages.has(msgKey)) {
                     processedMessages.add(msgKey);
                     console.log('[Toast Debug] Showing toast for:', msgText);
-                    showToast({
-                        type: msgType,
-                        message: msgText
-                    });
-                } else {
-                    console.log('[Toast Debug] Duplicate message skipped:', msgText);
+                    // Use a function to show toast if available, otherwise alert
+                    if (typeof showToast === 'function') {
+                        showToast(msgText, msgType);
+                    } else {
+                        console.warn('showToast function not found');
+                    }
                 }
                 {% endfor %}
-            } else {
-                console.log('[Toast Debug] Messages already processed, skipping');
             }
+            console.log('[Toast Debug] Messages already processed, skipping');
+        }
             {% endif %}
         });
 

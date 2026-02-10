@@ -223,7 +223,7 @@ def upload_view(request):
         
         for uploaded_file in files:
             try:
-                # Validate file
+                # Validate file extension
                 import os
                 from django.conf import settings
                 ext = os.path.splitext(uploaded_file.name)[1].lower()
@@ -232,22 +232,13 @@ def upload_view(request):
                     failed_count += 1
                     continue
                 
-                # Create document entry
-                document = Document.objects.create(
-                    filename=uploaded_file.name,
-                    file=uploaded_file,
-                    format=ext[1:].upper(),
-                    metadata=metadata,
-                    processed=False  # Will be set to True after import
-                )
-                
-                # Import corpus file (synchronous for now)
+                # Import corpus file
                 try:
                     from django.core.management import call_command
                     import tempfile
-                    import os
                     
                     # Save uploaded file to temp location
+                    # On Windows, we must close the file before opening it again in another handle
                     with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp_file:
                         for chunk in uploaded_file.chunks():
                             tmp_file.write(chunk)
@@ -255,17 +246,18 @@ def upload_view(request):
                     
                     try:
                         # Call import_corpus command
+                        # We pass the logged-in user so they own the document
                         call_command(
                             'import_corpus',
                             tmp_path,
                             title=metadata.get('source', uploaded_file.name),
                             author=metadata.get('author', ''),
                             genre=metadata.get('genre', 'other'),
+                            user=request.user.username,
                             skip_duplicates=skip_duplicates,
+                            format=ext[1:].replace('txt', 'vrt'), # Map txt to vrt or auto
                             validate=validate_format
                         )
-                        document.processed = True
-                        document.save()
                         processed_count += 1
                     finally:
                         # Clean up temp file
@@ -275,7 +267,6 @@ def upload_view(request):
                 except Exception as e:
                     messages.error(request, f'❌ {uploaded_file.name}: İmport hatası - {str(e)}')
                     failed_count += 1
-                    document.delete()
                     continue
                     
             except Exception as e:

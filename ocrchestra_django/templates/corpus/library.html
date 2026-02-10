@@ -1,73 +1,22 @@
 {% extends "corpus/base.html" %}
 {% load auth_extras %}
+{% load corpus_extras %}
 
 {% block title %}Korpus Kütüphanesi - CorpusIO{% endblock %}
 
 {% block content %}
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-    <h2><span class="material-icons" style="vertical-align:middle; margin-right:0.5rem;">library_books</span> Korpus Kütüphanesi</h2>
+    <h2><span class="material-icons" style="vertical-align:middle; margin-right:0.5rem;">library_books</span> Korpus
+        Kütüphanesi</h2>
     <span class="badge" style="background:var(--bg-surface); color:var(--text-secondary);">
         {{ page_obj.paginator.count }} korpus dosyası
     </span>
 </div>
-
-<!-- Search and Filters -->
-<div class="card filter-section">
-    <form method="GET" class="filter-form">
-        <div class="filter-grid">
-            <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Dosya adı, yazar, tür..."
-                class="form-control">
-
-            <select name="author" class="form-control" id="authorSelect">
-                <option value="">-- Yazar --</option>
-                {% for author in all_authors %}
-                <option value="{{ author }}">{{ author }}</option>
-                {% endfor %}
-            </select>
-
-            <select name="genre" class="form-control" id="genreSelect">
-                <option value="">-- Tür --</option>
-                {% for genre in all_genres %}
-                <option value="{{ genre }}">{{ genre|title }}</option>
-                {% endfor %}
-            </select>
-
-            <select name="format" class="form-control" id="formatSelect">
-                <option value="">-- Format --</option>
-                {% for code, name in format_choices %}
-                <option value="{{ code }}">{{ name }}</option>
-                {% endfor %}
-            </select>
-
-            <input type="text" name="date" value="{{ request.GET.date }}" placeholder="Tarih (örn: 2023)"
-                class="form-control">
-        </div>
-
-        <div class="filter-actions">
-            <button type="submit" class="btn btn-primary">
-                <span class="material-icons" style="font-size:16px;">search</span>
-                Ara
-            </button>
-            <a href="{% url 'corpus:library' %}" class="btn btn-outline">
-                <span class="material-icons" style="font-size:16px;">clear</span>
-                Temizle
-            </a>
-        </div>
-    </form>
-</div>
-
-{% if is_limited_public_view %}
-<div class="alert alert-info" style="display:flex; align-items:center; gap:0.5rem; margin-top:1rem;">
-    <span class="material-icons">visibility</span>
-    <p>Anonim ziyaretçiler için görüntüleme sınırlıdır. Tam erişim için lütfen <a href="{% url 'corpus:login' %}">giriş yapın</a> veya <a href="{% url 'corpus:register' %}">kayıt olun</a>.</p>
-</div>
-{% endif %}
-
 {% if corpora %}
-<div class="documents-grid" id="documentsGrid">
+<div class="documents-grid">
     {% for corpus in corpora %}
     <div class="card document-card">
-        <h3>{{ corpus.original_filename }}</h3>
+        <h3>{{ corpus.original_filename|basename }}</h3>
         <p class="meta">
             <span class="format-badge">{{ corpus.get_source_format_display }}</span>
             <span class="date" style="display:flex; align-items:center; gap:0.25rem;">
@@ -77,15 +26,18 @@
         </p>
 
         <p class="status">
-            <span style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-primary); font-weight:500; font-size:0.85rem;">
+            <span
+                style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-primary); font-weight:500; font-size:0.85rem;">
                 <span class="material-icons" style="font-size:16px;">analytics</span>
                 {{ corpus.document.get_word_count }} token
             </span>
-            <span style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-secondary); font-weight:500; font-size:0.85rem;">
+            <span
+                style="display:flex; align-items:center; gap:0.25rem; color:var(--accent-secondary); font-weight:500; font-size:0.85rem;">
                 <span class="material-icons" style="font-size:16px;">article</span>
                 {{ corpus.sentence_count }} cümle
             </span>
-            <span style="display:flex; align-items:center; gap:0.25rem; color:var(--text-secondary); font-weight:500; font-size:0.85rem;">
+            <span
+                style="display:flex; align-items:center; gap:0.25rem; color:var(--text-secondary); font-weight:500; font-size:0.85rem;">
                 <span class="material-icons" style="font-size:16px;">psychology</span>
                 {{ corpus.unique_lemmas }} lemma
             </span>
@@ -95,19 +47,22 @@
         {% if corpus.global_metadata %}
         <div class="corpus-metadata" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;">
             {% if corpus.global_metadata.author %}
-            <span class="metadata-badge" style="background:var(--bg-accent); color:var(--text-primary); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
+            <span class="metadata-badge"
+                style="background:var(--bg-accent); color:var(--text-primary); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
                 <span class="material-icons" style="font-size:12px; vertical-align:middle;">person</span>
                 {{ corpus.global_metadata.author }}
             </span>
             {% endif %}
             {% if corpus.global_metadata.genre %}
-            <span class="metadata-badge" style="background:var(--bg-secondary); color:var(--text-primary); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
+            <span class="metadata-badge"
+                style="background:var(--bg-secondary); color:var(--text-primary); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
                 <span class="material-icons" style="font-size:12px; vertical-align:middle;">category</span>
                 {{ corpus.global_metadata.genre|title }}
             </span>
             {% endif %}
             {% if corpus.global_metadata.date %}
-            <span class="metadata-badge" style="background:var(--bg-surface); color:var(--text-secondary); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
+            <span class="metadata-badge"
+                style="background:var(--bg-surface); color:var(--text-secondary); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.8rem;">
                 <span class="material-icons" style="font-size:12px; vertical-align:middle;">event</span>
                 {{ corpus.global_metadata.date }}
             </span>
@@ -186,54 +141,54 @@
 </style>
 
 <script>
-// Set selected values from URL parameters
-document.addEventListener('DOMContentLoaded', function () {
-    const urlParams = new URLSearchParams(window.location.search);
+    // Set selected values from URL parameters
+    document.addEventListener('DOMContentLoaded', function () {
+        const urlParams = new URLSearchParams(window.location.search);
 
-    // Author select
-    const author = urlParams.get('author');
-    if (author) {
-        const select = document.getElementById('authorSelect');
-        for (let i = 0; i < select.options.length; i++) {
-            if (select.options[i].value === author) {
-                select.selectedIndex = i;
-                break;
+        // Author select
+        const author = urlParams.get('author');
+        if (author) {
+            const select = document.getElementById('authorSelect');
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === author) {
+                    select.selectedIndex = i;
+                    break;
+                }
             }
         }
-    }
 
-    // Genre select
-    const genre = urlParams.get('genre');
-    if (genre) {
-        const select = document.getElementById('genreSelect');
-        for (let i = 0; i < select.options.length; i++) {
-            if (select.options[i].value === genre) {
-                select.selectedIndex = i;
-                break;
+        // Genre select
+        const genre = urlParams.get('genre');
+        if (genre) {
+            const select = document.getElementById('genreSelect');
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === genre) {
+                    select.selectedIndex = i;
+                    break;
+                }
             }
         }
-    }
 
-    // Format select
-    const format = urlParams.get('format');
-    if (format) {
-        const select = document.getElementById('formatSelect');
-        for (let i = 0; i < select.options.length; i++) {
-            if (select.options[i].value === format) {
-                select.selectedIndex = i;
-                break;
+        // Format select
+        const format = urlParams.get('format');
+        if (format) {
+            const select = document.getElementById('formatSelect');
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === format) {
+                    select.selectedIndex = i;
+                    break;
+                }
             }
         }
-    }
-});
+    });
 
-// Auto-submit form when select changes for better UX
-document.addEventListener('DOMContentLoaded', function () {
-    // Auto-submit on filter changes
-    document.querySelectorAll('select[name="author"], select[name="genre"], select[name="format"]').forEach(select => {
-        select.addEventListener('change', function () {
-            this.form.submit();
+    // Auto-submit form when select changes for better UX
+    document.addEventListener('DOMContentLoaded', function () {
+        // Auto-submit on filter changes
+        document.querySelectorAll('select[name="author"], select[name="genre"], select[name="format"]').forEach(select => {
+            select.addEventListener('change', function () {
+                this.form.submit();
+            });
         });
     });
-});
-{% endblock %}
+    {% endblock %}

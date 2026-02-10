@@ -104,6 +104,10 @@ class Command(BaseCommand):
             
             metadata = parser.import_to_database(document)
             
+            # Mark as processed
+            document.processed = True
+            document.save()
+            
             self.stdout.write(self.style.SUCCESS('✓ Import successful!'))
             self.stdout.write('')
             self.stdout.write('Statistics:')

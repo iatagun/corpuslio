@@ -40,6 +40,46 @@ class DocumentAdmin(admin.ModelAdmin):
         return obj.get_word_count()
     get_word_count.short_description = 'Kelime Sayısı'
 
+    def save_model(self, request, obj, form, change):
+        """Trigger corpus import when a new document is added via Admin."""
+        super().save_model(request, obj, form, change)
+        
+        # Only trigger import if it's a new document or file changed, and not yet processed
+        if not change and obj.file and not obj.processed:
+            try:
+                from django.core.management import call_command
+                import os
+                
+                # Determine format from extension if not set
+                if not obj.format:
+                    ext = os.path.splitext(obj.file.name)[1].lower()
+                    if ext in ['.vrt', '.xml']:
+                        obj.format = 'VRT'
+                    elif ext in ['.conllu', '.conll']:
+                        obj.format = 'CONLLU'
+                    obj.save()
+                
+                # Run import command
+                # We use the file path directly from storage
+                call_command(
+                    'import_corpus',
+                    obj.file.path,
+                    title=obj.filename,
+                    author=obj.author or '',
+                    genre=obj.genre or 'other',
+                    user=request.user.username,
+                    format='vrt' if obj.format == 'VRT' else 'conllu',
+                    validate=False # Admin users might upload trusted files
+                )
+                
+                # Refresh from db to get processed status if updated by command
+                obj.refresh_from_db()
+                if obj.processed:
+                    self.message_user(request, f"Document '{obj.filename}' successfully imported and processed.", level='SUCCESS')
+                
+            except Exception as e:
+                self.message_user(request, f"Error importing document: {str(e)}", level='ERROR')
+
 
 @admin.register(Content)
 class ContentAdmin(admin.ModelAdmin):
