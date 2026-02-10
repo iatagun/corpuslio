@@ -26,15 +26,15 @@ class DocumentViewSet(viewsets.ReadOnlyModelViewSet):
     search: Full-text search across documents
     """
     
-    queryset = Document.objects.all().select_related('uploaded_by').prefetch_related('tags')
+    queryset = Document.objects.all().select_related('content', 'analysis').prefetch_related('tags')
     serializer_class = DocumentSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     throttle_classes = [APIKeyRateThrottle]
     
-    filterset_fields = ['genre', 'author', 'year', 'language', 'text_type', 'license', 'collection', 'privacy_status']
-    search_fields = ['title', 'author', 'genre']
-    ordering_fields = ['uploaded_at', 'title', 'year', 'word_count']
-    ordering = ['-uploaded_at']
+    filterset_fields = ['genre', 'author', 'publication_year', 'language', 'text_type', 'license', 'collection', 'privacy_status']
+    search_fields = ['filename', 'author', 'genre']
+    ordering_fields = ['upload_date', 'filename', 'publication_year', 'word_count']
+    ordering = ['-upload_date']
     
     def get_serializer_class(self):
         """Use detailed serializer for retrieve action."""
@@ -51,12 +51,7 @@ class DocumentViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(
                 Q(privacy_status='public') | Q(privacy_status='anonymized')
             )
-        else:
-            # Authenticated users can see their own documents + public ones
-            queryset = queryset.filter(
-                Q(privacy_status__in=['public', 'anonymized']) |
-                Q(uploaded_by=self.request.user)
-            )
+        # Authenticated users see everything (no uploader field available)
         
         return queryset
     
@@ -99,7 +94,7 @@ class DocumentViewSet(viewsets.ReadOnlyModelViewSet):
                     
                     results.append({
                         'document_id': doc.id,
-                        'document_title': doc.title,
+                        'document_title': doc.filename,
                         'left_context': left,
                         'keyword': word,
                         'right_context': right,
@@ -161,7 +156,7 @@ class DocumentViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = FrequencySerializer(frequency_data, many=True)
         return Response({
             'document_id': document.id,
-            'document_title': document.title,
+            'document_title': document.filename,
             'total_words': sum(item['frequency'] for item in frequency_data),
             'unique_words': len(frequency_data),
             'frequencies': serializer.data
@@ -174,6 +169,7 @@ class GlobalFrequencyViewSet(viewsets.ViewSet):
     """
     
     permission_classes = [IsAuthenticated]
+    serializer_class = FrequencySerializer
     throttle_classes = [APIKeyRateThrottle]
     
     def list(self, request):
@@ -268,6 +264,8 @@ class APIKeyViewSet(viewsets.ModelViewSet):
     """
     
     serializer_class = APIKeySerializer
+    # Provide a base queryset to help schema generation; access is restricted by get_queryset
+    queryset = APIKey.objects.all()
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):

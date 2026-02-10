@@ -3,12 +3,13 @@
 from rest_framework import serializers
 from corpus.models import Document, UserProfile, Tag
 from .models import APIKey
+from drf_spectacular.utils import extend_schema_field, OpenApiTypes
 
 
 class DocumentSerializer(serializers.ModelSerializer):
     """Serializer for Document model."""
     
-    uploaded_by = serializers.StringRelatedField()
+    # `uploaded_by` was removed from Document model; expose filename instead
     word_count = serializers.IntegerField(source='get_word_count', read_only=True)
     tags = serializers.StringRelatedField(many=True, read_only=True)
     privacy_status_display = serializers.CharField(source='get_privacy_status_display', read_only=True)
@@ -18,15 +19,15 @@ class DocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
         fields = [
-            'id', 'title', 'author', 'genre', 'uploaded_by', 'uploaded_at',
-            'word_count', 'tags', 'year', 'language',
+            'id', 'filename', 'author', 'genre', 'upload_date',
+            'word_count', 'tags', 'publication_year', 'language',
             # Week 5: Corpus metadata
             'text_type', 'text_type_display', 'license', 'license_display',
             'region', 'collection', 'token_count', 'document_date',
             # Week 6: Privacy
             'privacy_status', 'privacy_status_display', 'contains_personal_data',
             # CoNLL-U
-            'has_dependency_parse',
+            # expose whether analysis has dependencies via related Analysis model (in detail serializer)
         ]
         read_only_fields = ['id', 'uploaded_at', 'word_count', 'token_count']
 
@@ -38,9 +39,10 @@ class DocumentDetailSerializer(DocumentSerializer):
     cleaned_text = serializers.SerializerMethodField()
     
     class Meta(DocumentSerializer.Meta):
-        fields = DocumentSerializer.Meta.fields + ['raw_text', 'cleaned_text']
+        fields = DocumentSerializer.Meta.fields + ['raw_text', 'cleaned_text', 'has_dependencies']
     
-    def get_raw_text(self, obj):
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_raw_text(self, obj) -> str:
         """Get raw text if user has permission."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
@@ -48,13 +50,20 @@ class DocumentDetailSerializer(DocumentSerializer):
                 return obj.content.raw_text[:1000]  # Limit to 1000 chars in API
         return None
     
-    def get_cleaned_text(self, obj):
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_cleaned_text(self, obj) -> str:
         """Get cleaned text if user has permission."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             if hasattr(obj, 'content') and obj.content:
                 return obj.content.cleaned_text[:1000]  # Limit to 1000 chars
         return None
+
+    has_dependencies = serializers.SerializerMethodField()
+
+    @extend_schema_field(OpenApiTypes.BOOL)
+    def get_has_dependencies(self, obj) -> bool:
+        return bool(getattr(getattr(obj, 'analysis', None), 'has_dependencies', False))
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -108,7 +117,8 @@ class APIKeySerializer(serializers.ModelSerializer):
             'key': {'write_only': False}  # Show key only on creation
         }
     
-    def get_remaining_quota(self, obj):
+    @extend_schema_field(OpenApiTypes.STR)
+    def get_remaining_quota(self, obj) -> str:
         """Calculate remaining quota for today."""
         limit = obj.get_daily_limit()
         if limit == float('inf'):
