@@ -121,7 +121,7 @@
                     </div>
                     {% endif %}
                     <p style="color: var(--muted-color); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 0;">
-                        Sıfırlanma: Yarın 00:00
+                        Sıfırlanma: {% if query_reset_is_tomorrow %}Yarın 00:00{% else %}{{ query_reset|date:"d F Y" }} 00:00{% endif %}
                     </p>
                 </div>
 

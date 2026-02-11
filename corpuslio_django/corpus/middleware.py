@@ -44,15 +44,16 @@ class QueryLogMiddleware(MiddlewareMixin):
             logger.info(f"[QueryLogMiddleware] Skipping export/download path: {path}")
             return response
         
+        # Accept paths even when a language prefix is present (e.g. '/tr/search/')
         loggable_paths = [
             '/analysis/',
             '/library/',
             '/search/',
             '/api/search/',
         ]
-        
-        if not any(path.startswith(p) for p in loggable_paths):
-            logger.info(f"[QueryLogMiddleware] Path not in loggable_paths: {path}")
+
+        if not any(p in path for p in loggable_paths):
+            logger.info(f"[QueryLogMiddleware] Path not in loggable_paths (no match): {path}")
             return response
         
         logger.info(f"[QueryLogMiddleware] Path matched: {path}, Method: {request.method}")

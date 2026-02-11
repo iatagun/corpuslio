@@ -595,6 +595,15 @@ def profile_view(request):
     
     export_percentage = (profile.export_used_mb / profile.export_quota_mb * 100) if profile.export_quota_mb > 0 else 0
     
+    # Compute next query reset date and helper flag for display
+    from datetime import date, timedelta
+    today = date.today()
+    try:
+        next_reset_date = profile.query_last_reset + timedelta(days=1)
+    except Exception:
+        next_reset_date = today
+    query_reset_is_tomorrow = (next_reset_date == today + timedelta(days=1))
+
     # Get recent search history (old model)
     recent_searches = request.user.search_history.order_by('-created_at')[:10]
     
@@ -609,6 +618,8 @@ def profile_view(request):
         'profile': profile,
         'query_limit': query_limit,
         'query_percentage': query_percentage,
+        'query_reset': next_reset_date,
+        'query_reset_is_tomorrow': query_reset_is_tomorrow,
         'export_percentage': export_percentage,
         'recent_searches': recent_searches,
         'recent_query_logs': recent_query_logs,
@@ -663,8 +674,8 @@ def global_search_view(request):
 
             matching_docs = []
             for doc in documents_qs:
-                # Check title
-                if doc.title and pattern.search(doc.title):
+                # Check filename
+                if doc.filename and pattern.search(doc.filename):
                     matching_docs.append(doc)
                     continue
 
@@ -700,13 +711,13 @@ def global_search_view(request):
         try:
             from django.contrib.postgres.search import TrigramSimilarity
             documents = Document.objects.annotate(
-                similarity=TrigramSimilarity('title', query) + TrigramSimilarity('author', query)
+                similarity=TrigramSimilarity('filename', query) + TrigramSimilarity('author', query)
             ).filter(similarity__gt=0.1).order_by('-similarity')[:10]
         except:
             # Fallback to basic search if PostgreSQL not available
             from django.db.models import Q
             documents = Document.objects.filter(
-                Q(title__icontains=query) |
+                Q(filename__icontains=query) |
                 Q(author__icontains=query) |
                 Q(content__cleaned_text__icontains=query) |
                 Q(metadata__author__icontains=query) |
@@ -718,7 +729,7 @@ def global_search_view(request):
         # Basic search across title, author, content and common metadata
         from django.db.models import Q
         documents = Document.objects.filter(
-            Q(title__icontains=query) |
+            Q(filename__icontains=query) |
             Q(author__icontains=query) |
             Q(content__cleaned_text__icontains=query) |
             Q(metadata__author__icontains=query) |
@@ -734,7 +745,7 @@ def global_search_view(request):
         
         results.append({
             'type': 'document',
-            'title': doc.title,
+            'title': doc.filename,
             'url': f'/corpus/library/?doc={doc.id}',
             'metadata': ' • '.join(metadata_parts),
             'badge': f'{doc.get_word_count()} kelime' if doc.processed else 'İşleniyor',
