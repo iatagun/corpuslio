@@ -10,7 +10,7 @@ from .models import Document
 @login_required
 def collections_view(request):
     """List all collections."""
-    collections = Collection.objects.all()
+    collections = Collection.objects.filter(owner=request.user)
     
     context = {
         'collections': collections,
@@ -22,7 +22,7 @@ def collections_view(request):
 @login_required
 def collection_detail_view(request, coll_id):
     """View collection details."""
-    collection = get_object_or_404(Collection, id=coll_id)
+    collection = get_object_or_404(Collection, id=coll_id, owner=request.user)
     
     context = {
         'collection': collection,
@@ -45,6 +45,9 @@ def create_collection_view(request):
                 name=name,
                 description=description
             )
+            # assign ownership to the creating user
+            collection.owner = request.user
+            collection.save()
             
             if doc_ids:
                 collection.documents.set(Document.objects.filter(id__in=doc_ids))

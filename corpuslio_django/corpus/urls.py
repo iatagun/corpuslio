@@ -21,11 +21,17 @@ urlpatterns = [
     path('register/', views.register_view, name='register'),
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
+    path('profile/login-history/', views.login_history_view, name='login_history'),  # Task 11.15
     
     # Email Verification (Task 11.6)
     path('auth/verification-sent/', views.email_verification_sent_view, name='verification_sent'),
     path('auth/verify-email/<str:token>/', views.email_verify_view, name='verify_email'),
     path('auth/resend-verification/', views.resend_verification_view, name='resend_verification'),
+    
+    # Password Reset (Task 11.12)
+    path('auth/password-reset/', views.password_reset_request_view, name='password_reset_request'),
+    path('auth/password-reset-sent/', views.password_reset_sent_view, name='password_reset_sent'),
+    path('auth/reset/<str:token>/', views.password_reset_confirm_view, name='password_reset_confirm'),
     
     # Global search (AJAX endpoint)
     path('search/', views.global_search_view, name='global_search'),

@@ -544,13 +544,37 @@
 
 ### Phase 3: Advanced Features (Future)
 
-#### [ ] Task 11.12: Password Reset Flow
-- [ ] "Forgot password?" link
-- [ ] Password reset email
-- [ ] Secure token generation
-- [ ] Password reset form
-- [ ] Password change confirmation
-- **Tahmini süre:** 3-4 saat
+#### [x] Task 11.12: Password Reset Flow ✅ TAMAMLANDI
+**Dosya:** `corpus/models.py`, `corpus/views.py`, `corpus/utils.py`, `corpus/urls.py`, `templates/`
+- [x] Model enhancements:
+  - [x] `password_reset_token` field ekle (CharField, max_length=64, unique=True, null=True)
+  - [x] `password_reset_sent_at` field ekle (DateTimeField, null=True)
+  - [x] `password_reset_expires_at` field ekle (DateTimeField, null=True - 1 saat)
+  - [x] `generate_password_reset_token()` method (UUID4, 1 saat expiration)
+  - [x] `is_reset_token_valid()` method
+  - [x] `clear_reset_token()` method
+- [x] Migration oluştur ve çalıştır (Migration 0017)
+- [x] Utility functions (`corpus/utils.py`):
+  - [x] `send_password_reset_email(user, request)` - Email gönderimi
+  - [x] `verify_password_reset_token(token)` - Token validation
+- [x] Email templates:
+  - [x] `password_reset_email.html` - Modern responsive email (pink/red gradient)
+  - [x] `password_reset_email.txt` - Plain text fallback
+- [x] Views (`corpus/views.py`):
+  - [x] `password_reset_request_view()` - Email input form + rate limiting (5/h)
+  - [x] `password_reset_sent_view()` - Confirmation page
+  - [x] `password_reset_confirm_view(token)` - New password form + validation
+- [x] URL patterns (`corpus/urls.py`):
+  - [x] `/auth/password-reset/` → password_reset_request
+  - [x] `/auth/password-reset-sent/` → password_reset_sent
+  - [x] `/auth/reset/<token>/` → password_reset_confirm
+- [x] Frontend templates (auth-page design):
+  - [x] `password_reset_request.html` - Email input form
+  - [x] `password_reset_sent.html` - Confirmation with security tips
+  - [x] `password_reset_confirm.html` - New password form with strength meter
+- [x] Login page integration:
+  - [x] "Şifremi Unuttum" button linked to password reset
+- **Gerçek süre:** 2 saat
 
 #### [ ] Task 11.13: Two-Factor Authentication (2FA)
 - [ ] TOTP (Google Authenticator)

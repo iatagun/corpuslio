@@ -333,6 +333,11 @@ button,
     transform: rotate(180deg);
 }
 
+/* Arrow rotation when dropdown is explicitly opened */
+.profile-dropdown.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
 /* Dropdown Menu */
 .dropdown-menu {
     position: absolute;

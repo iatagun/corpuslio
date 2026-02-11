@@ -147,7 +147,7 @@
                 <div class="profile-section">
                     {% if user.is_authenticated %}
                     {% load auth_extras %}
-                    <div class="profile-dropdown" onclick="toggleDropdown()">
+                    <div class="profile-dropdown" onclick="window.toggleDropdown(event)">
                         <div class="profile-avatar">
                             <span class="material-icons" style="font-size: 18px;">person</span>
                         </div>
@@ -163,6 +163,10 @@
                         <a href="{% url 'corpus:profile' %}" class="dropdown-item">
                             <span class="material-icons">account_circle</span>
                             <span>Profil</span>
+                        </a>
+                        <a href="{% url 'corpus:login_history' %}" class="dropdown-item">
+                            <span class="material-icons">shield</span>
+                            <span>Giriş Geçmişi</span>
                         </a>
                         {% if user.is_staff %}
                         <a href="/admin/" class="dropdown-item" target="_blank">
@@ -446,18 +450,27 @@
             menu.classList.toggle('show');
         }
 
-        // Profile Dropdown
-        function toggleDropdown() {
-            const dropdown = document.getElementById('profileDropdown');
-            dropdown.classList.toggle('show');
-        }
+        // Profile Dropdown - make it globally accessible
+        window.toggleDropdown = function(event) {
+            // If invoked by click handler, prevent the document listener from immediately closing it
+            if (event) event.stopPropagation();
 
-        // Close dropdowns when clicking outside
-        window.onclick = function (event) {
+            const dropdown = document.getElementById('profileDropdown');
+            const pill = document.querySelector('.profile-dropdown');
+            if (dropdown) dropdown.classList.toggle('show');
+            if (pill) pill.classList.toggle('open');
+        };
+
+        // Close dropdowns when clicking outside (use event listener to avoid overwrite)
+        document.addEventListener('click', function (event) {
             if (!event.target.closest('.profile-dropdown')) {
                 const dropdown = document.getElementById('profileDropdown');
+                const pill = document.querySelector('.profile-dropdown');
                 if (dropdown && dropdown.classList.contains('show')) {
                     dropdown.classList.remove('show');
+                }
+                if (pill && pill.classList.contains('open')) {
+                    pill.classList.remove('open');
                 }
             }
             if (!event.target.closest('.theme-switcher')) {
@@ -472,7 +485,7 @@
                     languageMenu.classList.remove('show');
                 }
             }
-        }
+        });
 
         // Auto-dismiss alerts after 5 seconds
         document.addEventListener('DOMContentLoaded', function () {

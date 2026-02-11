@@ -187,6 +187,27 @@ class UserProfile(models.Model):
         help_text="5 başarısız denemeden sonra 30 dakika kilitlenir"
     )
     
+    # Password reset (Task 11.12)
+    password_reset_token = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        unique=True,
+        verbose_name="Şifre Sıfırlama Token",
+        help_text="Şifre sıfırlama için benzersiz token"
+    )
+    password_reset_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Sıfırlama Emaili Gönderilme Zamanı"
+    )
+    password_reset_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Reset Token Geçerlilik Süresi",
+        help_text="Token 1 saat geçerlidir"
+    )
+    
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Kayıt Tarihi")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Güncellenme")
@@ -368,6 +389,39 @@ class UserProfile(models.Model):
         self.last_failed_login = None
         self.account_locked_until = None
         self.save(update_fields=['failed_login_attempts', 'last_failed_login', 'account_locked_until'])
+    
+    # Password Reset Methods (Task 11.12)
+    def generate_password_reset_token(self):
+        """Generate a unique password reset token with 1-hour expiration."""
+        import uuid
+        from datetime import timedelta
+        
+        self.password_reset_token = uuid.uuid4().hex
+        self.password_reset_sent_at = timezone.now()
+        self.password_reset_expires_at = timezone.now() + timedelta(hours=1)
+        self.save(update_fields=['password_reset_token', 'password_reset_sent_at', 'password_reset_expires_at'])
+        return self.password_reset_token
+    
+    def is_reset_token_valid(self):
+        """Check if password reset token is valid (exists and not expired)."""
+        if not self.password_reset_token:
+            return False
+        
+        if not self.password_reset_expires_at:
+            return False
+        
+        # Check if token expired (1 hour)
+        if timezone.now() > self.password_reset_expires_at:
+            return False
+        
+        return True
+    
+    def clear_reset_token(self):
+        """Clear password reset token after successful reset or expiration."""
+        self.password_reset_token = None
+        self.password_reset_sent_at = None
+        self.password_reset_expires_at = None
+        self.save(update_fields=['password_reset_token', 'password_reset_sent_at', 'password_reset_expires_at'])
 
     def get_export_quota_mb(self):
         """Return the user's monthly export quota in MB.
@@ -417,6 +471,136 @@ def save_user_profile(sender, instance, **kwargs):
     """Save profile when user is saved."""
     if hasattr(instance, 'profile'):
         instance.profile.save()
+
+
+class LoginHistory(models.Model):
+    """Track user login attempts for security monitoring (Task 11.15)."""
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='login_history',
+        null=True,
+        blank=True,
+        verbose_name="Kullanıcı",
+        help_text="Null ise başarısız login attempt (user bulunamadı)"
+    )
+    
+    username_attempted = models.CharField(
+        max_length=150,
+        verbose_name="Denenen Kullanıcı Adı",
+        help_text="Girilen username/email"
+    )
+    
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Giriş Zamanı",
+        db_index=True
+    )
+    
+    ip_address = models.GenericIPAddressField(
+        verbose_name="IP Adresi"
+    )
+    
+    user_agent = models.TextField(
+        blank=True,
+        verbose_name="User Agent",
+        help_text="Browser/device bilgisi"
+    )
+    
+    success = models.BooleanField(
+        default=True,
+        verbose_name="Başarılı mı?",
+        db_index=True
+    )
+    
+    failure_reason = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Başarısızlık Nedeni",
+        help_text="Örn: invalid_credentials, account_locked, email_not_verified"
+    )
+    
+    session_key = models.CharField(
+        max_length=40,
+        blank=True,
+        verbose_name="Session Key",
+        help_text="Django session key (başarılı login için)"
+    )
+    
+    is_suspicious = models.BooleanField(
+        default=False,
+        verbose_name="Şüpheli Aktivite",
+        db_index=True,
+        help_text="Otomatik tespit edilen şüpheli aktivite"
+    )
+    
+    # Device/Browser info (parsed from user_agent)
+    device_type = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="Cihaz Tipi",
+        help_text="Desktop, Mobile, Tablet, Bot"
+    )
+    
+    browser = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Tarayıcı"
+    )
+    
+    os = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="İşletim Sistemi"
+    )
+    
+    # Location (optional, from IP geolocation)
+    location_city = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Şehir"
+    )
+    
+    location_country = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Ülke"
+    )
+    
+    class Meta:
+        verbose_name = "Login Geçmişi"
+        verbose_name_plural = "Login Geçmişi Kayıtları"
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['-timestamp', 'user']),
+            models.Index(fields=['ip_address', '-timestamp']),
+            models.Index(fields=['is_suspicious', '-timestamp']),
+        ]
+    
+    def __str__(self):
+        status = "✓ Başarılı" if self.success else "✗ Başarısız"
+        username = self.user.username if self.user else self.username_attempted
+        return f"{username} - {status} - {self.timestamp.strftime('%d.%m.%Y %H:%M')}"
+    
+    def get_device_info(self):
+        """Return formatted device info string."""
+        parts = []
+        if self.device_type:
+            parts.append(self.device_type)
+        if self.browser:
+            parts.append(self.browser)
+        if self.os:
+            parts.append(self.os)
+        return " • ".join(parts) if parts else "Bilinmiyor"
+    
+    def get_location(self):
+        """Return formatted location string."""
+        if self.location_city and self.location_country:
+            return f"{self.location_city}, {self.location_country}"
+        elif self.location_country:
+            return self.location_country
+        return "Bilinmiyor"
 
 
 class Tag(models.Model):

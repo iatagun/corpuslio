@@ -16,7 +16,7 @@ from .models import Document, ProcessingTask, Analysis, Tag, Content, CorpusMeta
 from .services import CorpusService
 from .services import CorpusService
 from .collections import Collection
-from .utils import check_password_strength, send_verification_email
+from .utils import check_password_strength, send_verification_email, log_login_attempt
 import os
 from django.contrib.auth.decorators import user_passes_test, login_required
 
@@ -61,7 +61,9 @@ def home_view(request):
     # Recent corpus uploads
     recent_corpora = CorpusMetadata.objects.select_related('document').all().order_by('-imported_at')[:4]
     
-    total_collections = Collection.objects.count()
+    total_collections = 0
+    if request.user.is_authenticated:
+        total_collections = Collection.objects.filter(owner=request.user).count()
     
     # Popular tags (top 10 by document count)
     from django.db.models import Count
@@ -480,12 +482,31 @@ def login_view(request):
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
         
+        # If user entered an email instead of username, resolve it to username
+        resolved_username = username
+        if '@' in username:
+            try:
+                u = User.objects.get(email__iexact=username)
+                resolved_username = u.username
+            except User.DoesNotExist:
+                # keep resolved_username as entered (will fail authentication)
+                resolved_username = username
+
         # Try to authenticate
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(request, username=resolved_username, password=password)
         
         if user is not None:
             # Check if email is verified (Task 11.9)
             if not user.profile.email_verified:
+                # Log failed login (email not verified)
+                log_login_attempt(
+                    request=request,
+                    user=user,
+                    username_attempted=username,
+                    success=False,
+                    failure_reason='email_not_verified'
+                )
+                
                 messages.error(
                     request,
                     '✉️ Email adresiniz henüz doğrulanmamış. '
@@ -509,6 +530,15 @@ def login_view(request):
                 lock_until = user.profile.account_locked_until
                 remaining_minutes = int((lock_until - datetime.now(lock_until.tzinfo)).total_seconds() / 60)
                 
+                # Log failed login (account locked)
+                log_login_attempt(
+                    request=request,
+                    user=user,
+                    username_attempted=username,
+                    success=False,
+                    failure_reason='account_locked'
+                )
+                
                 messages.error(
                     request,
                     f'🔒 Hesabınız çok fazla başarısız giriş denemesi nedeniyle kilitlendi. '
@@ -520,6 +550,15 @@ def login_view(request):
             user.profile.reset_failed_login_attempts()
             
             login(request, user)
+            
+            # Log successful login attempt (Task 11.15)
+            log_login_attempt(
+                request=request,
+                user=user,
+                username_attempted=username,
+                success=True,
+                session_key=request.session.session_key
+            )
             
             # Get user role for personalized message
             role = "Süper Kullanıcı" if user.is_superuser else (
@@ -538,8 +577,18 @@ def login_view(request):
             # Failed login - record attempt (Task 11.9)
             # Try to find user by username to track failed attempts
             try:
-                failed_user = User.objects.get(username=username)
+                # Try resolved_username first (handles email input)
+                failed_user = User.objects.get(username=resolved_username)
                 failed_user.profile.record_failed_login()
+                
+                # Log failed login attempt (invalid credentials)
+                log_login_attempt(
+                    request=request,
+                    user=failed_user,
+                    username_attempted=username,
+                    success=False,
+                    failure_reason='invalid_credentials'
+                )
                 
                 # Check if account just got locked
                 if failed_user.profile.is_account_locked():
@@ -560,6 +609,14 @@ def login_view(request):
                         messages.error(request, '❌ Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.')
             except User.DoesNotExist:
                 # User not found - don't reveal this info
+                # Log failed login attempt (user not found)
+                log_login_attempt(
+                    request=request,
+                    user=None,
+                    username_attempted=username,
+                    success=False,
+                    failure_reason='user_not_found'
+                )
                 messages.error(request, '❌ Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.')
     
     return render(request, 'corpus/login.html')
@@ -805,6 +862,157 @@ def resend_verification_view(request):
     return redirect('corpus:verification_sent')
 
 
+@ratelimit(key='ip', rate='5/h', method='POST')
+def password_reset_request_view(request):
+    """Request password reset - send email with reset link (Task 11.12)."""
+    if request.user.is_authenticated:
+        # Already logged in users should use change password
+        messages.info(request, 'Zaten giriş yapmışsınız. Şifrenizi profil ayarlarından değiştirebilirsiniz.')
+        return redirect('corpus:profile')
+    
+    if request.method == 'POST':
+        # Check rate limit
+        was_limited = getattr(request, 'limited', False)
+        if was_limited:
+            messages.error(
+                request,
+                '⏱️ Çok fazla şifre sıfırlama denemesi yaptınız. '
+                'Lütfen 1 saat sonra tekrar deneyin.'
+            )
+            return render(request, 'corpus/password_reset_request.html')
+        
+        email = request.POST.get('email', '').strip()
+        
+        if not email:
+            messages.error(request, 'Lütfen email adresinizi girin.')
+            return render(request, 'corpus/password_reset_request.html')
+        
+        try:
+            # Find user by email
+            user = User.objects.get(email=email)
+            
+            # Send password reset email
+            from .utils import send_password_reset_email
+            success, error_msg = send_password_reset_email(user, request)
+            
+            if success:
+                # Always show success message for security (don't reveal if email exists)
+                messages.success(
+                    request,
+                    f'✅ Eğer {email} adresi sistemimizde kayıtlıysa, şifre sıfırlama linki gönderildi. '
+                    'Lütfen email kutunuzu kontrol edin.'
+                )
+                return redirect('corpus:password_reset_sent')
+            else:
+                messages.error(
+                    request,
+                    f'❌ Email gönderilemedi. Lütfen daha sonra tekrar deneyin.'
+                )
+        
+        except User.DoesNotExist:
+            # Don't reveal that user doesn't exist (security best practice)
+            messages.success(
+                request,
+                f'✅ Eğer {email} adresi sistemimizde kayıtlıysa, şifre sıfırlama linki gönderildi. '
+                'Lütfen email kutunuzu kontrol edin.'
+            )
+            return redirect('corpus:password_reset_sent')
+        
+        except Exception as e:
+            messages.error(request, f'❌ Bir hata oluştu: {str(e)}')
+            return render(request, 'corpus/password_reset_request.html')
+    
+    return render(request, 'corpus/password_reset_request.html')
+
+
+def password_reset_sent_view(request):
+    """Show confirmation that reset email was sent (Task 11.12)."""
+    return render(request, 'corpus/password_reset_sent.html')
+
+
+def password_reset_confirm_view(request, token):
+    """Confirm password reset with token and set new password (Task 11.12)."""
+    from .utils import verify_password_reset_token, check_password_strength
+    
+    # Verify token first
+    success, message, user = verify_password_reset_token(token)
+    
+    if not success or not user:
+        messages.error(request, message)
+        context = {
+            'success': False,
+            'message': message,
+            'token': None,
+        }
+        return render(request, 'corpus/password_reset_confirm.html', context)
+    
+    if request.method == 'POST':
+        password1 = request.POST.get('password1', '')
+        password2 = request.POST.get('password2', '')
+        
+        # Check if passwords match
+        if password1 != password2:
+            messages.error(request, '❌ Şifreler eşleşmiyor. Lütfen aynı şifreyi iki kez girin.')
+            context = {
+                'success': True,
+                'token': token,
+                'user': user,
+            }
+            return render(request, 'corpus/password_reset_confirm.html', context)
+        
+        # Check password strength
+        is_valid, errors = check_password_strength(password1)
+        if not is_valid:
+            for error in errors:
+                messages.error(request, f'🔑 {error}')
+            context = {
+                'success': True,
+                'token': token,
+                'user': user,
+            }
+            return render(request, 'corpus/password_reset_confirm.html', context)
+        
+        # Set new password
+        try:
+            user.set_password(password1)
+            user.save()
+            
+            # Clear reset token
+            user.profile.clear_reset_token()
+            
+            # Reset failed login attempts (if any)
+            user.profile.reset_failed_login_attempts()
+            
+            # Mark email as verified (user proved email ownership via reset link)
+            if not user.profile.email_verified:
+                user.profile.mark_email_verified()
+            
+            messages.success(
+                request,
+                '✅ Şifreniz başarıyla değiştirildi! Artık yeni şifrenizle giriş yapabilirsiniz.'
+            )
+            
+            # Redirect to login
+            return redirect('corpus:login')
+            
+        except Exception as e:
+            messages.error(request, f'❌ Şifre değiştirme sırasında bir hata oluştu: {str(e)}')
+            context = {
+                'success': True,
+                'token': token,
+                'user': user,
+            }
+            return render(request, 'corpus/password_reset_confirm.html', context)
+    
+    # GET request - show password reset form
+    context = {
+        'success': True,
+        'token': token,
+        'user': user,
+    }
+    return render(request, 'corpus/password_reset_confirm.html', context)
+
+
 def logout_view(request):
     """User logout view."""
     # Safely get user display name — AnonymousUser may not have get_full_name
@@ -879,6 +1087,49 @@ def profile_view(request):
     
     return render(request, 'corpus/profile.html', context)
 
+
+@login_required
+def login_history_view(request):
+    """Display user's login history for security monitoring (Task 11.15)."""
+    from .models import LoginHistory
+    from django.core.paginator import Paginator
+    
+    # Get user's login history
+    history = LoginHistory.objects.filter(user=request.user).order_by('-timestamp')
+    
+    # Pagination
+    paginator = Paginator(history, 20)  # 20 entries per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Statistics
+    total_logins = history.filter(success=True).count()
+    failed_attempts = history.filter(success=False).count()
+    suspicious_count = history.filter(is_suspicious=True).count()
+    
+    # Get unique devices/browsers
+    unique_devices = history.values('device_type', 'browser', 'os').distinct().count()
+    
+    # Recent locations (last 10 unique IPs)
+    recent_ips = history.values_list('ip_address', flat=True).distinct()[:10]
+    
+    # Last successful login (excluding current session)
+    last_login = history.filter(success=True).exclude(
+        session_key=request.session.session_key
+    ).first()
+    
+    context = {
+        'active_tab': 'profile',
+        'page_obj': page_obj,
+        'total_logins': total_logins,
+        'failed_attempts': failed_attempts,
+        'suspicious_count': suspicious_count,
+        'unique_devices': unique_devices,
+        'last_login': last_login,
+        'recent_ips': recent_ips,
+    }
+    
+    return render(request, 'corpus/login_history.html', context)
 
 
 @login_required
@@ -1003,8 +1254,11 @@ def global_search_view(request):
             'badge_icon': 'article' if doc.processed else 'hourglass_empty'
         })
     
-    # Search in collections
-    collections = Collection.objects.filter(name__icontains=query)[:5]
+    # Search in collections (only user's collections)
+    if request.user.is_authenticated:
+        collections = Collection.objects.filter(owner=request.user, name__icontains=query)[:5]
+    else:
+        collections = Collection.objects.none()
     
     for coll in collections:
         doc_count = coll.get_document_count()

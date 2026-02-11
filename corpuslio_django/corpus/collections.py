@@ -1,6 +1,7 @@
 """Models for advanced corpus features."""
 
 from django.db import models
+from django.conf import settings
 from .models import Document
 
 
@@ -9,6 +10,14 @@ class Collection(models.Model):
     
     name = models.CharField(max_length=200, verbose_name="Koleksiyon Adı")
     description = models.TextField(blank=True, verbose_name="Açıklama")
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='collections',
+        null=True,
+        blank=True,
+        verbose_name="Sahip"
+    )
     documents = models.ManyToManyField(
         Document,
         related_name='collections',
