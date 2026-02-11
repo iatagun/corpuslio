@@ -1,0 +1,446 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Doğrulaması - CorpusLIO</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        .verification-content {
+            max-width: 550px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .email-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+        }
+        .email-icon span {
+            font-size: 50px;
+            color: white;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+        }
+        .verification-content h1 {
+            font-size: 24px;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .verification-content h1 .material-icons {
+            font-size: 32px;
+            color: #667eea;
+        }
+        .verification-content p {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        .email-highlight {
+            color: #667eea;
+            font-weight: 600;
+            word-break: break-word;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .info-box {
+            background: rgba(102, 126, 234, 0.05);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 24px 0;
+            text-align: left;
+        }
+        .info-box h3 {
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-box ul {
+            margin: 0;
+            padding-left: 20px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+        .info-box li {
+            margin-bottom: 6px;
+        }
+        .resend-section {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+        .resend-section p {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-bottom: 16px;
+        }
+        .btn-resend {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        .btn-resend:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .btn-resend:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .countdown {
+            font-size: 13px;
+            color: #667eea;
+            margin-top: 12px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card" style="max-width: 650px; margin: 0 auto;">
+            <div class="verification-content">
+                <div class="email-icon">
+                    <span class="material-icons">mark_email_read</span>
+                </div>
+
+                <h1>
+                    <span class="material-icons">check_circle</span>
+                    Email Doğrulaması Gönderildi!
+                </h1>
+
+                <p>
+                    <strong class="email-highlight">{{ email }}</strong> adresine bir doğrulama emaili gönderdik.
+                </p>
+
+                <p style="margin-top: 16px;">
+                    Hesabınızı aktif etmek için lütfen email kutunuzu kontrol edin ve
+                    <strong>doğrulama linkine tıklayın.</strong>
+                </p>
+
+                <div class="info-box">
+                    <h3><span class="material-icons">checklist</span> Yapmanız Gerekenler:</h3>
+                    <ul>
+                        <li>Email kutunuzu kontrol edin (Gelen Kutusu ve Spam klasörü)</li>
+                        <li>CorpusLIO'dan gelen doğrulama emailini bulun</li>
+                        <li>Email içindeki "Email Adresimi Doğrula" butonuna tıklayın</li>
+                        <li>Doğrulama tamamlandıktan sonra giriş yapabilirsiniz</li>
+                    </ul>
+                </div>
+
+                <div class="info-box" style="background: #fff3e0; border-color: #ff9800;">
+                    <p style="margin: 0; display: flex; align-items: flex-start; gap: 8px;">
+                        <span class="material-icons" style="color: #ff9800; font-size: 20px;">schedule</span>
+                        <span>
+                            <strong>Önemli:</strong> Doğrulama linki 24 saat geçerlidir.
+                            Süre dolduğunda yeni bir doğrulama emaili talep edebilirsiniz.
+                        </span>
+                    </p>
+                </div>
+
+                <div class="resend-section">
+                    <p>Email almadınız mı?</p>
+                    <form method="post" action="{% url 'corpus:resend_verification' %}" id="resendForm">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-resend" id="resendBtn">
+                            <span class="material-icons" style="vertical-align: middle; font-size: 18px; margin-right: 4px;">refresh</span>
+                            Doğrulama Emailini Tekrar Gönder
+                        </button>
+                        <div class="countdown" id="countdownText" style="display: none;">
+                            Yeni email göndermek için <strong id="countdown">60</strong> saniye beklemeniz gerekir.
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let countdown = 60;
+        let timer = null;
+        const resendBtn = document.getElementById('resendBtn');
+        const countdownEl = document.getElementById('countdown');
+        const countdownText = document.getElementById('countdownText');
+
+        function startCountdown() {
+            resendBtn.disabled = true;
+            countdownText.style.display = 'block';
+            
+            timer = setInterval(() => {
+                countdown--;
+                countdownEl.textContent = countdown;
+                
+                if (countdown <= 0) {
+                    clearInterval(timer);
+                    resendBtn.disabled = false;
+                    countdownText.style.display = 'none';
+                    countdown = 60;
+                }
+            }, 1000);
+        }
+
+        // Start countdown on page load
+        startCountdown();
+
+        document.getElementById('resendForm').addEventListener('submit', function(e) {
+            if (countdown > 0) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>
+    <style>
+        .verification-content {
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .email-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+        }
+        .email-icon span {
+            font-size: 50px;
+            color: white;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+        }
+        .verification-content h1 {
+            font-size: 24px;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+        .verification-content p {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        .email-highlight {
+            color: #667eea;
+            font-weight: 600;
+            word-break: break-word;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .info-box {
+            background: rgba(102, 126, 234, 0.05);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 24px 0;
+            text-align: left;
+        }
+        .info-box h3 {
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-box h3 .material-icons {
+            font-size: 18px;
+        }
+        .info-box ul {
+            margin: 0;
+            padding-left: 20px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+        .info-box li {
+            margin-bottom: 6px;
+        }
+        .resend-section {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+        .resend-section p {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-bottom: 16px;
+        }
+        .verification-content .btn-resend {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        .btn-resend:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+        .btn-resend:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .countdown {
+            font-size: 13px;
+            color: #999;
+            margin-top: 10px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .verification-card {
+                padding: 40px 30px;
+            }
+            .verification-card h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card" style="max-width: 600px; margin: 0 auto;">
+            <div class="verification-content">
+            <div class="email-icon">
+                <span class="material-icons">email</span>
+            </div>
+
+            <h1>📧 Email Adresinizi Kontrol Edin</h1>
+            
+            <p>
+                <strong class="email-highlight">{{ email }}</strong> adresine bir doğrulama linki gönderdik.
+            </p>
+            
+            <p>
+                Hesabınızı aktif hale getirmek için emailinizdeki linke tıklayın.
+            </p>
+
+            <div class="info-box">
+                <h3>💡 Emaili bulamıyor musunuz?</h3>
+                <ul>
+                    <li><strong>Spam/Gereksiz klasörünü</strong> kontrol edin</li>
+                    <li>Email gelene kadar <strong>2-3 dakika</strong> bekleyin</li>
+                    <li>Email adresinizi <strong>doğru yazdığınızdan</strong> emin olun</li>
+                    <li>Doğrulama linki <strong>24 saat</strong> geçerlidir</li>
+                </ul>
+            </div>
+
+            {% if messages %}
+            <div style="margin: 20px 0;">
+                {% for message in messages %}
+                    <div class="{% if message.tags == 'success' %}success-message{% else %}error-message{% endif %}"
+                         style="padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="resend-section">
+                <p>Email almadınız mı?</p>
+                <form method="post" action="{% url 'corpus:resend_verification' %}" id="resendForm">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-resend" id="resendBtn">
+                        <span class="material-icons" style="vertical-align: middle; margin-right: 5px; font-size: 18px;">refresh</span>
+                        Email'i Tekrar Gönder
+                    </button>
+                </form>
+                <div class="countdown" id="countdown"></div>
+            </div>
+
+            <a href="{% url 'corpus:login' %}" class="back-link">
+                ← Giriş sayfasına dön
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Resend button cooldown (60 seconds)
+        let cooldownSeconds = 60;
+        let cooldownTimer = null;
+        const resendBtn = document.getElementById('resendBtn');
+        const countdownDiv = document.getElementById('countdown');
+        const resendForm = document.getElementById('resendForm');
+
+        function startCooldown() {
+            resendBtn.disabled = true;
+            cooldownTimer = setInterval(() => {
+                cooldownSeconds--;
+                countdownDiv.textContent = `Tekrar göndermek için ${cooldownSeconds} saniye bekleyin...`;
+                
+                if (cooldownSeconds <= 0) {
+                    clearInterval(cooldownTimer);
+                    resendBtn.disabled = false;
+                    countdownDiv.textContent = '';
+                    cooldownSeconds = 60;
+                }
+            }, 1000);
+        }
+
+        resendForm.addEventListener('submit', function() {
+            if (!resendBtn.disabled) {
+                startCooldown();
+            }
+        });
+
+        // Auto-start countdown on page load
+        window.addEventListener('load', function() {
+            startCooldown();
+        });
+    </script>
+</body>
+</html>

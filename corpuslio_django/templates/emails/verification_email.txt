@@ -1,0 +1,33 @@
+========================================
+CorpusLIO - Email Doğrulama
+========================================
+
+Merhaba {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %},
+
+CorpusLIO'ya hoş geldiniz! Email adresinizi doğrulamak için aşağıdaki adımları izleyin.
+
+DOĞRULAMA LİNKİ:
+{{ verification_url }}
+
+Yukarıdaki linki tarayıcınıza kopyalayıp yapıştırın ve email adresinizi doğrulayın.
+
+⏰ ÖNEMLİ:
+- Bu doğrulama linki {{ expires_hours }} saat geçerlidir.
+- Süre dolduğunda yeni bir doğrulama emaili talep etmeniz gerekecektir.
+- Bu linki kimseyle paylaşmayın.
+
+⚠️ GÜVENLİK NOTU:
+Bu email'i beklemiyorsanız, lütfen dikkate almayın. 
+Hesap oluşturma işlemi tamamlanmayacaktır.
+
+========================================
+{{ site_name }}
+Modern Turkish Corpus Infrastructure
+API-First Corpus Serving
+========================================
+
+Yardım: Hesabınızla ilgili sorunlar için destek ekibimizle iletişime geçin.
+İletişim: support@corpuslio.com (örnek)
+
+Bu email otomatik olarak gönderilmiştir. Lütfen yanıtlamayın.
+© 2026 CorpusLIO. Tüm hakları saklıdır.

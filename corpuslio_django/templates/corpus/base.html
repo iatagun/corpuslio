@@ -318,6 +318,46 @@
     {% block extra_js %}{% endblock %}
 
     <script>
+        // CSRF Token Configuration for AJAX Requests (Task 11.11)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+
+        // Configure CSRF for all AJAX requests
+        if (typeof $ !== 'undefined') {
+            // jQuery AJAX setup
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                    }
+                }
+            });
+        }
+
+        // Fetch API CSRF setup (for modern JavaScript)
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options = {}) {
+            if (options.method && !/^(GET|HEAD|OPTIONS|TRACE)$/i.test(options.method)) {
+                options.headers = options.headers || {};
+                options.headers['X-CSRFToken'] = csrftoken;
+            }
+            return originalFetch(url, options);
+        };
+
         // Simple Toast Notification Function
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');

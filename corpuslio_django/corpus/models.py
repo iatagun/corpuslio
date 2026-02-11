@@ -144,6 +144,49 @@ class UserProfile(models.Model):
         verbose_name="Koşulların Kabul Tarihi"
     )
     
+    # Email verification (Task 11.1)
+    email_verified = models.BooleanField(
+        default=False,
+        verbose_name="Email Doğrulandı",
+        help_text="Kullanıcı email adresini doğruladı mı?"
+    )
+    email_verification_token = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        unique=True,
+        verbose_name="Email Doğrulama Token",
+        help_text="Email doğrulama için benzersiz token"
+    )
+    email_verification_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Doğrulama Emaili Gönderilme Zamanı"
+    )
+    email_token_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Token Geçerlilik Süresi",
+        help_text="Token 24 saat geçerlidir"
+    )
+    
+    # Login security (Task 11.9)
+    failed_login_attempts = models.IntegerField(
+        default=0,
+        verbose_name="Başarısız Giriş Denemeleri"
+    )
+    last_failed_login = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Son Başarısız Giriş"
+    )
+    account_locked_until = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Hesap Kilitli (Süre)",
+        help_text="5 başarısız denemeden sonra 30 dakika kilitlenir"
+    )
+    
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Kayıt Tarihi")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Güncellenme")
@@ -248,6 +291,83 @@ class UserProfile(models.Model):
             self.export_used_mb = Decimal('0.00')
             self.export_last_reset = today
             self.save(update_fields=['export_used_mb', 'export_last_reset'])
+    
+    # Email Verification Methods (Task 11.1)
+    def generate_verification_token(self):
+        """Generate a unique email verification token with 24-hour expiration."""
+        import uuid
+        from datetime import timedelta
+        
+        self.email_verification_token = uuid.uuid4().hex
+        self.email_verification_sent_at = timezone.now()
+        self.email_token_expires_at = timezone.now() + timedelta(hours=24)
+        self.save(update_fields=['email_verification_token', 'email_verification_sent_at', 'email_token_expires_at'])
+        return self.email_verification_token
+    
+    def is_email_token_valid(self):
+        """Check if email verification token is valid (exists and not expired)."""
+        if not self.email_verification_token:
+            return False
+        
+        if not self.email_token_expires_at:
+            return False
+        
+        # Check if token expired
+        if timezone.now() > self.email_token_expires_at:
+            return False
+        
+        return True
+    
+    def mark_email_verified(self):
+        """Mark email as verified and activate user account."""
+        self.email_verified = True
+        self.email_verification_token = None
+        self.email_verification_sent_at = None
+        self.email_token_expires_at = None
+        
+        # Activate user account
+        if not self.user.is_active:
+            self.user.is_active = True
+            self.user.save(update_fields=['is_active'])
+        
+        self.save(update_fields=['email_verified', 'email_verification_token', 
+                                 'email_verification_sent_at', 'email_token_expires_at'])
+    
+    # Login Security Methods (Task 11.9)
+    def is_account_locked(self):
+        """Check if account is currently locked due to failed login attempts."""
+        if not self.account_locked_until:
+            return False
+        
+        # Check if lock period has passed
+        if timezone.now() > self.account_locked_until:
+            # Unlock account
+            self.account_locked_until = None
+            self.failed_login_attempts = 0
+            self.save(update_fields=['account_locked_until', 'failed_login_attempts'])
+            return False
+        
+        return True
+    
+    def record_failed_login(self):
+        """Record a failed login attempt and lock account if threshold reached."""
+        from datetime import timedelta
+        
+        self.failed_login_attempts += 1
+        self.last_failed_login = timezone.now()
+        
+        # Lock account after 5 failed attempts for 30 minutes
+        if self.failed_login_attempts >= 5:
+            self.account_locked_until = timezone.now() + timedelta(minutes=30)
+        
+        self.save(update_fields=['failed_login_attempts', 'last_failed_login', 'account_locked_until'])
+    
+    def reset_failed_login_attempts(self):
+        """Reset failed login counter after successful login."""
+        self.failed_login_attempts = 0
+        self.last_failed_login = None
+        self.account_locked_until = None
+        self.save(update_fields=['failed_login_attempts', 'last_failed_login', 'account_locked_until'])
 
     def get_export_quota_mb(self):
         """Return the user's monthly export quota in MB.

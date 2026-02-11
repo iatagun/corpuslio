@@ -22,6 +22,11 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
     
+    # Email Verification (Task 11.6)
+    path('auth/verification-sent/', views.email_verification_sent_view, name='verification_sent'),
+    path('auth/verify-email/<str:token>/', views.email_verify_view, name='verify_email'),
+    path('auth/resend-verification/', views.resend_verification_view, name='resend_verification'),
+    
     # Global search (AJAX endpoint)
     path('search/', views.global_search_view, name='global_search'),
     path('suggest/', views.search_suggestions_view, name='search_suggest'),

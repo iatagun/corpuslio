@@ -35,6 +35,14 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# CSRF Settings (Task 11.11)
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = False  # JavaScript needs to read CSRF token
+
 
 # Application definition
 
@@ -61,6 +69,9 @@ INSTALLED_APPS = [
     'corpus',
     'api',
 ]
+
+# Site framework configuration
+SITE_ID = 1
 
 MIDDLEWARE = [
     # Security middleware (Week 10)
@@ -166,5 +177,30 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
 }
+
+# Email Configuration (Task 11.2)
+# =================================
+
+# Use environment variables for email backend configuration
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.sendgrid.net')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'apikey')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+
+# Email sender configuration
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'CorpusLIO <noreply@corpuslio.com>')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+# Email template configuration
+EMAIL_SUBJECT_PREFIX = '[CorpusLIO] '
+
+# Email timeout (prevent hanging)
+EMAIL_TIMEOUT = 10
+
+# Django Ratelimit Configuration (Task 11.10)
+RATELIMIT_VIEW = 'corpus.views.ratelimit_handler'
+RATELIMIT_ENABLE = os.getenv('RATELIMIT_ENABLE', 'False') == 'True'  # Enable in production via .env
 
 # (Remaining settings unchanged - project-local settings preserved)

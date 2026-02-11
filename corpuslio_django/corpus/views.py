@@ -16,6 +16,7 @@ from .models import Document, ProcessingTask, Analysis, Tag, Content, CorpusMeta
 from .services import CorpusService
 from .services import CorpusService
 from .collections import Collection
+from .utils import check_password_strength, send_verification_email
 import os
 from django.contrib.auth.decorators import user_passes_test, login_required
 
@@ -468,22 +469,61 @@ def task_status_view(request, task_id):
 
 
 # Authentication Views
+@ratelimit(key='ip', rate='20/m', method='POST', block=False)
+@ratelimit(key='post:username', rate='10/m', method='POST', block=False)
 def login_view(request):
-    """User login view."""
+    """User login view with email verification and security features (Task 11.9)."""
     if request.user.is_authenticated:
         return redirect('corpus:home')
     
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        
+        # Try to authenticate
         user = authenticate(request, username=username, password=password)
         
         if user is not None:
+            # Check if email is verified (Task 11.9)
+            if not user.profile.email_verified:
+                messages.error(
+                    request,
+                    '✉️ Email adresiniz henüz doğrulanmamış. '
+                    'Lütfen email adresinize gönderilen doğrulama linkine tıklayın.'
+                )
+                # Store email in session for resend option
+                request.session['pending_verification_email'] = user.email
+                
+                # Show resend link in message
+                messages.info(
+                    request,
+                    'Doğrulama emaili almadıysanız, '
+                    '<a href="/tr/auth/verification-sent/" style="color: #667eea; text-decoration: underline;">buraya tıklayarak</a> '
+                    'yeni bir doğrulama emaili isteyebilirsiniz.'
+                )
+                return render(request, 'corpus/login.html')
+            
+            # Check if account is locked (Task 11.9)
+            if user.profile.is_account_locked():
+                from datetime import datetime
+                lock_until = user.profile.account_locked_until
+                remaining_minutes = int((lock_until - datetime.now(lock_until.tzinfo)).total_seconds() / 60)
+                
+                messages.error(
+                    request,
+                    f'🔒 Hesabınız çok fazla başarısız giriş denemesi nedeniyle kilitlendi. '
+                    f'Lütfen {remaining_minutes} dakika sonra tekrar deneyin.'
+                )
+                return render(request, 'corpus/login.html')
+            
+            # Successful login - reset failed attempts
+            user.profile.reset_failed_login_attempts()
+            
             login(request, user)
             
             # Get user role for personalized message
             role = "Süper Kullanıcı" if user.is_superuser else (
-                user.groups.first().name if user.groups.exists() else "Kullanıcı"
+                user.profile.get_role_display() if hasattr(user, 'profile') else "Kullanıcı"
             )
             
             welcome_name = user.get_full_name() or user.username
@@ -495,61 +535,274 @@ def login_view(request):
             next_url = request.GET.get('next', 'corpus:home')
             return redirect(next_url)
         else:
-            messages.error(request, '❌ Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.')
+            # Failed login - record attempt (Task 11.9)
+            # Try to find user by username to track failed attempts
+            try:
+                failed_user = User.objects.get(username=username)
+                failed_user.profile.record_failed_login()
+                
+                # Check if account just got locked
+                if failed_user.profile.is_account_locked():
+                    messages.error(
+                        request,
+                        '🔒 Çok fazla başarısız giriş denemesi yaptınız. '
+                        'Hesabınız güvenlik nedeniyle 30 dakika süreyle kilitlendi.'
+                    )
+                else:
+                    remaining_attempts = 5 - failed_user.profile.failed_login_attempts
+                    if remaining_attempts <= 2:
+                        messages.error(
+                            request,
+                            f'❌ Kullanıcı adı veya şifre hatalı. '
+                            f'Kalan deneme hakkınız: {remaining_attempts}'
+                        )
+                    else:
+                        messages.error(request, '❌ Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.')
+            except User.DoesNotExist:
+                # User not found - don't reveal this info
+                messages.error(request, '❌ Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.')
     
     return render(request, 'corpus/login.html')
 
 
+@ratelimit(key='ip', rate='5/h', method='POST', block=False)
+@ratelimit(key='post:email', rate='3/d', method='POST', block=False)
 def register_view(request):
-    """User registration view."""
+    """User registration view with email verification (Task 11.5)."""
     if request.user.is_authenticated:
         return redirect('corpus:home')
     
     if request.method == 'POST':
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        first_name = request.POST.get('first_name', '')
-        last_name = request.POST.get('last_name', '')
-        password1 = request.POST.get('password1')
-        password2 = request.POST.get('password2')
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        password1 = request.POST.get('password1', '')
+        password2 = request.POST.get('password2', '')
         
-        # Validation
+        # Basic validation
         if not username or not email or not password1:
             messages.error(request, '⚠️ Lütfen tüm zorunlu alanları doldurun.')
             return render(request, 'corpus/register.html')
         
+        # Email format validation
+        if '@' not in email or '.' not in email.split('@')[-1]:
+            messages.error(request, '✉️ Geçerli bir email adresi girin.')
+            return render(request, 'corpus/register.html')
+        
+        # Username validation (alphanumeric + underscore)
+        if not username.replace('_', '').isalnum():
+            messages.error(request, '👤 Kullanıcı adı sadece harf, rakam ve alt çizgi içerebilir.')
+            return render(request, 'corpus/register.html')
+        
+        # Password confirmation
         if password1 != password2:
-            messages.error(request, '🔒 Şifreler eşleşmiyor. Lütfen aynı şifreyi girin.')
+            messages.error(request, '🔒 Şifreler eşleşmiyor. Lütfen aynı şifreyi iki kez girin.')
             return render(request, 'corpus/register.html')
         
-        if len(password1) < 8:
-            messages.error(request, '🔑 Şifre en az 8 karakter olmalıdır.')
+        # Password strength validation (Task 11.5)
+        is_valid, errors = check_password_strength(password1)
+        if not is_valid:
+            for error in errors:
+                messages.error(request, f'🔑 {error}')
             return render(request, 'corpus/register.html')
         
+        # Check username uniqueness
         if User.objects.filter(username=username).exists():
             messages.error(request, '👤 Bu kullanıcı adı zaten kullanılıyor. Lütfen başka bir kullanıcı adı seçin.')
             return render(request, 'corpus/register.html')
         
+        # Check email uniqueness
         if User.objects.filter(email=email).exists():
-            messages.error(request, '✉️ Bu e-posta adresi zaten kullanılıyor.')
+            messages.error(request, '✉️ Bu email adresi zaten kayıtlı. Giriş yapmayı deneyin veya şifrenizi sıfırlayın.')
             return render(request, 'corpus/register.html')
         
-        # Create user
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password1,
-            first_name=first_name,
-            last_name=last_name
-        )
-        
-        messages.success(
-            request, 
-            f'✅ Hesabınız başarıyla oluşturuldu! Hoş geldiniz {first_name or username}, şimdi giriş yapabilirsiniz.'
-        )
-        return redirect('corpus:login')
+        # Create user (inactive until email verification)
+        try:
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password1,
+                first_name=first_name,
+                last_name=last_name,
+                is_active=False  # Will be activated after email verification
+            )
+            
+            # Send verification email
+            success, error_msg = send_verification_email(user, request)
+            
+            if success:
+                messages.success(
+                    request,
+                    f'✅ Hesabınız oluşturuldu! Email adresinize ({email}) bir doğrulama linki gönderdik. '
+                    f'Hesabınızı aktif etmek için lütfen emailinizi kontrol edin.'
+                )
+                # Store email in session for resend functionality
+                request.session['pending_verification_email'] = email
+                return redirect('corpus:verification_sent')
+            else:
+                # Email sending failed - delete user and show error
+                user.delete()
+                messages.error(
+                    request,
+                    f'❌ Doğrulama emaili gönderilemedi. Lütfen daha sonra tekrar deneyin. '
+                    f'Hata: {error_msg}'
+                )
+                return render(request, 'corpus/register.html')
+                
+        except Exception as e:
+            messages.error(request, f'❌ Hesap oluşturulurken bir hata oluştu: {str(e)}')
+            return render(request, 'corpus/register.html')
     
     return render(request, 'corpus/register.html')
+
+
+def ratelimit_handler(request, exception=None):
+    """
+    Custom handler for rate limit exceptions (Task 11.10).
+    Shows user-friendly error message when rate limits are exceeded.
+    """
+    # Determine which action was rate limited based on request path
+    path = request.path
+    
+    if 'login' in path:
+        error_message = (
+            '🚫 Çok fazla giriş denemesi yaptınız. '
+            'Lütfen birkaç dakika bekleyip tekrar deneyin. '
+            'Güvenliğiniz için giriş denemeleri sınırlıdır.'
+        )
+    elif 'register' in path:
+        error_message = (
+            '🚫 Çok fazla kayıt denemesi yaptınız. '
+            'Lütfen bir süre bekleyip tekrar deneyin. '
+            'Spam önleme sistemimiz kayıt sayısını sınırlar.'
+        )
+    elif 'resend-verification' in path:
+        error_message = (
+            '✉️ Çok fazla doğrulama emaili isteği gönderidiniz. '
+            'Lütfen spam klasörünüzü kontrol edin ve bir süre sonra tekrar deneyin.'
+        )
+    else:
+        error_message = (
+            '🚫 İşlem limiti aşıldı. '
+            'Lütfen birkaç dakika bekleyip tekrar deneyin.'
+        )
+    
+    from django.shortcuts import render
+    from django.contrib import messages
+    
+    messages.error(request, error_message)
+    
+    # Render appropriate template based on request path
+    if 'login' in path:
+        return render(request, 'corpus/login.html', status=429)
+    elif 'register' in path:
+        return render(request, 'corpus/register.html', status=429)
+    elif 'verification' in path:
+        return render(request, 'corpus/email_verification_sent.html', status=429)
+    else:
+        # Generic error page
+        return render(request, 'corpus/error.html', {
+            'error_title': 'İşlem Limiti Aşıldı',
+            'error_message': error_message
+        }, status=429)
+
+
+def email_verification_sent_view(request):
+    """Display 'check your email' message after registration (Task 11.6)."""
+    # Get email from session (set during registration)
+    email = request.session.get('pending_verification_email')
+    
+    if not email:
+        # No pending verification - redirect to register
+        messages.info(request, 'Lütfen önce kayıt olun.')
+        return redirect('corpus:register')
+    
+    context = {
+        'email': email,
+    }
+    return render(request, 'corpus/email_verification_sent.html', context)
+
+
+def email_verify_view(request, token):
+    """Verify email address using token and activate user account (Task 11.6)."""
+    from .utils import verify_email_token
+    
+    # Validate token and activate user
+    success, message, user = verify_email_token(token)
+    
+    if success:
+        messages.success(request, f'✅ {message}')
+        # Clear pending verification from session
+        if 'pending_verification_email' in request.session:
+            del request.session['pending_verification_email']
+        
+        context = {
+            'success': True,
+            'user': user,
+        }
+        return render(request, 'corpus/email_verified.html', context)
+    else:
+        messages.error(request, f'❌ {message}')
+        context = {
+            'success': False,
+            'message': message,
+            'user': user,  # May be None if token invalid
+        }
+        return render(request, 'corpus/email_verified.html', context)
+
+
+@ratelimit(key='user_or_ip', rate='3/h', method='POST')
+def resend_verification_view(request):
+    """Resend verification email with rate limiting (Task 11.6)."""
+    if request.method != 'POST':
+        return redirect('corpus:verification_sent')
+    
+    # Check rate limit
+    was_limited = getattr(request, 'limited', False)
+    if was_limited:
+        messages.error(
+            request,
+            '⏱️ Çok fazla email gönderme denemesi yaptınız. '
+            'Lütfen 1 saat sonra tekrar deneyin.'
+        )
+        return redirect('corpus:verification_sent')
+    
+    email = request.session.get('pending_verification_email')
+    
+    if not email:
+        messages.error(request, 'Email adresi bulunamadı. Lütfen tekrar kayıt olun.')
+        return redirect('corpus:register')
+    
+    try:
+        # Find user by email
+        user = User.objects.get(email=email, is_active=False)
+        
+        # Check if already verified
+        if user.profile.email_verified:
+            messages.info(request, 'Email adresiniz zaten doğrulanmış. Giriş yapabilirsiniz.')
+            return redirect('corpus:login')
+        
+        # Resend verification email
+        success, error_msg = send_verification_email(user, request)
+        
+        if success:
+            messages.success(
+                request,
+                f'✅ Doğrulama emaili tekrar gönderildi. Lütfen {email} adresini kontrol edin.'
+            )
+        else:
+            messages.error(
+                request,
+                f'❌ Email gönderilemedi. Lütfen daha sonra tekrar deneyin. Hata: {error_msg}'
+            )
+    
+    except User.DoesNotExist:
+        messages.error(request, 'Bu email ile kayıtlı aktif olmayan kullanıcı bulunamadı.')
+    except Exception as e:
+        messages.error(request, f'❌ Bir hata oluştu: {str(e)}')
+    
+    return redirect('corpus:verification_sent')
 
 
 def logout_view(request):

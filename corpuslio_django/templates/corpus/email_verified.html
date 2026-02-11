@@ -1,0 +1,428 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if success %}Email Doğrulandı{% else %}Doğrulama Hatası{% endif %} - CorpusLIO</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        .verification-content {
+            max-width: 550px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .status-icon {
+            width: 110px;
+            height: 110px;
+            margin: 0 auto 30px;
+            background: {% if success %}linear-gradient(135deg, #11998e 0%, #38ef7d 100%){% else %}linear-gradient(135deg, #eb3349 0%, #f45c43 100%){% endif %};
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scaleIn 0.5s ease-out;
+            box-shadow: 0 4px 20px rgba({% if success %}17, 153, 142{% else %}235, 51, 73{% endif %}, 0.3);
+        }
+        .status-icon span {
+            font-size: 64px;
+            color: white;
+        }
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        .verification-content h1 {
+            font-size: 26px;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+        .verification-content p {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        .btn-primary {
+            background: {% if success %}linear-gradient(135deg, #11998e 0%, #38ef7d 100%){% else %}linear-gradient(135deg, #667eea 0%, #764ba2 100%){% endif %};
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 24px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 12px rgba({% if success %}17, 153, 142{% else %}102, 126, 234{% endif %}, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba({% if success %}17, 153, 142{% else %}102, 126, 234{% endif %}, 0.4);
+        }
+        .info-box {
+            background: {% if success %}rgba(17, 153, 142, 0.05){% else %}rgba(235, 51, 73, 0.05){% endif %};
+            border: 1px solid {% if success %}rgba(17, 153, 142, 0.2){% else %}rgba(235, 51, 73, 0.2){% endif %};
+            border-left: 4px solid {% if success %}#11998e{% else %}#eb3349{% endif %};
+            padding: 20px;
+            border-radius: 8px;
+            margin: 24px 0;
+            text-align: left;
+        }
+        .info-box p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .info-box .material-icons {
+            font-size: 20px;
+            color: {% if success %}#11998e{% else %}#eb3349{% endif %};
+        }
+        .countdown-text {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-top: 16px;
+        }
+        .error-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s;
+        }
+        .btn-secondary:hover {
+            background: var(--surface-elevated);
+            border-color: #667eea;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card" style="max-width: 600px; margin: 0 auto;">
+            <div class="verification-content">
+                <div class="status-icon">
+                    <span class="material-icons">
+                        {% if success %}check_circle{% else %}error{% endif %}
+                    </span>
+                </div>
+
+                {% if success %}
+                <h1>Email Adresiniz Doğrulandı! 🎉</h1>
+                <p>
+                    Tebrikler! Email adresiniz başarıyla doğrulandı.
+                    Artık CorpusLIO'ya giriş yapabilir ve tüm özelliklere erişebilirsiniz.
+                </p>
+
+                <div class="info-box">
+                    <p>
+                        <span class="material-icons">info</span>
+                        <span>
+                            Hesabınız aktif edildi. Giriş yaptıktan sonra belgelerinizi yükleyebilir,
+                            korpus araması yapabilir ve analizlerinize başlayabilirsiniz.
+                        </span>
+                    </p>
+                </div>
+
+                <a href="{% url 'corpus:login' %}" class="btn-primary">
+                    <span class="material-icons" style="font-size: 20px;">login</span>
+                    Giriş Sayfasına Git
+                </a>
+
+                <p class="countdown-text">
+                    <strong id="countdown">3</strong> saniye içinde otomatik olarak giriş sayfasına yönlendirileceksiniz...
+                </p>
+
+                <script>
+                    let countdown = 3;
+                    const countdownEl = document.getElementById('countdown');
+                    
+                    const timer = setInterval(() => {
+                        countdown--;
+                        if (countdownEl) {
+                            countdownEl.textContent = countdown;
+                        }
+                        
+                        if (countdown <= 0) {
+                            clearInterval(timer);
+                            window.location.href = "{% url 'corpus:login' %}";
+                        }
+                    }, 1000);
+                </script>
+
+                {% else %}
+                <h1>Email Doğrulama Hatası</h1>
+                <p>
+                    {{ message|default:"Doğrulama linki geçersiz veya süresi dolmuş olabilir." }}
+                </p>
+
+                <div class="info-box">
+                    <p>
+                        <span class="material-icons">warning</span>
+                        <span>
+                            Doğrulama linki 24 saat geçerlidir. Süre dolmuşsa veya link kullanılmışsa,
+                            yeni bir doğrulama emaili talep edebilirsiniz.
+                        </span>
+                    </p>
+                </div>
+
+                <div class="error-actions">
+                    <a href="{% url 'corpus:verification_sent' %}" class="btn-primary">
+                        <span class="material-icons" style="font-size: 18px;">refresh</span>
+                        Yeni Doğrulama Emaili Gönder
+                    </a>
+                    <a href="{% url 'corpus:register' %}" class="btn-secondary">
+                        <span class="material-icons" style="font-size: 18px;">person_add</span>
+                        Yeni Kayıt Oluştur
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+    <style>
+        .verification-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: {% if success %}linear-gradient(135deg, #11998e 0%, #38ef7d 100%){% else %}linear-gradient(135deg, #eb3349 0%, #f45c43 100%){% endif %};
+            padding: 20px;
+        }
+        .verification-card {
+            background: white;
+            border-radius: 16px;
+            padding: 60px 50px;
+            max-width: 550px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        .status-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            background: {% if success %}linear-gradient(135deg, #11998e 0%, #38ef7d 100%){% else %}linear-gradient(135deg, #eb3349 0%, #f45c43 100%){% endif %};
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scaleIn 0.5s ease-out;
+        }
+        .status-icon span {
+            font-size: 70px;
+            color: white;
+        }
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        .verification-card h1 {
+            font-size: 28px;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        .verification-card p {
+            font-size: 16px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .btn-primary {
+            background: {% if success %}linear-gradient(135deg, #11998e 0%, #38ef7d 100%){% else %}linear-gradient(135deg, #667eea 0%, #764ba2 100%){% endif %};
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+        .info-box {
+            background: {% if success %}#e8f5e9{% else %}#ffebee{% endif %};
+            border-left: 4px solid {% if success %}#4caf50{% else %}#f44336{% endif %};
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+            text-align: left;
+        }
+        .info-box p {
+            margin: 0;
+            font-size: 14px;
+            color: #555;
+        }
+        .countdown-text {
+            font-size: 14px;
+            color: #999;
+            margin-top: 15px;
+        }
+        .link-group {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .link-group a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .link-group a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .verification-card {
+                padding: 40px 30px;
+            }
+            .verification-card h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="verification-container">
+        <div class="verification-card">
+            {% if success %}
+                <!-- Success State -->
+                <div class="status-icon">
+                    <span class="material-icons">check_circle</span>
+                </div>
+
+                <h1>✅ Email Doğrulandı!</h1>
+                
+                <p>
+                    Tebrikler {% if user %}{{ user.first_name|default:user.username }}{% endif %}! 
+                    Email adresiniz başarıyla doğrulandı.
+                </p>
+                
+                <p>
+                    Artık CorpusLIO'ya giriş yapabilir ve platformun tüm özelliklerinden yararlanabilirsiniz.
+                </p>
+
+                <div class="info-box">
+                    <p>
+                        <strong>🎉 Hesabınız aktif!</strong><br>
+                        Şimdi giriş yaparak korpus arama, analiz ve export işlemlerine başlayabilirsiniz.
+                    </p>
+                </div>
+
+                <a href="{% url 'corpus:login' %}" class="btn-primary">
+                    <span class="material-icons" style="vertical-align: middle; margin-right: 5px;">login</span>
+                    Giriş Yap
+                </a>
+
+                <p class="countdown-text" id="countdown">
+                    3 saniye içinde giriş sayfasına yönlendirileceksiniz...
+                </p>
+
+            {% else %}
+                <!-- Error State -->
+                <div class="status-icon">
+                    <span class="material-icons">error</span>
+                </div>
+
+                <h1>❌ Doğrulama Başarısız</h1>
+                
+                <p>{{ message }}</p>
+
+                <div class="info-box">
+                    <p>
+                        <strong>⚠️ Olası Nedenler:</strong><br>
+                        • Doğrulama linki süresi dolmuş olabilir (24 saat geçerli)<br>
+                        • Link yanlış veya eksik kopyalanmış olabilir<br>
+                        • Email adresi zaten doğrulanmış olabilir
+                    </p>
+                </div>
+
+                <div class="link-group">
+                    {% if user %}
+                        <a href="{% url 'corpus:verification_sent' %}" class="btn-primary">
+                            Yeni Doğrulama Emaili Gönder
+                        </a>
+                    {% else %}
+                        <a href="{% url 'corpus:register' %}" class="btn-primary">
+                            Tekrar Kayıt Ol
+                        </a>
+                    {% endif %}
+                </div>
+
+            {% endif %}
+
+            <div class="link-group">
+                <a href="{% url 'corpus:home' %}">← Ana Sayfaya Dön</a>
+                {% if not success %}
+                    <a href="{% url 'corpus:login' %}">Giriş Yap</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if success %}
+    <script>
+        // Auto-redirect after 3 seconds on success
+        let seconds = 3;
+        const countdownEl = document.getElementById('countdown');
+        
+        const timer = setInterval(() => {
+            seconds--;
+            if (seconds > 0) {
+                countdownEl.textContent = `${seconds} saniye içinde giriş sayfasına yönlendirileceksiniz...`;
+            } else {
+                clearInterval(timer);
+                window.location.href = "{% url 'corpus:login' %}";
+            }
+        }, 1000);
+    </script>
+    {% endif %}
+</body>
+</html>
