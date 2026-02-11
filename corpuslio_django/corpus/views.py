@@ -598,17 +598,15 @@ def profile_view(request):
     # Compute next query reset date and helper flag for display
     from datetime import date, timedelta
     today = date.today()
-    try:
-        next_reset_date = profile.query_last_reset + timedelta(days=1)
-    except Exception:
-        next_reset_date = today
-    query_reset_is_tomorrow = (next_reset_date == today + timedelta(days=1))
+    # Next reset is always tomorrow (daily reset at 00:00)
+    next_reset_date = today + timedelta(days=1)
+    query_reset_is_tomorrow = True
 
     # Get recent search history (old model)
     recent_searches = request.user.search_history.order_by('-created_at')[:10]
     
     # Get recent query logs (NEW - detailed activity)
-    recent_query_logs = QueryLog.objects.filter(user=request.user).order_by('-created_at')[:10]
+    recent_query_logs = QueryLog.objects.filter(user=request.user).order_by('-created_at')[:20]
     
     # Get recent export logs
     recent_export_logs = ExportLog.objects.filter(user=request.user).order_by('-created_at')[:5]

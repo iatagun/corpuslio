@@ -143,13 +143,17 @@ def advanced_search_view(request):
         context['total_matches'] = len(all_matches)
         context['document_count'] = len(documents)
         
-        # Log query
+        # Log query (for POST-based advanced search)
         QueryLog.objects.create(
             user=request.user,
-            query=query,
-            query_type='cqp_advanced',
-            results_count=len(all_matches),
-            timestamp=timezone.now()
+            session_key=request.session.session_key if hasattr(request, 'session') else None,
+            ip_address=request.META.get('REMOTE_ADDR'),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:256],
+            query_text=query,
+            query_type='advanced',
+            result_count=len(all_matches),
+            rate_limit_hit=False,
+            is_cached=False,
         )
         
         if len(all_matches) > 0:

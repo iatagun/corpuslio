@@ -6,10 +6,10 @@
 {% block content %}
 <div class="container" style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem;">
     <div style="margin-bottom: 2rem;">
-        <h1 style="font-size: 2rem; color: var(--text-color); margin-bottom: 0.5rem;">
+        <h1 style="font-size: 2rem; color: var(--text-main); margin-bottom: 0.5rem;">
             📦 Export History
         </h1>
-        <p style="color: var(--muted-color);">
+        <p style="color: var(--text-secondary);">
             Track your exports and quota usage
         </p>
     </div>
@@ -27,12 +27,12 @@
                     <span style="font-size: 2rem; font-weight: 700; color: {% if quota_percentage >= 90 %}#dc2626{% elif quota_percentage >= 70 %}#f59e0b{% else %}#059669{% endif %};" class="quota-text">
                         {{ quota_used|floatformat:2 }} MB
                     </span>
-                    <span style="color: var(--muted-color); font-size: 1.1rem;">
+                    <span style="color: var(--text-secondary); font-size: 1.1rem;">
                         / {{ quota_limit|floatformat:0 }} MB
                     </span>
                 </div>
                 <div style="text-align: right;">
-                    <div style="font-size: 0.9rem; color: var(--muted-color);">
+                    <div style="font-size: 0.9rem; color: var(--text-secondary);">
                         Quota Usage
                     </div>
                     <div style="font-size: 1.5rem; font-weight: 600; color: {% if quota_percentage >= 90 %}#dc2626{% elif quota_percentage >= 70 %}#f59e0b{% else %}#059669{% endif %};" class="quota-percent">
@@ -58,7 +58,7 @@
                 </div>
             </div>
             
-            <div style="background: #f3f4f6; padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; color: #6b7280;">
+            <div style="background: #f3f4f6; padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; color: var(--text-secondary);">
                 💡 <strong>Quota resets monthly</strong> on the 1st.
                 {% if user.is_superuser %}
                 You have <strong>unlimited</strong> quota as a superuser.
@@ -83,22 +83,22 @@
             <div class="table-responsive">
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
                     <thead>
-                        <tr style="border-bottom: 2px solid var(--border-color); background: #f9fafb;">
-                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--muted-color);">Date</th>
-                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--muted-color);">Type</th>
-                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--muted-color);">Format</th>
-                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--muted-color);">Document</th>
-                            <th style="padding: 0.75rem; text-align: right; font-weight: 600; color: var(--muted-color);">Size</th>
-                            <th style="padding: 0.75rem; text-align: center; font-weight: 600; color: var(--muted-color);">Watermark</th>
-                            <th style="padding: 0.75rem; text-align: right; font-weight: 600; color: var(--muted-color);">Quota Impact</th>
+                        <tr style="border-bottom: 2px solid var(--border-subtle); background: #f9fafb;">
+                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-secondary);">Date</th>
+                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-secondary);">Type</th>
+                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-secondary);">Format</th>
+                            <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-secondary);">Document</th>
+                            <th style="padding: 0.75rem; text-align: right; font-weight: 600; color: var(--text-secondary);">Size</th>
+                            <th style="padding: 0.75rem; text-align: center; font-weight: 600; color: var(--text-secondary);">Watermark</th>
+                            <th style="padding: 0.75rem; text-align: right; font-weight: 600; color: var(--text-secondary);">Quota Impact</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for export in exports %}
-                        <tr style="border-bottom: 1px solid var(--border-color);">
+                        <tr style="border-bottom: 1px solid var(--border-subtle);">
                             <td style="padding: 0.75rem;">
                                 <div style="font-size: 0.85rem;">{{ export.created_at|date:"M d, Y" }}</div>
-                                <div style="font-size: 0.75rem; color: var(--muted-color);">{{ export.created_at|time:"H:i" }}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">{{ export.created_at|time:"H:i" }}</div>
                             </td>
                             <td style="padding: 0.75rem;">
                                 <span style="background: #e0e7ff; color: #4f46e5; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500;">
@@ -116,10 +116,10 @@
                                     {{ export.document.title }}
                                 </div>
                                 {% else %}
-                                <span style="color: var(--muted-color); font-style: italic;">Global Search</span>
+                                <span style="color: var(--text-secondary); font-style: italic;">Global Search</span>
                                 {% endif %}
                             </td>
-                            <td style="padding: 0.75rem; text-align: right; font-family: monospace;">
+                            <td style="padding: 0.75rem; text-align: right; font-family: monospace; color: var(--text-main);">
                                 {{ export.file_size_mb|floatformat:3 }} MB
                             </td>
                             <td style="padding: 0.75rem; text-align: center;">
@@ -135,7 +135,7 @@
                                     →
                                     <span style="color: #059669; font-weight: 600;">{{ export.quota_after_mb|floatformat:2 }}</span>
                                 </div>
-                                <div style="font-size: 0.75rem; color: var(--muted-color);">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">
                                     (+{{ export.file_size_mb|floatformat:3 }} MB)
                                 </div>
                             </td>

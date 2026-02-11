@@ -8,10 +8,10 @@
 {% block content %}
 <div class="container" style="max-width: 1200px; margin-top: 40px;">
     <div class="profile-header" style="margin-bottom: 2rem;">
-        <h1 style="color: var(--text-color); font-size: 2rem; margin-bottom: 0.5rem;">
+        <h1 style="color: var(--text-main); font-size: 2rem; margin-bottom: 0.5rem;">
             👤 {{ user.get_full_name|default:user.username }}
         </h1>
-        <p style="color: var(--muted-color); font-size: 1.1rem;">
+        <p style="color: var(--text-secondary); font-size: 1.1rem;">
             {{ user.email }}
         </p>
     </div>
@@ -20,13 +20,13 @@
         <!-- Role & Status Card -->
         <div class="card">
             <div class="card-header">
-                <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-color);">
+                <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-main);">
                     🎯 Hesap Durumu
                 </h2>
             </div>
             <div class="card-body">
                 <div style="margin-bottom: 1.5rem;">
-                    <label style="color: var(--muted-color); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
+                    <label style="color: var(--text-secondary); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
                         Yetki Seviyesi
                     </label>
                     <div style="display: flex; align-items: center; gap: 1rem;">
@@ -56,17 +56,17 @@
 
                 {% if profile.role == 'verified' or profile.role == 'developer' or profile.role == 'admin' %}
                 <div style="margin-bottom: 1.5rem;">
-                    <label style="color: var(--muted-color); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
+                    <label style="color: var(--text-secondary); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
                         Kurum
                     </label>
-                    <p style="color: var(--text-color); margin: 0;">
+                    <p style="color: var(--text-main); margin: 0;">
                         {{ profile.institution|default:"Belirtilmemiş" }}
                     </p>
                 </div>
 
                 {% if profile.orcid %}
                 <div style="margin-bottom: 1.5rem;">
-                    <label style="color: var(--muted-color); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
+                    <label style="color: var(--text-secondary); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
                         ORCID
                     </label>
                     <a href="https://orcid.org/{{ profile.orcid }}" target="_blank" style="color: #3b82f6; text-decoration: none;">
@@ -77,10 +77,10 @@
                 {% endif %}
 
                 <div style="margin-bottom: 0;">
-                    <label style="color: var(--muted-color); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
+                    <label style="color: var(--text-secondary); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
                         Üyelik Tarihi
                     </label>
-                    <p style="color: var(--text-color); margin: 0;">
+                    <p style="color: var(--text-main); margin: 0;">
                         {{ user.date_joined|date:"d F Y" }}
                     </p>
                 </div>
@@ -90,7 +90,7 @@
         <!-- Quota Tracking Card -->
         <div class="card">
             <div class="card-header">
-                <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-color);">
+                <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-main);">
                     📊 Kullanım İstatistikleri
                 </h2>
             </div>
@@ -99,8 +99,8 @@
                 <!-- Superuser unlimited notice -->
                 <div style="text-align: center; padding: 2rem;">
                     <div style="font-size: 3rem; margin-bottom: 1rem;">♾️</div>
-                    <h3 style="color: var(--text-color); margin-bottom: 0.5rem;">Sınırsız Erişim</h3>
-                    <p style="color: var(--muted-color); margin: 0;">
+                    <h3 style="color: var(--text-main); margin-bottom: 0.5rem;">Sınırsız Erişim</h3>
+                    <p style="color: var(--text-secondary); margin: 0;">
                         Süper yönetici olarak tüm kotalardan muafsınız.
                     </p>
                 </div>
@@ -108,19 +108,19 @@
                 <!-- Query Quota -->
                 <div style="margin-bottom: 1.5rem;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <label style="color: var(--muted-color); font-size: 0.9rem;">
+                        <label style="color: var(--text-secondary); font-size: 0.9rem;">
                             Günlük Sorgu Limiti
                         </label>
-                        <span style="color: var(--text-color); font-weight: 600;">
+                        <span style="color: var(--text-main); font-weight: 600;">
                             {{ profile.queries_today }} / {% if query_limit %}{{ query_limit }}{% else %}Sınırsız{% endif %}
                         </span>
                     </div>
                     {% if query_limit %}
-                    <div class="progress-bar" style="background: var(--background-secondary); height: 8px; border-radius: 4px; overflow: hidden;">
+                    <div class="progress-bar" style="background: var(--bg-surface-hover); height: 8px; border-radius: 4px; overflow: hidden;">
                         <div style="background: linear-gradient(90deg, #3b82f6, #2563eb); height: 100%; width: {{ query_percentage }}%; transition: width 0.3s;"></div>
                     </div>
                     {% endif %}
-                    <p style="color: var(--muted-color); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 0;">
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 0;">
                         Sıfırlanma: {% if query_reset_is_tomorrow %}Yarın 00:00{% else %}{{ query_reset|date:"d F Y" }} 00:00{% endif %}
                     </p>
                 </div>
@@ -128,17 +128,17 @@
                 <!-- Export Quota -->
                 <div style="margin-bottom: 1.5rem;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <label style="color: var(--muted-color); font-size: 0.9rem;">
+                        <label style="color: var(--text-secondary); font-size: 0.9rem;">
                             Aylık Dışa Aktarma Kotası
                         </label>
-                        <span style="color: var(--text-color); font-weight: 600;">
+                        <span style="color: var(--text-main); font-weight: 600;">
                             {{ profile.export_used_mb|floatformat:2 }} MB / {{ profile.export_quota_mb }} MB
                         </span>
                     </div>
-                    <div class="progress-bar" style="background: var(--background-secondary); height: 8px; border-radius: 4px; overflow: hidden;">
+                    <div class="progress-bar" style="background: var(--bg-surface-hover); height: 8px; border-radius: 4px; overflow: hidden;">
                         <div style="background: linear-gradient(90deg, #10b981, #059669); height: 100%; width: {{ export_percentage }}%; transition: width 0.3s;"></div>
                     </div>
-                    <p style="color: var(--muted-color); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 0;">
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 0;">
                         Sıfırlanma: {{ profile.export_last_reset|date:"d F Y" }}
                     </p>
                     
@@ -155,14 +155,14 @@
                 <!-- API Calls -->
                 <div style="margin-bottom: 0;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <label style="color: var(--muted-color); font-size: 0.9rem;">
+                        <label style="color: var(--text-secondary); font-size: 0.9rem;">
                             API Çağrıları (Bugün)
                         </label>
-                        <span style="color: var(--text-color); font-weight: 600;">
+                        <span style="color: var(--text-main); font-weight: 600;">
                             {{ profile.api_calls_today }} / {{ profile.api_quota_daily }}
                         </span>
                     </div>
-                    <div class="progress-bar" style="background: var(--background-secondary); height: 8px; border-radius: 4px; overflow: hidden;">
+                    <div class="progress-bar" style="background: var(--bg-surface-hover); height: 8px; border-radius: 4px; overflow: hidden;">
                         <div style="background: linear-gradient(90deg, #f59e0b, #d97706); height: 100%; width: {% widthratio profile.api_calls_today profile.api_quota_daily 100 %}%; transition: width 0.3s;"></div>
                     </div>
                 </div>
@@ -176,28 +176,28 @@
     <!-- API Key Card (Developer/Admin only) -->
     <div class="card" style="margin-bottom: 2rem;">
         <div class="card-header">
-            <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-color);">
+            <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-main);">
                 🔑 API Erişim Anahtarı
             </h2>
         </div>
         <div class="card-body">
             {% if profile.api_key %}
-            <div style="background: var(--background-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 1rem; margin-bottom: 1rem; font-family: 'Courier New', monospace;">
-                <code id="api-key" style="color: var(--text-color); word-break: break-all;">{{ profile.api_key }}</code>
+            <div style="background: var(--bg-surface-hover); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 1rem; margin-bottom: 1rem; font-family: 'Courier New', monospace;">
+                <code id="api-key" style="color: var(--text-main); word-break: break-all;">{{ profile.api_key }}</code>
             </div>
             <div style="display: flex; gap: 1rem;">
                 <button onclick="copyApiKey()" class="btn btn-primary">
                     📋 Kopyala
                 </button>
             </div>
-            <p style="color: var(--muted-color); font-size: 0.9rem; margin-top: 1rem; margin-bottom: 0;">
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 1rem; margin-bottom: 0;">
                 ⚠️ API anahtarınızı güvenli tutun. Başkalarıyla paylaşmayın.
             </p>
             {% else %}
-            <p style="color: var(--muted-color); margin-bottom: 1rem;">
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
                 Henüz API anahtarınız oluşturulmamış.
             </p>
-            <p style="color: var(--muted-color); font-size: 0.9rem;">
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">
                 API anahtarı otoma tik olarak oluşturulacaktır. Lütfen yöneticiye başvurun.
             </p>
             {% endif %}
@@ -205,58 +205,13 @@
     </div>
     {% endif %}
 
-    <!-- Recent Activity -->
-    <div class="card">
-        <div class="card-header">
-            <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-color);">
-                📜 Son Aramalar
-            </h2>
-        </div>
-        <div class="card-body">
-            {% if recent_searches %}
-            <div class="table-responsive">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="border-bottom: 2px solid var(--border-color);">
-                            <th style="padding: 0.75rem; text-align: left; color: var(--muted-color); font-weight: 600;">Sorgu</th>
-                            <th style="padding: 0.75rem; text-align: left; color: var(--muted-color); font-weight: 600;">Tip</th>
-                            <th style="padding: 0.75rem; text-align: left; color: var(--muted-color); font-weight: 600;">Sonuç</th>
-                            <th style="padding: 0.75rem; text-align: left; color: var(--muted-color); font-weight: 600;">Tarih</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for search in recent_searches %}
-                        <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 0.75rem; color: var(--text-color);">{{ search.query }}</td>
-                            <td style="padding: 0.75rem; color: var(--muted-color);">
-                                <span style="background: var(--background-secondary); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">
-                                    {{ search.search_type }}
-                                </span>
-                            </td>
-                            <td style="padding: 0.75rem; color: var(--text-color);">{{ search.result_count }}</td>
-                            <td style="padding: 0.75rem; color: var(--muted-color); font-size: 0.9rem;">
-                                {{ search.created_at|date:"d M Y H:i" }}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <p style="color: var(--muted-color); text-align: center; padding: 2rem 0; margin: 0;">
-                Henüz arama yapılmamış.
-            </p>
-            {% endif %}
-        </div>
-    </div>
-
     <!-- Detailed Activity Logs (Query & Export) -->
     <div class="card" style="margin-top: 2rem;">
         <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-color);">
+            <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-main);">
                 🔍 Detaylı Aktivite Geçmişi
             </h2>
-            <span style="background: var(--background-secondary); padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem; color: var(--muted-color);">
+            <span style="background: var(--bg-surface-hover); padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem; color: var(--text-secondary);">
                 Bugün: {{ profile.queries_today }} sorgu, {{ profile.export_used_mb|floatformat:2 }} MB export
                 <span style="margin-left: 10px; opacity: 0.7;">
                     ({{ recent_query_logs|length }} log, {{ recent_export_logs|length }} export)
@@ -265,28 +220,28 @@
         </div>
         <div class="card-body">
             {% if recent_query_logs %}
-            <h3 style="font-size: 1.1rem; color: var(--text-color); margin-bottom: 1rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">
+            <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 1rem; border-bottom: 2px solid var(--border-subtle); padding-bottom: 0.5rem;">
                 📊 Son Query Logları 
-                <span style="font-size: 0.85rem; color: var(--muted-color); font-weight: normal;">
+                <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: normal;">
                     (Rate limit edilenler kotaya dahil değildir)
                 </span>
             </h3>
             <div class="table-responsive" style="margin-bottom: 2rem;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
                     <thead>
-                        <tr style="border-bottom: 2px solid var(--border-color);">
-                            <th style="padding: 0.6rem; text-align: left; color: var(--muted-color); font-weight: 600;">Sorgu</th>
-                            <th style="padding: 0.6rem; text-align: left; color: var(--muted-color); font-weight: 600;">Tip</th>
-                            <th style="padding: 0.6rem; text-align: center; color: var(--muted-color); font-weight: 600;">Sonuç</th>
-                            <th style="padding: 0.6rem; text-align: center; color: var(--muted-color); font-weight: 600;">Süre</th>
-                            <th style="padding: 0.6rem; text-align: center; color: var(--muted-color); font-weight: 600;">Durum</th>
-                            <th style="padding: 0.6rem; text-align: right; color: var(--muted-color); font-weight: 600;">Tarih</th>
+                        <tr style="border-bottom: 2px solid var(--border-subtle);">
+                            <th style="padding: 0.6rem; text-align: left; color: var(--text-secondary); font-weight: 600;">Sorgu</th>
+                            <th style="padding: 0.6rem; text-align: left; color: var(--text-secondary); font-weight: 600;">Tip</th>
+                            <th style="padding: 0.6rem; text-align: center; color: var(--text-secondary); font-weight: 600;">Sonuç</th>
+                            <th style="padding: 0.6rem; text-align: center; color: var(--text-secondary); font-weight: 600;">Süre</th>
+                            <th style="padding: 0.6rem; text-align: center; color: var(--text-secondary); font-weight: 600;">Durum</th>
+                            <th style="padding: 0.6rem; text-align: right; color: var(--text-secondary); font-weight: 600;">Tarih</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for log in recent_query_logs %}
-                        <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 0.6rem; color: var(--text-color); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <tr style="border-bottom: 1px solid var(--border-subtle);">
+                            <td style="padding: 0.6rem; color: var(--text-main); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                 {{ log.query_text|truncatewords:8 }}
                             </td>
                             <td style="padding: 0.6rem;">
@@ -330,7 +285,7 @@
                                 </div>
                                 {% endif %}
                             </td>
-                            <td style="padding: 0.6rem; text-align: right; color: var(--muted-color); font-size: 0.85rem;">
+                            <td style="padding: 0.6rem; text-align: right; color: var(--text-secondary); font-size: 0.85rem;">
                                 {{ log.created_at|date:"d.m H:i" }}
                             </td>
                         </tr>
@@ -341,36 +296,36 @@
             {% endif %}
 
             {% if recent_export_logs %}
-            <h3 style="font-size: 1.1rem; color: var(--text-color); margin-bottom: 1rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">
+            <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 1rem; border-bottom: 2px solid var(--border-subtle); padding-bottom: 0.5rem;">
                 📦 Son Export Logları (Kotaya Dahil)
             </h3>
             <div class="table-responsive">
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
                     <thead>
-                        <tr style="border-bottom: 2px solid var(--border-color);">
-                            <th style="padding: 0.6rem; text-align: left; color: var(--muted-color); font-weight: 600;">Tip</th>
-                            <th style="padding: 0.6rem; text-align: left; color: var(--muted-color); font-weight: 600;">Format</th>
-                            <th style="padding: 0.6rem; text-align: center; color: var(--muted-color); font-weight: 600;">Boyut</th>
-                            <th style="padding: 0.6rem; text-align: center; color: var(--muted-color); font-weight: 600;">Kota Değişimi</th>
-                            <th style="padding: 0.6rem; text-align: center; color: var(--muted-color); font-weight: 600;">Filigran</th>
-                            <th style="padding: 0.6rem; text-align: right; color: var(--muted-color); font-weight: 600;">Tarih</th>
+                        <tr style="border-bottom: 2px solid var(--border-subtle);">
+                            <th style="padding: 0.6rem; text-align: left; color: var(--text-secondary); font-weight: 600;">Tip</th>
+                            <th style="padding: 0.6rem; text-align: left; color: var(--text-secondary); font-weight: 600;">Format</th>
+                            <th style="padding: 0.6rem; text-align: center; color: var(--text-secondary); font-weight: 600;">Boyut</th>
+                            <th style="padding: 0.6rem; text-align: center; color: var(--text-secondary); font-weight: 600;">Kota Değişimi</th>
+                            <th style="padding: 0.6rem; text-align: center; color: var(--text-secondary); font-weight: 600;">Filigran</th>
+                            <th style="padding: 0.6rem; text-align: right; color: var(--text-secondary); font-weight: 600;">Tarih</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for log in recent_export_logs %}
-                        <tr style="border-bottom: 1px solid var(--border-color);">
+                        <tr style="border-bottom: 1px solid var(--border-subtle);">
                             <td style="padding: 0.6rem;">
                                 <span style="background: #fef3c7; color: #92400e; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">
                                     {{ log.get_export_type_display }}
                                 </span>
                             </td>
-                            <td style="padding: 0.6rem; color: var(--text-color); text-transform: uppercase; font-weight: 600;">
+                            <td style="padding: 0.6rem; color: var(--text-main); text-transform: uppercase; font-weight: 600;">
                                 {{ log.format }}
                             </td>
-                            <td style="padding: 0.6rem; text-align: center; color: var(--text-color); font-weight: 500;">
+                            <td style="padding: 0.6rem; text-align: center; color: var(--text-main); font-weight: 500;">
                                 {{ log.file_size_mb|floatformat:2 }} MB
                             </td>
-                            <td style="padding: 0.6rem; text-align: center; color: var(--muted-color); font-size: 0.85rem;">
+                            <td style="padding: 0.6rem; text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
                                 {{ log.quota_before_mb|floatformat:2 }} → {{ log.quota_after_mb|floatformat:2 }} MB
                             </td>
                             <td style="padding: 0.6rem; text-align: center;">
@@ -380,7 +335,7 @@
                                 <span style="color: #dc2626;">✗</span>
                                 {% endif %}
                             </td>
-                            <td style="padding: 0.6rem; text-align: right; color: var(--muted-color); font-size: 0.85rem;">
+                            <td style="padding: 0.6rem; text-align: right; color: var(--text-secondary); font-size: 0.85rem;">
                                 {{ log.created_at|date:"d.m H:i" }}
                             </td>
                         </tr>
@@ -391,10 +346,10 @@
             {% endif %}
 
             {% if not recent_query_logs and not recent_export_logs %}
-            <div style="text-align: center; padding: 3rem 1rem; background: var(--background-secondary); border-radius: 8px;">
+            <div style="text-align: center; padding: 3rem 1rem; background: var(--bg-surface-hover); border-radius: 8px;">
                 <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
-                <h3 style="color: var(--text-color); margin-bottom: 0.5rem;">Henüz Aktivite Yok</h3>
-                <p style="color: var(--muted-color); margin: 0;">
+                <h3 style="color: var(--text-main); margin-bottom: 0.5rem;">Henüz Aktivite Yok</h3>
+                <p style="color: var(--text-secondary); margin: 0;">
                     Arama yaptığınızda veya dosya export ettiğinizde aktiviteleriniz burada görünecek.
                 </p>
             </div>
@@ -465,13 +420,13 @@
 }
 
 .btn-secondary {
-    background: var(--background-secondary);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
+    background: var(--bg-surface-hover);
+    color: var(--text-main);
+    border: 1px solid var(--border-subtle);
 }
 
 .btn-secondary:hover {
-    background: var(--background-tertiary);
+    background: var(--bg-surface);
 }
 
 @media (max-width: 768px) {

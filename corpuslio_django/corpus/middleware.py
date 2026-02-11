@@ -32,8 +32,8 @@ class QueryLogMiddleware(MiddlewareMixin):
         import logging
         logger = logging.getLogger(__name__)
         
-        # Only log GET requests to analysis/search views
-        if request.method != 'GET':
+        # Log both GET and POST requests to analysis/search views
+        if request.method not in ['GET', 'POST']:
             return response
         
         # Check if this is a query-related view
@@ -49,7 +49,13 @@ class QueryLogMiddleware(MiddlewareMixin):
             '/analysis/',
             '/library/',
             '/search/',
+            '/corpus-search/',
+            '/collocation/',
+            '/ngram-analysis/',
+            '/frequency/',
+            '/advanced-search/',
             '/api/search/',
+            '/api/concordance/',
         ]
 
         if not any(p in path for p in loggable_paths):
@@ -68,11 +74,14 @@ class QueryLogMiddleware(MiddlewareMixin):
         ip_address = self.get_client_ip(request)
         session_key = request.session.session_key if hasattr(request, 'session') else None
         
-        # Get query parameters
+        # Get query parameters from GET or POST
         query_text = request.GET.get('query') or request.GET.get('q') or request.GET.get('search', '')
+        if not query_text:
+            query_text = request.POST.get('query') or request.POST.get('q') or request.POST.get('search', '')
         
-        # Check if there are any filter parameters (for library view)
-        has_filters = any(request.GET.get(param) for param in ['author', 'genre', 'date', 'tag', 'collection'])
+        # Check if there are any filter parameters (for library view) in GET or POST
+        has_filters = any(request.GET.get(param) for param in ['author', 'genre', 'date', 'tag', 'collection']) or \
+                      any(request.POST.get(param) for param in ['author', 'genre', 'date', 'tag', 'collection'])
         
         logger.info(f"[QueryLogMiddleware] query_text='{query_text}', has_filters={has_filters}, GET params={dict(request.GET)}")
         
@@ -154,7 +163,8 @@ class QueryLogMiddleware(MiddlewareMixin):
         return response
     
     def detect_query_type(self, request):
-        """Detect query type from request parameters."""
+        """Detect query type from request parameters (GET or POST)."""
+        # Check GET parameters
         if 'lemma' in request.GET:
             return 'lemma'
         elif 'pos' in request.GET:
@@ -167,16 +177,23 @@ class QueryLogMiddleware(MiddlewareMixin):
             return 'ngram'
         elif request.GET.get('advanced') == 'true':
             return 'advanced'
+        # Check POST parameters
+        elif 'lemma' in request.POST:
+            return 'lemma'
+        elif 'pos' in request.POST:
+            return 'pos'
+        elif request.POST.get('advanced') == 'true':
+            return 'advanced'
         else:
             return 'word'
     
     def extract_filters(self, request):
-        """Extract filter parameters from request."""
+        """Extract filter parameters from request (GET or POST)."""
         filters = {}
         filter_params = ['author', 'genre', 'date', 'tag', 'collection', 'language']
         
         for param in filter_params:
-            value = request.GET.get(param)
+            value = request.GET.get(param) or request.POST.get(param)
             if value:
                 filters[param] = value
         
