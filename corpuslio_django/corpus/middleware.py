@@ -280,6 +280,9 @@ class ExportLogMiddleware(MiddlewareMixin):
             
             quota_after = profile.export_used_mb
             
+            # Check user watermark preference
+            watermark_enabled = profile.enable_watermark if profile else True
+            
             # Create export log for ALL users (including superusers for audit trail)
             log = ExportLog.objects.create(
                 user=request.user,
@@ -290,10 +293,11 @@ class ExportLogMiddleware(MiddlewareMixin):
                 query_text=request.GET.get('query', '')[:1000],
                 row_count=0,  # TODO: Extract from response
                 file_size_bytes=file_size_bytes,
-                watermark_applied=False,  # Old exports don't have watermarks
-                citation_text=self.generate_citation(request),
+                watermark_applied=watermark_enabled,  # Respect user preference
+                citation_text=self.generate_citation(request) if watermark_enabled else '',
                 quota_before_mb=quota_before,
                 quota_after_mb=quota_after,
+                document_title=self.generate_export_filename(export_type, file_format, document),
             )
             logger.info(f"✅ ExportLog created: ID={log.id}, User={request.user}, Type={export_type}, Doc={document.id if document else 'None'}, Size={file_size_mb:.2f}MB")
         except Exception as e:
@@ -376,3 +380,15 @@ class ExportLogMiddleware(MiddlewareMixin):
             except Document.DoesNotExist:
                 return None
         return None
+    
+    def generate_export_filename(self, export_type, file_format, document=None):
+        """Generate meaningful export filename based on type and document."""
+        timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+        
+        if document:
+            # Use document-based naming
+            doc_name = document.filename.rsplit('.', 1)[0]  # Remove extension
+            return f"{export_type}_{doc_name}_{timestamp}.{file_format}"
+        else:
+            # Generic naming for non-document exports
+            return f"{export_type}_{timestamp}.{file_format}"

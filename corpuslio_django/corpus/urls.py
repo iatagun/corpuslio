@@ -22,6 +22,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
     path('profile/login-history/', views.login_history_view, name='login_history'),  # Task 11.15
+    path('profile/watermark-preference/', views.update_watermark_preference, name='update_watermark_preference'),  # Watermark preference toggle
     
     # Email Verification (Task 11.6)
     path('auth/verification-sent/', views.email_verification_sent_view, name='verification_sent'),

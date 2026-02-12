@@ -1,472 +1,759 @@
 {% extends 'corpus/base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Export History{% endblock %}
+{% block title %}İşlem Geçmişi | CorpusLIO{% endblock %}
 
-{% block extra_head %}
+{% block extra_css %}
 <style>
-    /* Responsive Export History Styles */
-    .export-quota-stats {
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.4);
+        --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+        --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        --card-bg: #ffffff;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --border-color: #e2e8f0;
+    }
+
+    /* Dark Mode Overrides */
+    [data-theme="dark"] {
+        --glass-bg: rgba(30, 41, 59, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        --card-bg: #1e293b;
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --border-color: #334155;
+    }
+
+    .export-history-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Hero Section / Quota Card */
+    .quota-hero {
+        background: var(--card-bg);
+        border-radius: 24px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--glass-shadow);
+        border: 1px solid var(--border-color);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .quota-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 6px;
+        background: var(--primary-gradient);
+    }
+
+    .quota-info {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .quota-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .quota-subtitle {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    /* Circular Progress */
+    .quota-visual {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .circular-chart {
+        width: 120px;
+        height: 120px;
+    }
+
+    .circular-chart path {
+        transition: stroke-dasharray 1s ease-out;
+    }
+
+    .circle-bg {
+        fill: none;
+        stroke: var(--border-color);
+        stroke-width: 2.5;
+    }
+
+    .circle {
+        fill: none;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        /* Stroke color set inline dynamically */
+    }
+
+    .percentage {
+        fill: var(--text-primary);
+        font-family: 'Inter', sans-serif;
+        font-weight: bold;
+        font-size: 0.5em;
+        text-anchor: middle;
+    }
+
+    .quota-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .stat-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+
+    .stat-value {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    /* Controls Bar */
+    .controls-bar {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        flex: 1;
+        min-width: 280px;
+        position: relative;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.75rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        background: var(--card-bg);
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+
+    .search-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+        pointer-events: none;
+    }
+
+    .filter-dropdown {
+        min-width: 180px;
+        position: relative;
+    }
+
+    .filter-select {
+        width: 100%;
+        appearance: none;
+        padding: 0.75rem 2.5rem 0.75rem 1rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        background: var(--card-bg);
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1rem;
+    }
+
+    /* Desktop Table View */
+    .history-table-container {
+        background: var(--card-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--glass-shadow);
+        overflow: hidden;
+    }
+
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .history-table th {
+        background: rgba(241, 245, 249, 0.5);
+        /* var(--bg-secondary) equivalent */
+        padding: 1rem 1.5rem;
+        text-align: left;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    [data-theme="dark"] .history-table th {
+        background: rgba(30, 41, 59, 0.5);
+    }
+
+    .history-table td {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        transition: background 0.2s;
+    }
+
+    .history-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .history-table tr:hover td {
+        background: rgba(59, 130, 246, 0.02);
+    }
+
+    .doc-cell {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .doc-name {
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .doc-meta {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-top: 2px;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .badge-format {
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+        border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    .badge-type {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .badge-watermark {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    /* Mobile Card View */
+    .mobile-cards {
+        display: none;
+        /* Hidden by default on desktop */
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .export-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 1.25rem;
+        position: relative;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .export-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .card-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card-date {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+
+    .card-body {
+        margin-bottom: 1rem;
+    }
+
+    .card-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .card-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .card-footer {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--border-color);
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-secondary);
+    }
+
+    .empty-icon {
+        font-size: 4rem;
         margin-bottom: 1rem;
+        opacity: 0.5;
     }
-    
-    .quota-stat-left {
-        flex: 1;
+
+    .btn-action {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: opacity 0.2s;
     }
-    
-    .quota-stat-right {
-        text-align: right;
+
+    .btn-action:hover {
+        opacity: 0.9;
+        color: white;
     }
-    
-    /* Desktop Table */
-    .export-table-desktop {
-        display: block !important;
-    }
-    
-    .export-table-mobile {
-        display: none !important;
-    }
-    
-    /* Responsive table headers */
-    .th-full {
-        display: inline;
-    }
-    
-    .th-short {
-        display: none;
-    }
-    
-    /* Tablet screens - compressed headers */
-    @media (max-width: 1024px) {
-        .export-table-desktop table {
-            font-size: 0.8rem;
-        }
-        
-        .export-table-desktop th {
-            padding: 0.5rem 0.4rem !important;
-            font-size: 0.7rem;
-        }
-        
-        .export-table-desktop td {
-            padding: 0.5rem 0.4rem !important;
-            font-size: 0.8rem;
-        }
-        
-        /* Show abbreviated headers */
-        .th-full {
+
+    /* Responsive Breakpoint */
+    @media (max-width: 900px) {
+        .history-table-container {
             display: none;
         }
-        
-        .th-short {
-            display: inline;
-        }
-        
-        /* Compress content for better fit */
-        .export-table-desktop .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .export-table-desktop td > div {
-            font-size: 0.75rem;
-        }
-        
-        .export-table-desktop td span {
-            padding: 0.2rem 0.4rem !important;
-            font-size: 0.7rem !important;
-        }
-        
-        /* Shorten document title on tablet */
-        .export-table-desktop .doc-title {
-            max-width: 100px !important;
-        }
-        
-        /* Card header responsive */
-        .card-header {
-            padding: 0.75rem !important;
-        }
-        
-        .card-header h2 {
-            font-size: 0.95rem !important;
-        }
-        
-        .card-header .material-icons {
-            font-size: 1.1rem !important;
-        }
-    }
-    
-    /* Mobile Responsive */
-    @media (max-width: 768px) {
-        .export-quota-stats {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-        
-        .quota-stat-right {
-            text-align: left;
-            width: 100%;
-        }
-        
-        /* Card header mobile */
-        .card-header {
-            padding: 0.6rem !important;
-        }
-        
-        .card-header h2 {
-            font-size: 0.85rem !important;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.25rem !important;
-        }
-        
-        .card-header .material-icons {
-            font-size: 1rem !important;
-        }
-        
-        /* Hide desktop table */
-        .export-table-desktop {
-            display: none !important;
-        }
-        
-        /* Show mobile cards */
-        .export-table-mobile {
-            display: block !important;
-            padding: 1rem;
-        }
-        
-        .export-card-mobile {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-        
-        .export-card-row {
+
+        .mobile-cards {
             display: flex;
-            justify-content: space-between;
+        }
+
+        .quota-hero {
+            flex-direction: column;
             align-items: flex-start;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid var(--border);
         }
-        
-        .export-card-row:last-child {
-            border-bottom: none;
+
+        .quota-visual {
+            width: 100%;
+            justify-content: center;
         }
-        
-        .export-card-label {
-            font-weight: 600;
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            flex-shrink: 0;
-            margin-right: 1rem;
-        }
-        
-        .export-card-value {
-            text-align: right;
-            flex: 1;
+
+        .controls-bar {
+            flex-direction: column;
         }
     }
 </style>
 {% endblock %}
 
+{% block breadcrumb %}
+<a href="{% url 'corpus:home' %}">Ana Sayfa</a>
+<span class="separator">/</span>
+<a href="{% url 'corpus:profile' %}">Profil</a>
+<span class="separator">/</span>
+<span class="current">İşlem Geçmişi</span>
+{% endblock %}
+
 {% block content %}
-<div class="container" style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem;">
-    <div style="margin-bottom: 2rem;">
-        <h1 style="font-size: 2rem; color: var(--text-main); margin-bottom: 0.5rem;">
-            📦 Export Geçmişi
-        </h1>
-        <p style="color: var(--text-secondary);">
-            Exportlarınızı ve kota kullanımınızı takip edin
-        </p>
-    </div>
-    
-    <!-- Quota Card -->
-    <div class="card" style="margin-bottom: 2rem;">
-        <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-            <h2 style="margin: 0; font-size: 1.2rem;">
-                💾 Aylık Export Kotası
-            </h2>
+<div class="export-history-container">
+
+    <!-- Quota Hero Section -->
+    <div class="quota-hero">
+        <div class="quota-info">
+            <h1 class="quota-title">
+                <span class="material-icons" style="color: #3b82f6;">history_edu</span>
+                İşlem Geçmişi
+            </h1>
+            <p class="quota-subtitle">
+                Son 50 dışa aktarım işleminizi ve mevcut kota durumunuzu buradan takip edebilirsiniz.<br>
+                Kotanız her ayın başında otomatik olarak yenilenir.
+            </p>
         </div>
-        <div class="card-body">
-            <div class="export-quota-stats">
-                <div class="quota-stat-left">
-                    <span style="font-size: 2rem; font-weight: 700; color: {% if quota_percentage >= 90 %}#dc2626{% elif quota_percentage >= 70 %}#f59e0b{% else %}#059669{% endif %};" class="quota-text">
-                        {{ quota_used|floatformat:2 }} MB
-                    </span>
-                    <span style="color: var(--text-secondary); font-size: 1.1rem;">
-                        / {{ quota_limit|floatformat:0 }} MB
-                    </span>
+
+        <div class="quota-visual">
+            <!-- Circular Chart -->
+            <svg viewBox="0 0 36 36" class="circular-chart">
+                <path class="circle-bg" d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="circle" stroke-dasharray="{{ quota_percentage|floatformat:1 }}, 100"
+                    stroke="{% if quota_percentage > 90 %}#ef4444{% elif quota_percentage > 70 %}#f59e0b{% else %}#10b981{% endif %}"
+                    d="M18 2.0845
+                        a 15.9155 15.9155 0 0 1 0 31.831
+                        a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <text x="18" y="20.35" class="percentage">{{ quota_percentage|floatformat:0 }}%</text>
+            </svg>
+
+            <!-- Stats Legend -->
+            <div class="quota-stats">
+                <div class="stat-row">
+                    <span class="material-icons" style="font-size: 18px;">data_usage</span>
+                    <span>Kullanılan: <span class="stat-value">{{ quota_used|floatformat:2 }} MB</span></span>
                 </div>
-                <div class="quota-stat-right">
-                    <div style="font-size: 0.9rem; color: var(--text-secondary);">
-                        Kota Kullanımı
-                    </div>
-                    <div style="font-size: 1.5rem; font-weight: 600; color: {% if quota_percentage >= 90 %}#dc2626{% elif quota_percentage >= 70 %}#f59e0b{% else %}#059669{% endif %};" class="quota-percent">
-                        {{ quota_percentage|floatformat:1 }}%
-                    </div>
+                <div class="stat-row">
+                    <span class="material-icons" style="font-size: 18px;">savings</span>
+                    <span>Limit: <span class="stat-value">{% if quota_limit == 0 %}Sınırsız{% else %}{{ quota_limit }}
+                            MB{% endif %}</span></span>
+                </div>
+                <div class="stat-row">
+                    <span class="material-icons" style="font-size: 18px;">verified_user</span>
+                    <span>Rol: <span class="stat-value">{{ request.user.profile.get_role_display }}</span></span>
                 </div>
             </div>
-            
-            <!-- Progress bar -->
-            <div style="background: #e5e7eb; height: 20px; border-radius: 10px; overflow: hidden; margin-bottom: 1rem;">
-                <div style="height: 100%; 
-                            width: {{ quota_percentage|floatformat:1 }}%; 
-                            transition: width 0.3s ease;
-                            display: flex;
-                            align-items: center;
-                            justify-content: flex-end;
-                            padding-right: 0.5rem; background: {% if quota_percentage >= 90 %}#dc2626{% elif quota_percentage >= 70 %}#f59e0b{% else %}linear-gradient(90deg, #059669, #10b981){% endif %};" >
-                    {% if quota_percentage > 10 %}
-                    <span style="color: white; font-size: 0.75rem; font-weight: 600;">
-                        {{ quota_percentage|floatformat:1 }}%
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-bar">
+        <div class="search-box">
+            <span class="material-icons search-icon">search</span>
+            <input type="text" id="tableSearch" class="search-input" placeholder="Dosya adı veya ID ile ara...">
+        </div>
+        <div class="filter-dropdown">
+            <select id="typeFilter" class="filter-select">
+                <option value="all">Tüm Tipler</option>
+                <option value="concordance">Konkordans</option>
+                <option value="frequency">Frekans</option>
+                <option value="statistics">İstatistik</option>
+                <option value="document">Doküman</option>
+            </select>
+        </div>
+    </div>
+
+    {% if exports %}
+    <!-- Desktop Table View -->
+    <div class="history-table-container">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th style="width: 30%;">Dosya / Doküman</th>
+                    <th>İşlem Tipi</th>
+                    <th>Format</th>
+                    <th>Boyut</th>
+                    <th>Tarih</th>
+                    <th>Durum</th>
+                    <th style="text-align: right;">Aksiyon</th>
+                </tr>
+            </thead>
+            <tbody id="historyTableBody">
+                {% for log in exports %}
+                <tr class="export-row"
+                    data-search="{{ log.document_title|lower }} {{ log.document.filename|lower }} {{ log.export_type|lower }}"
+                    data-type="{{ log.export_type }}">
+                    <td>
+                        <div class="doc-cell">
+                            <span class="doc-name">
+                                {% if log.export_type == 'concordance' and log.query_text %}
+                                Konkordans: "{{ log.query_text }}"
+                                {% elif log.export_type == 'frequency' %}
+                                Frekans Analizi
+                                {% if log.document %}
+                                - {{ log.document.filename }}
+                                {% elif log.document_title %}
+                                - {{ log.document_title }}
+                                {% endif %}
+                                {% elif log.export_type == 'dependency' %}
+                                Bağımlılık Analizi
+                                {% if log.document %}
+                                - {{ log.document.filename }}
+                                {% elif log.document_title %}
+                                - {{ log.document_title }}
+                                {% endif %}
+                                {% else %}
+                                {% if log.query_text %}
+                                {{ log.export_type|title }}: "{{ log.query_text }}"
+                                {% elif log.document_title %}
+                                {{ log.document_title }}
+                                {% elif log.document %}
+                                {{ log.document.filename }}
+                                {% else %}
+                                Bilinmeyen Export
+                                {% endif %}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge badge-type">
+                            {% if log.export_type == 'concordance' %}Konkordans
+                            {% elif log.export_type == 'frequency' %}Frekans
+                            {% elif log.export_type == 'statistics' %}İstatistik
+                            {% else %}{{ log.export_type|title }}{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge badge-format">
+                            {{ log.format|upper }}
+                        </span>
+                    </td>
+                    <td>{{ log.file_size_mb }} MB</td>
+                    <td>{{ log.created_at|date:"d M Y, H:i" }}</td>
+                    <td>
+                        {% if log.watermark_applied %}
+                        <span class="badge badge-watermark" title="Filigran Eklendi">
+                            <span class="material-icons" style="font-size: 14px;">water_drop</span> İmza
+                        </span>
+                        {% else %}
+                        <span style="color: var(--text-secondary);">-</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        {% if log.document and request.user.is_authenticated %}
+                        <a href="{% url 'corpus:analysis' log.document.id %}" class="btn-action"
+                            title="Analize Git (Dosya Mevcutsa)">
+                            <span class="material-icons" style="font-size: 16px;">visibility</span>
+                        </a>
+                        {% else %}
+                        <span class="material-icons" style="color: var(--text-secondary); opacity: 0.5;">block</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile Cards View -->
+    <div class="mobile-cards" id="mobileCardsContainer">
+        {% for log in exports %}
+        <div class="export-card export-row"
+            data-search="{{ log.document_title|lower }} {{ log.document.filename|lower }} {{ log.export_type|lower }}"
+            data-type="{{ log.export_type }}">
+            <div class="card-header">
+                <div class="card-icon">
+                    <span class="material-icons">
+                        {% if log.export_type == 'concordance' %}manage_search
+                        {% elif log.export_type == 'frequency' %}bar_chart
+                        {% else %}description{% endif %}
                     </span>
+                </div>
+                <span class="card-date">{{ log.created_at|date:"d M H:i" }}</span>
+            </div>
+
+            <div class="card-body">
+                <span class="card-title">
+                    {% if log.export_type == 'concordance' and log.query_text %}
+                    Konkordans: "{{ log.query_text|truncatechars:30 }}"
+                    {% elif log.export_type == 'frequency' %}
+                    Frekans Analizi
+                    {% if log.document %}
+                    - {{ log.document.filename|truncatechars:20 }}
+                    {% elif log.document_title %}
+                    - {{ log.document_title|truncatechars:20 }}
+                    {% endif %}
+                    {% elif log.export_type == 'dependency' %}
+                    Bağımlılık Analizi
+                    {% if log.document %}
+                    - {{ log.document.filename|truncatechars:20 }}
+                    {% elif log.document_title %}
+                    - {{ log.document_title|truncatechars:20 }}
+                    {% endif %}
+                    {% else %}
+                    {% if log.query_text %}
+                    {{ log.export_type|title }}: "{{ log.query_text|truncatechars:30 }}"
+                    {% elif log.document_title %}
+                    {{ log.document_title|truncatechars:30 }}"
+                    {% elif log.document %}
+                    {{ log.document.filename|truncatechars:30 }}
+                    {% else %}
+                    Bilinmeyen Export
+                    {% endif %}
+                    {% endif %}
+                </span>
+                <div class="card-badges">
+                    <span class="badge badge-type">{{ log.export_type|title }}</span>
+                    <span class="badge badge-format">{{ log.format|upper }}</span>
+                    {% if log.watermark_applied %}
+                    <span class="badge badge-watermark">Filigranlı</span>
                     {% endif %}
                 </div>
+                {% if log.query_text %}
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem; font-style: italic;">
+                    Sorgu: "{{ log.query_text|truncatechars:30 }}"
+                </div>
+                {% endif %}
             </div>
-            
-            <div style="background: #f3f4f6; padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; color: var(--text-secondary);">
-                💡 <strong>Kota her ay 1'inde sıfırlanır</strong>.
-                {% if user.is_superuser %}
-                Süper kullanıcı olarak <strong>sınırsız</strong> kotaya sahipsiniz.
-                {% elif user.userprofile.role == 2 %}
-                Doğrulanmış araştırmacılar 100 MB/ay kota alır.
-                {% else %}
-                Kayıtlı kullanıcılar 5 MB/ay kota alır. 100 MB için <a href="{% url 'corpus:profile' %}" style="color: #4f46e5;">Doğrulanmış Araştırmacı'ya yükselt</a>.
+
+            <div class="card-footer">
+                <span>
+                    <span class="material-icons" style="font-size: 14px; vertical-align: middle;">attachment</span>
+                    {{ log.file_size_mb }} MB
+                </span>
+                {% if log.document %}
+                <a href="{% url 'corpus:analysis' log.document.id %}"
+                    style="color: #3b82f6; text-decoration: none; font-weight: 500;">
+                    İncele &rarr;
+                </a>
                 {% endif %}
             </div>
         </div>
+        {% endfor %}
     </div>
-    
-    <!-- Export History Table -->
-    <div class="card">
-        <div class="card-header" style="padding: 1rem;">
-            <h2 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
-                <span class="material-icons" style="font-size: 1.25rem;">history</span>
-                <span>Recent Exports <span style="opacity: 0.7;">(Last 50)</span></span>
-            </h2>
+
+    <!-- No Results Found Message (Hidden by default) -->
+    <div id="noResultsMessage" class="empty-state" style="display: none;">
+        <div class="empty-icon">
+            <span class="material-icons">filter_list_off</span>
         </div>
-        <div class="card-body" style="padding: 0;">
-            {% if exports %}
-            
-            <!-- Desktop Table View -->
-            <div class="export-table-desktop">
-                <div class="table-responsive">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid var(--border-subtle); background: #f9fafb;">
-                                <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-secondary);">
-                                    <span class="th-full">Tarih</span>
-                                    <span class="th-short">Tarih</span>
-                                </th>
-                                <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-secondary);">
-                                    <span class="th-full">Tür</span>
-                                    <span class="th-short">Tür</span>
-                                </th>
-                                <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-secondary);">
-                                    <span class="th-full">Format</span>
-                                    <span class="th-short">Fmt</span>
-                                </th>
-                                <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: var(--text-secondary);">
-                                    <span class="th-full">Belge</span>
-                                    <span class="th-short">Blg</span>
-                                </th>
-                                <th style="padding: 0.75rem; text-align: right; font-weight: 600; color: var(--text-secondary);">
-                                    <span class="th-full">Boyut</span>
-                                    <span class="th-short">MB</span>
-                                </th>
-                                <th style="padding: 0.75rem; text-align: center; font-weight: 600; color: var(--text-secondary);">
-                                    <span class="th-full">Filigran</span>
-                                    <span class="th-short">WM</span>
-                                </th>
-                                <th style="padding: 0.75rem; text-align: right; font-weight: 600; color: var(--text-secondary);">
-                                    <span class="th-full">Kota Etkisi</span>
-                                    <span class="th-short">Kota</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for export in exports %}
-                            <tr style="border-bottom: 1px solid var(--border-subtle);">
-                                <td style="padding: 0.75rem;">
-                                    <div style="font-size: 0.85rem;">{{ export.created_at|date:"M d, Y" }}</div>
-                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">{{ export.created_at|time:"H:i" }}</div>
-                                </td>
-                                <td style="padding: 0.75rem;">
-                                    <span style="background: #e0e7ff; color: #4f46e5; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500;">
-                                        {{ export.export_type|title }}
-                                    </span>
-                                </td>
-                                <td style="padding: 0.75rem;">
-                                    <span style="font-family: monospace; background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">
-                                        {{ export.format|upper }}
-                                    </span>
-                                </td>
-                                <td style="padding: 0.75rem;">
-                                    {% if export.document %}
-                                    <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" class="doc-title" title="{{ export.document.title }}">
-                                        {{ export.document.title }}
-                                    </div>
-                                    {% else %}
-                                    <span style="color: var(--text-secondary); font-style: italic;">Global Search</span>
-                                    {% endif %}
-                                </td>
-                                <td style="padding: 0.75rem; text-align: right; font-family: monospace; color: var(--text-main);">
-                                    {{ export.file_size_mb|floatformat:3 }} MB
-                                </td>
-                                <td style="padding: 0.75rem; text-align: center;">
-                                    {% if export.watermark_applied %}
-                                    <span style="color: #059669; font-weight: 600;">✓</span>
-                                    {% else %}
-                                    <span style="color: #dc2626; font-weight: 600;">✗</span>
-                                    {% endif %}
-                                </td>
-                                <td style="padding: 0.75rem; text-align: right;">
-                                    <div style="font-size: 0.85rem;">
-                                        <span style="color: #dc2626;">{{ export.quota_before_mb|floatformat:2 }}</span>
-                                        →
-                                        <span style="color: #059669; font-weight: 600;">{{ export.quota_after_mb|floatformat:2 }}</span>
-                                    </div>
-                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                                        (+{{ export.file_size_mb|floatformat:3 }} MB)
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <!-- Mobile Card View -->
-            <div class="export-table-mobile">
-                {% for export in exports %}
-                <div class="export-card-mobile">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--border);">
-                        <div>
-                            <span style="background: #e0e7ff; color: #4f46e5; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
-                                {{ export.export_type|title }}
-                            </span>
-                            <span style="font-family: monospace; background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">
-                                {{ export.format|upper }}
-                            </span>
-                        </div>
-                        <div style="text-align: right; font-size: 0.75rem; color: var(--text-secondary);">
-                            {{ export.created_at|date:"M d, Y" }}<br>
-                            {{ export.created_at|time:"H:i" }}
-                        </div>
-                    </div>
-                    
-                    {% if export.document %}
-                    <div class="export-card-row">
-                        <div class="export-card-label">Belge</div>
-                        <div class="export-card-value" style="font-size: 0.85rem; color: var(--text-main);">
-                            {{ export.document.title }}
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    <div class="export-card-row">
-                        <div class="export-card-label">Boyut</div>
-                        <div class="export-card-value" style="font-family: monospace; font-size: 0.9rem; font-weight: 600; color: var(--text-main);">
-                            {{ export.file_size_mb|floatformat:3 }} MB
-                        </div>
-                    </div>
-                    
-                    <div class="export-card-row">
-                        <div class="export-card-label">Filigran</div>
-                        <div class="export-card-value">
-                            {% if export.watermark_applied %}
-                            <span style="color: #059669; font-weight: 600; font-size: 1.2rem;">✓ Uygulandı</span>
-                            {% else %}
-                            <span style="color: #dc2626; font-weight: 600; font-size: 1.2rem;">✗ Yok</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="export-card-row">
-                        <div class="export-card-label">Kota Etkisi</div>
-                        <div class="export-card-value" style="font-size: 0.85rem;">
-                            <span style="color: #dc2626;">{{ export.quota_before_mb|floatformat:2 }}</span>
-                            →
-                            <span style="color: #059669; font-weight: 600;">{{ export.quota_after_mb|floatformat:2 }}</span>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
-                                (+{{ export.file_size_mb|floatformat:3 }} MB)
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            
-            {% else %}
-            <div style="padding: 4rem; text-align: center; color: var(--muted-color);">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
-                <p style="font-size: 1.1rem;">Henüz export bulunmuyor</p>
-                <p style="font-size: 0.9rem;">Start searching and exporting corpus data!</p>
-                <a href="{% url 'corpus:library' %}" 
-                   style="display: inline-block; margin-top: 1rem; background: #4f46e5; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 500;">
-                    Browse Library
-                </a>
-            </div>
-            {% endif %}
+        <h3>Sonuç Bulunamadı</h3>
+        <p>Arama kriterlerinize uygun kayıt yok.</p>
+    </div>
+
+    {% else %}
+    <!-- Empty State (No Exports at all) -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <span class="material-icons">history_toggle_off</span>
+        </div>
+        <h3>İşlem Geçmişi Boş</h3>
+        <p>Henüz herhangi bir dışa aktarım işlemi yapmadınız.</p>
+        <div style="margin-top: 1.5rem;">
+            <a href="{% url 'corpus:library' %}" class="btn-action">
+                <span class="material-icons">library_books</span>
+                Kütüphaneye Git
+            </a>
         </div>
     </div>
-    
-    <div style="margin-top: 2rem; text-align: center;">
-        <a href="{% url 'corpus:profile' %}" 
-           style="color: #4f46e5; text-decoration: none; font-weight: 500;">
-            ← Back to Profile
-        </a>
-    </div>
+    {% endif %}
+
 </div>
+
 {% endblock %}
+
+{% block extra_js %}
 <script>
-    // Debug overlay + auto-toggle desktop/mobile export views
-    (function(){
-        try{
-            var dbg = document.getElementById('__viewport_debug');
-            if(!dbg){
-                dbg = document.createElement('div');
-                dbg.id = '__viewport_debug';
-                dbg.style.position = 'fixed';
-                dbg.style.bottom = '8px';
-                dbg.style.right = '8px';
-                dbg.style.background = 'rgba(0,0,0,0.6)';
-                dbg.style.color = '#fff';
-                dbg.style.padding = '6px 8px';
-                dbg.style.borderRadius = '6px';
-                dbg.style.fontSize = '12px';
-                dbg.style.zIndex = 99999;
-                dbg.style.pointerEvents = 'none';
-                document.body.appendChild(dbg);
-            }
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('tableSearch');
+        const typeFilter = document.getElementById('typeFilter');
+        const rows = document.querySelectorAll('.export-row');
+        const noResultsMsg = document.getElementById('noResultsMessage');
 
-            var desktop = document.querySelector('.export-table-desktop');
-            var mobile = document.querySelector('.export-table-mobile');
+        function filterExports() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const selectedType = typeFilter.value;
+            let visibleCount = 0;
 
-            function setView(){
-                var w = window.innerWidth || document.documentElement.clientWidth;
-                dbg.textContent = 'w:' + w + ' h:' + (window.innerHeight||document.documentElement.clientHeight) + ' dpr:' + (window.devicePixelRatio||1);
-                // If viewport is wider than 1024px, force desktop view
-                if(w > 1024){
-                    if(desktop) desktop.style.setProperty('display','block','important');
-                    if(mobile) mobile.style.setProperty('display','none','important');
+            rows.forEach(row => {
+                const rowSearchData = row.getAttribute('data-search');
+                const rowType = row.getAttribute('data-type');
+
+                const matchesSearch = rowSearchData.includes(searchTerm);
+                const matchesType = selectedType === 'all' || rowType === selectedType;
+
+                if (matchesSearch && matchesType) {
+                    row.style.display = '';
+                    // For table rows, we need 'table-row', for flex cards 'flex' or block
+                    // But empty string usually reverts to default css display
+                    visibleCount++;
                 } else {
-                    if(desktop) desktop.style.setProperty('display','none','important');
-                    if(mobile) mobile.style.setProperty('display','block','important');
+                    row.style.display = 'none';
                 }
-            }
+            });
 
-            setView();
-            window.addEventListener('resize', setView);
-            console.log('ExportHistory view toggler active');
-        }catch(e){ console.warn('ExportHistory toggler failed', e); }
-    })();
+            if (visibleCount === 0 && rows.length > 0) {
+                if (noResultsMsg) noResultsMsg.style.display = 'block';
+            } else {
+                if (noResultsMsg) noResultsMsg.style.display = 'none';
+            }
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', filterExports);
+        }
+
+        if (typeFilter) {
+            typeFilter.addEventListener('change', filterExports);
+        }
+    });
 </script>
+{% endblock %}

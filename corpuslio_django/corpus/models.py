@@ -208,6 +208,13 @@ class UserProfile(models.Model):
         help_text="Token 1 saat geçerlidir"
     )
     
+    # Export preferences
+    enable_watermark = models.BooleanField(
+        default=True,
+        verbose_name="Export'larda Filigran Ekle",
+        help_text="Export edilen dosyalarda CorpusLIO atıf bilgisi gösterilsin mi?"
+    )
+    
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Kayıt Tarihi")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Güncellenme")
@@ -848,7 +855,7 @@ class Content(models.Model):
         Document, 
         on_delete=models.CASCADE, 
         related_name='content',
-        verbose_name="Belge"
+        verbose_name="Doküman"
     )
     raw_text = models.TextField(blank=True, verbose_name="Ham Metin")
     cleaned_text = models.TextField(blank=True, verbose_name="Temiz Metin")
@@ -1184,6 +1191,12 @@ class ExportLog(models.Model):
         blank=True,
         related_name='export_logs',
         verbose_name="Doküman"
+    )
+    document_title = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Doküman Adı (Snapshot)",
+        help_text="Belge silinse bile adını saklar"
     )
     query_text = models.TextField(
         blank=True,

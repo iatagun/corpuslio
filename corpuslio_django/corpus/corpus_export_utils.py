@@ -203,6 +203,9 @@ def _finalize_export(content_bytes, filename, export_type, fmt, user, query_text
 
         quota_after = profile.export_used_mb
 
+        # Check user watermark preference
+        watermark_enabled = profile.enable_watermark if profile else True
+
         # Create ExportLog
         ExportLog.objects.create(
             user=user,
@@ -213,10 +216,11 @@ def _finalize_export(content_bytes, filename, export_type, fmt, user, query_text
             query_text=query_text or '',
             row_count=row_count or 0,
             file_size_bytes=file_size_bytes,
-            watermark_applied=True,
-            citation_text=generate_citation(user),
+            watermark_applied=watermark_enabled,  # Respect user preference
+            citation_text=generate_citation(user) if watermark_enabled else '',
             quota_before_mb=quota_before,
             quota_after_mb=quota_after,
+            document_title=filename,  # Save the generated filename
         )
 
     return response

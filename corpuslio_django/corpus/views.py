@@ -1431,3 +1431,17 @@ def bulk_add_tags(request):
         
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+@login_required
+def update_watermark_preference(request):
+    """Update user's watermark preference via toggle in profile."""
+    if request.method == 'POST':
+        profile = request.user.profile
+        enable_watermark = request.POST.get('enable_watermark') == 'on'
+        
+        profile.enable_watermark = enable_watermark
+        profile.save()
+        
+        status = "aktif" if enable_watermark else "devre dışı"
+        messages.success(request, f"✅ Filigran tercihi {status} olarak kaydedildi.")
+    
+    return redirect('corpus:profile')

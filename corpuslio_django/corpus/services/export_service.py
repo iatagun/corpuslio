@@ -32,6 +32,11 @@ class ExportService:
         self.document = document
         self.query_text = query_text
         self.timestamp = timezone.now()
+        
+        # Check user watermark preference
+        self.enable_watermark = True  # Default
+        if hasattr(user, 'profile') and user.profile:
+            self.enable_watermark = user.profile.enable_watermark
     
     def generate_citation(self) -> str:
         """
@@ -81,11 +86,12 @@ class ExportService:
         output = io.StringIO()
         writer = csv.writer(output)
         
-        # Watermark header
-        citation = self.generate_citation()
-        for line in citation.split('\n'):
-            writer.writerow([f"# {line}"])
-        writer.writerow([])  # Empty row separator
+        # Watermark header (if enabled)
+        if self.enable_watermark:
+            citation = self.generate_citation()
+            for line in citation.split('\n'):
+                writer.writerow([f"# {line}"])
+            writer.writerow([])  # Empty row separator
         
         # Column headers
         writer.writerow(['Left Context', 'Keyword', 'Right Context', 'Document', 'Position'])
@@ -100,10 +106,11 @@ class ExportService:
                 result.get('position', '')
             ])
         
-        # Footer watermark
+        # Footer
         writer.writerow([])
         writer.writerow([f"Total results: {len(results)}"])
-        writer.writerow([f"Export ID: {self.timestamp.strftime('%Y%m%d%H%M%S')}"])
+        if self.enable_watermark:
+            writer.writerow([f"Export ID: {self.timestamp.strftime('%Y%m%d%H%M%S')}"])
         
         return output.getvalue().encode('utf-8-sig')  # BOM for Excel compatibility
     
@@ -121,11 +128,12 @@ class ExportService:
         output = io.StringIO()
         writer = csv.writer(output)
         
-        # Watermark header
-        citation = self.generate_citation()
-        for line in citation.split('\n'):
-            writer.writerow([f"# {line}"])
-        writer.writerow([])
+        # Watermark header (if enabled)
+        if self.enable_watermark:
+            citation = self.generate_citation()
+            for line in citation.split('\n'):
+                writer.writerow([f"# {line}"])
+            writer.writerow([])
         
         # Column headers
         writer.writerow(['Word', 'Lemma', 'POS', 'Frequency', 'Percentage'])
@@ -160,11 +168,12 @@ class ExportService:
         output = io.StringIO()
         writer = csv.writer(output)
         
-        # Watermark header
-        citation = self.generate_citation()
-        for line in citation.split('\n'):
-            writer.writerow([f"# {line}"])
-        writer.writerow([])
+        # Watermark header (if enabled)
+        if self.enable_watermark:
+            citation = self.generate_citation()
+            for line in citation.split('\n'):
+                writer.writerow([f"# {line}"])
+            writer.writerow([])
         
         # Column headers
         writer.writerow(['N-gram', 'Frequency', 'N-value'])
@@ -209,10 +218,12 @@ class ExportService:
                 'document': doc_title,
                 'query': self.query_text,
                 'total_ngrams': len(results),
-                'citation': self.generate_citation()
             },
             'ngrams': results
         }
+        
+        if self.enable_watermark:
+            data['metadata']['citation'] = self.generate_citation()
         
         return json.dumps(data, ensure_ascii=False, indent=2).encode('utf-8')
     
@@ -242,10 +253,12 @@ class ExportService:
                 'document': doc_title,
                 'query': self.query_text,
                 'total_results': len(results),
-                'citation': self.generate_citation()
             },
             'results': results
         }
+        
+        if self.enable_watermark:
+            data['metadata']['citation'] = self.generate_citation()
         
         return json.dumps(data, ensure_ascii=False, indent=2).encode('utf-8')
     
@@ -274,10 +287,12 @@ class ExportService:
                 'export_date': self.timestamp.isoformat(),
                 'document': doc_title,
                 'total_entries': len(results),
-                'citation': self.generate_citation()
             },
             'frequency_table': results
         }
+        
+        if self.enable_watermark:
+            data['metadata']['citation'] = self.generate_citation()
         
         return json.dumps(data, ensure_ascii=False, indent=2).encode('utf-8')
     
@@ -301,15 +316,19 @@ class ExportService:
         watermark_fill = PatternFill(start_color="FEF3C7", end_color="FEF3C7", fill_type="solid")
         watermark_font = Font(italic=True, size=9)
         
-        # Watermark header (merged cells)
-        citation_lines = self.generate_citation().split('\n')
-        for idx, line in enumerate(citation_lines, 1):
-            ws.merge_cells(f'A{idx}:E{idx}')
-            cell = ws[f'A{idx}']
-            cell.value = line
-            cell.fill = watermark_fill
-            cell.font = watermark_font
-            cell.alignment = Alignment(horizontal='left', vertical='top')
+        # Watermark header (if enabled)
+        if self.enable_watermark:
+            citation_lines = self.generate_citation().split('\n')
+            for idx, line in enumerate(citation_lines, 1):
+                ws.merge_cells(f'A{idx}:E{idx}')
+                cell = ws[f'A{idx}']
+                cell.value = line
+                cell.fill = watermark_fill
+                cell.font = watermark_font
+                cell.alignment = Alignment(horizontal='left', vertical='top')
+            watermark_rows = len(citation_lines) + 1
+        else:
+            watermark_rows = 0
         
         # Empty row
         watermark_rows = len(citation_lines) + 1
@@ -365,17 +384,18 @@ class ExportService:
         ws = wb.active
         ws.title = "Frequency"
         
-        # Watermark header
-        citation_lines = self.generate_citation().split('\n')
-        watermark_fill = PatternFill(start_color="FEF3C7", end_color="FEF3C7", fill_type="solid")
-        watermark_font = Font(italic=True, size=9)
-        
-        for idx, line in enumerate(citation_lines, 1):
-            ws.merge_cells(f'A{idx}:E{idx}')
-            cell = ws[f'A{idx}']
-            cell.value = line
-            cell.fill = watermark_fill
-            cell.font = watermark_font
+        # Watermark header (if enabled)
+        if self.enable_watermark:
+            citation_lines = self.generate_citation().split('\n')
+            for idx, line in enumerate(citation_lines, 1):
+                ws.merge_cells(f'A{idx}:E{idx}')
+                cell = ws[f'A{idx}']
+                cell.value = line
+                cell.fill = watermark_fill
+                cell.font = watermark_font
+            watermark_rows = len(citation_lines) + 1
+        else:
+            watermark_rows = 0
         
         watermark_rows = len(citation_lines) + 1
         ws.append([])
@@ -440,22 +460,24 @@ class ExportService:
         if sentence_indices:
             tokens = [t for t in tokens if t.get('sentence_id') in sentence_indices]
         
-        # Add watermark as comment lines at the beginning
-        citation = self.generate_citation()
-        watermark_lines = [
-            "# ========================================",
-            "# CoNLL-U Export from CorpusLIO Platform",
-            "# ========================================",
-        ]
-        
-        for line in citation.split('\n'):
-            if line.strip():
-                watermark_lines.append(f"# {line}")
-        
-        watermark_lines.append("# ========================================")
-        watermark_lines.append("")
-        
-        watermark_text = '\n'.join(watermark_lines)
+        # Add watermark as comment lines at the beginning (if enabled)
+        if self.enable_watermark:
+            citation = self.generate_citation()
+            watermark_lines = [
+                "# ========================================",
+                "# CoNLL-U Export from CorpusLIO Platform",
+                "# ========================================",
+            ]
+            
+            for line in citation.split('\n'):
+                if line.strip():
+                    watermark_lines.append(f"# {line}")
+            
+            watermark_lines.append("# ========================================")
+            watermark_lines.append("")
+            watermark_text = '\n'.join(watermark_lines)
+        else:
+            watermark_text = ""
         
         # Serialize tokens to CoNLL-U format
         conllu_text = CoNLLUParser.serialize(tokens, include_metadata=True)

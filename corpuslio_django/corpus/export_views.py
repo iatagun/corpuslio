@@ -557,6 +557,10 @@ def export_concordance_watermarked(request, document_id):
     file_size_mb = Decimal(len(content)) / Decimal(1024 * 1024)
     file_size_bytes = len(content)
     
+    # Generate filename (moved before ExportLog)
+    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"concordance_{document.id}_{timestamp}.{file_extension}"
+    
     # Store quota before update
     quota_before = profile.export_used_mb
     
@@ -580,11 +584,8 @@ def export_concordance_watermarked(request, document_id):
         citation_text=service.generate_citation(),
         quota_before_mb=quota_before,
         quota_after_mb=quota_after,
+        document_title=filename,  # Use generated filename instead of document.filename
     )
-    
-    # Generate filename
-    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-    filename = f"concordance_{document.id}_{timestamp}.{file_extension}"
     
     # Create response
     response = HttpResponse(content, content_type=content_type)
@@ -650,6 +651,10 @@ def export_frequency_watermarked(request, document_id):
     file_size_mb = Decimal(len(content)) / Decimal(1024 * 1024)
     file_size_bytes = len(content)
     
+    # Generate filename (moved before ExportLog)
+    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"frequency_{document.id}_{timestamp}.{file_extension}"
+    
     # Store quota before update
     quota_before = profile.export_used_mb
     
@@ -672,11 +677,8 @@ def export_frequency_watermarked(request, document_id):
         citation_text=service.generate_citation(),
         quota_before_mb=quota_before,
         quota_after_mb=quota_after,
+        document_title=filename,  # Use generated filename
     )
-    
-    # Generate filename
-    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-    filename = f"frequency_{document.id}_{timestamp}.{file_extension}"
     
     # Create response
     response = HttpResponse(content, content_type=content_type)
@@ -864,15 +866,19 @@ def export_conllu_watermarked(request, document_id):
         # Calculate file size
         file_size_mb = Decimal(len(content)) / Decimal(1024 * 1024)
         
+        # Generate filename (moved before ExportLog)
+        filename = f"{document.filename.rsplit('.', 1)[0]}_dependencies.conllu"
+        
         # Create export log
         ExportLog.objects.create(
             user=request.user,
             document=document,
             export_type='dependency',
-            file_format='conllu',
+            format='conllu',
             file_size_mb=file_size_mb,
             query_text=request.GET.get('query', ''),
-            watermarked=True
+            watermark_applied=True,
+            document_title=filename,  # Use generated filename
         )
         
         # Update quota for non-superusers
@@ -883,7 +889,6 @@ def export_conllu_watermarked(request, document_id):
                 messages.warning(request, f"Kota güncellenemedi: {e}")
         
         # Prepare response
-        filename = f"{document.filename.rsplit('.', 1)[0]}_dependencies.conllu"
         response = HttpResponse(content, content_type='text/plain; charset=utf-8')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
