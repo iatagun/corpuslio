@@ -260,25 +260,16 @@ def analysis_view(request, doc_id):
         ))
         pos_tags.sort()
     
-    # Document Preview
-    from .permissions import get_document_preview_limit, user_can_view_full_document
-    preview_limit = get_document_preview_limit(request.user)
+    # Document Preview: universally limit preview to first 300 characters for all users
     preview_text = ""
-    
+    preview_char_limit = 300
+
     if hasattr(document, 'content') and document.content and document.content.cleaned_text:
         text = document.content.cleaned_text
-        if preview_limit:
-             # Simple word split for approximation
-            words = text.split()
-            if len(words) > preview_limit:
-                preview_text = " ".join(words[:preview_limit]) + "..."
-            else:
-                preview_text = text
-        else:
-            # Full text for authorized users (maybe limit to a reasonable first chunk for display performance anyway)
-            # But "view full document" rights imply they *can* see it. 
-            # For this view, we might still want to truncate if it's huge, but let's assume we show a generous amount or full.
-            preview_text = text[:10000] + "..." if len(text) > 10000 else text # Safety cap for rendering
+        preview_text = text[:preview_char_limit]
+        if len(text) > preview_char_limit:
+            preview_text = preview_text.rstrip() + "..."
+        is_preview_limited = True
     
     context = {
         'document': document,
@@ -287,7 +278,7 @@ def analysis_view(request, doc_id):
         'pos_tags': pos_tags,
         'active_tab': 'analysis',
         'preview_text': preview_text,
-        'is_preview_limited': preview_limit is not None
+        'is_preview_limited': is_preview_limited
     }
     return render(request, 'corpus/analysis.html', context)
 

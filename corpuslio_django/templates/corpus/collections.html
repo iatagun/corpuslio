@@ -5,9 +5,8 @@
 {% block content %}
 <div class="header-with-action">
     <h2>📁 Koleksiyonlar</h2>
-    {% load auth_extras %}
-    {% if request.user|has_group:"Academician" or request.user|has_group:"Developer" or request.user.is_superuser %}
-    <a href="{% url 'corpus:create_collection' %}" class="btn">+ Yeni Koleksiyon</a>
+    {% if request.user.is_authenticated %}
+    <a href="{% url 'corpus:create_collection' %}" class="btn btn-primary">+ Yeni Koleksiyon</a>
     {% endif %}
 </div>
 
@@ -36,24 +35,91 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
+        gap: 1rem;
     }
 
+    .header-with-action h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Documents grid uses the same responsive rhythm as other pages */
+    .documents-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    /* Premium card styling */
     .collection-card {
         position: relative;
+        padding: 1.5rem;
+        border-radius: 16px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+        border: 1px solid rgba(99,102,241,0.08);
+        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+        transition: transform 0.24s ease, box-shadow 0.24s ease;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .collection-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
+    }
+
+    .collection-card h3 {
+        margin: 0;
+        font-size: 1.125rem;
+        color: var(--text-main);
     }
 
     .collection-desc {
         color: #94a3b8;
-        margin: 0.5rem 0;
+        margin: 0;
+        font-size: 0.95rem;
     }
 
     .collection-meta {
         display: flex;
         gap: 1rem;
-        margin: 1rem 0;
-        font-size: 14px;
-        color: #cbd5e1;
+        margin: 0.25rem 0 0 0;
+        font-size: 13px;
+        color: #9aa6bf;
+    }
+
+    /* Premium primary button */
+    .btn.btn-primary {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        border: none;
+        padding: 0.6rem 1rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(99,102,241,0.18);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 700;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .btn.btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 20px 45px rgba(99,102,241,0.24);
+    }
+
+    .btn.btn-small {
+        padding: 0.45rem 0.75rem;
+        border-radius: 10px;
+        font-weight: 600;
     }
 </style>
 {% endblock %}

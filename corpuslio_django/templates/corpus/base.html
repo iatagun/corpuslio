@@ -147,7 +147,7 @@
                 <div class="profile-section">
                     {% if user.is_authenticated %}
                     {% load auth_extras %}
-                    <div class="profile-dropdown" onclick="window.toggleDropdown(event)">
+                    <div class="profile-dropdown">
                         <div class="profile-avatar">
                             <span class="material-icons" style="font-size: 18px;">person</span>
                         </div>
@@ -460,6 +460,46 @@
             if (dropdown) dropdown.classList.toggle('show');
             if (pill) pill.classList.toggle('open');
         };
+
+        // Ensure profile dropdown works even if header is replaced dynamically
+        (function bindProfileDropdown() {
+            function attach() {
+                const pills = document.querySelectorAll('.profile-dropdown');
+                if (!pills || pills.length === 0) {
+                    console.log('[ProfileDropdown] No .profile-dropdown elements found');
+                    return;
+                }
+                pills.forEach((pill, idx) => {
+                    // Remove any inline onclick to avoid duplicate handlers
+                    pill.removeAttribute('onclick');
+                    // Remove previous listener if present
+                    if (window._profileClickHandler) pill.removeEventListener('click', window._profileClickHandler);
+
+                    window._profileClickHandler = function (e) {
+                        try {
+                            e.stopPropagation();
+                        } catch (err) {}
+                        const dropdown = document.getElementById('profileDropdown');
+                        console.log('[ProfileDropdown] clicked, toggling, index=', idx);
+                        if (dropdown) dropdown.classList.toggle('show');
+                        pill.classList.toggle('open');
+                    };
+
+                    pill.addEventListener('click', window._profileClickHandler);
+                    console.log('[ProfileDropdown] Attached click handler to .profile-dropdown index=', idx);
+                });
+            }
+
+            // Attach on DOMContentLoaded and immediately (if already loaded)
+            document.addEventListener('DOMContentLoaded', attach);
+            attach();
+
+            // Observe DOM mutations to re-attach if header gets replaced (e.g., after login)
+            const observer = new MutationObserver(function () {
+                attach();
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        })();
 
         // Close dropdowns when clicking outside (use event listener to avoid overwrite)
         document.addEventListener('click', function (event) {

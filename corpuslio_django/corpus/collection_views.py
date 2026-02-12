@@ -63,3 +63,55 @@ def create_collection_view(request):
         'active_tab': 'collections'
     }
     return render(request, 'corpus/create_collection.html', context)
+
+
+@login_required
+def edit_collection_view(request, coll_id):
+    """Edit an existing collection (owner only)."""
+    collection = get_object_or_404(Collection, id=coll_id)
+    if collection.owner != request.user and not request.user.is_superuser:
+        messages.error(request, 'Bu koleksiyonu düzenleme yetkiniz yok.')
+        return redirect('corpus:collections')
+
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description', '')
+        doc_ids = request.POST.getlist('documents')
+
+        if not name:
+            messages.error(request, 'Koleksiyon adı gereklidir.')
+        else:
+            collection.name = name
+            collection.description = description
+            collection.save()
+            collection.documents.set(Document.objects.filter(id__in=doc_ids))
+            messages.success(request, f'✅ "{name}" koleksiyonu güncellendi!')
+            return redirect('corpus:collection_detail', coll_id=collection.id)
+
+    documents = Document.objects.all()
+    context = {
+        'collection': collection,
+        'documents': documents,
+        'editing': True,
+        'active_tab': 'collections'
+    }
+    return render(request, 'corpus/create_collection.html', context)
+
+
+@login_required
+def delete_collection_view(request, coll_id):
+    """Delete a collection (owner only). Requires POST."""
+    collection = get_object_or_404(Collection, id=coll_id)
+    if collection.owner != request.user and not request.user.is_superuser:
+        messages.error(request, 'Bu koleksiyonu silme yetkiniz yok.')
+        return redirect('corpus:collections')
+
+    if request.method == 'POST':
+        name = collection.name
+        collection.delete()
+        messages.success(request, f'🗑️ "{name}" koleksiyonu silindi.')
+        return redirect('corpus:collections')
+
+    # If GET, show a simple confirmation page
+    context = {'collection': collection, 'active_tab': 'collections'}
+    return render(request, 'corpus/confirm_delete_collection.html', context)

@@ -179,21 +179,49 @@
 <div class="card preview-card" style="margin-bottom: 2rem;">
     <h3>📄 Belge Önizleme</h3>
     <div class="document-content"
-        style="background: var(--bg-surface); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-subtle); max-height: 400px; overflow-y: auto; white-space: pre-wrap; font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--text-main);">
+        style="background: var(--bg-surface); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(99,102,241,0.06); max-height: 360px; overflow-y: auto; white-space: pre-wrap; font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--text-main);">
         {{ preview_text|default:"İçerik işleniyor veya mevcut değil..." }}
     </div>
     {% if is_preview_limited %}
     <div class="preview-overlay"
-        style="margin-top: 1rem; text-align: center; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
-        <p style="margin-bottom: 0.5rem; font-weight: 500; color: var(--accent-primary);">Bu belgenin devamını görmek
-            için üye olun.</p>
-        <div style="display: flex; gap: 10px; justify-content: center;">
-            <a href="{% url 'corpus:login' %}" class="btn btn-primary btn-small">Giriş Yap</a>
-            <a href="{% url 'corpus:register' %}" class="btn btn-outline btn-small">Kayıt Ol</a>
-        </div>
+        style="margin-top: 1rem; text-align: center; padding: 0.75rem; background: rgba(15,23,42,0.03); border-radius: 8px; border: 1px solid rgba(99,102,241,0.04); color: var(--text-secondary);">
+        <p style="margin:0; font-weight:500;">Not: Önizleme tüm kullanıcılar için ilk 300 karakterle sınırlıdır.</p>
     </div>
     {% endif %}
 </div>
+
+    <style>
+        /* Premium tweaks for analysis page */
+        .analysis-header {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:1rem;
+            margin-bottom:1.25rem;
+        }
+
+        .analysis-header h2 { margin:0; font-size:1.5rem; font-weight:800; }
+
+        .preview-card { border-radius:14px; padding:1rem; box-shadow:0 12px 40px rgba(2,6,23,0.06); background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(99,102,241,0.04); }
+
+        .document-content { font-size:0.95rem; color:var(--text-main); }
+
+        .preview-overlay { border-radius:12px; }
+
+        .search-card { border-radius:12px; padding:1rem; box-shadow:0 10px 30px rgba(2,6,23,0.04); }
+
+        .action-btn { border-radius:12px; padding:0.75rem; background: linear-gradient(135deg,#0ea5e9, #6366f1); color:white; box-shadow:0 8px 30px rgba(99,102,241,0.12); }
+
+        .export-buttons .btn { margin-right:0.5rem; border-radius:10px; }
+
+        /* Make KWIC results area feel premium */
+        .kwic-row { padding:0.5rem 0; border-bottom:1px dashed rgba(99,102,241,0.04); }
+
+        @media (max-width:768px) {
+            .analysis-header { flex-direction:column; align-items:flex-start; }
+            .preview-card { max-width:100%; }
+        }
+    </style>
 
 <!-- Search Form -->
 <div class="card search-card">
@@ -455,18 +483,7 @@
             </div>
         </div>
 
-        <!-- Corpus Formats -->
-        <div>
-            <h4 style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:0.5rem;">
-                Korpus Formatları
-            </h4>
-            <div class="export-buttons">
-                <a href="{% url 'corpus:export' document.id %}?format=json" class="btn btn-outline btn-small">JSON</a>
-                <a href="{% url 'corpus:export' document.id %}?format=vrt" class="btn btn-outline btn-small">VRT</a>
-                <a href="{% url 'corpus:export' document.id %}?format=conllu"
-                    class="btn btn-outline btn-small">CoNLL-U</a>
-            </div>
-        </div>
+        <!-- Corpus Formats removed per request -->
 
         <!-- Watermarked Exports (Week 3) -->
         <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle);">
@@ -508,7 +525,6 @@
     </h3>
     <div class="export-buttons">
         <a href="{% url 'corpus:ngrams' document.id %}" class="btn">N-gram & Kolokasyon</a>
-        <a href="{% url 'corpus:wordcloud' document.id %}" class="btn">Frekans Grafikleri</a>
     </div>
 </div>
 {% endif %}
@@ -543,6 +559,16 @@
         align-items: center;
         gap: 0.5rem;
         color: #cbd5e1;
+    }
+
+    /* Ensure equal spacing between analysis cards */
+    .card {
+        margin-bottom: 1rem;
+    }
+
+    /* When cards appear side-by-side, provide consistent gaps */
+    @media (min-width: 900px) {
+        .card { margin-bottom: 1.25rem; }
     }
 
     .form-check input[type="checkbox"] {
@@ -704,15 +730,81 @@
 }
 </style>
 
+<style>
+    /* Premium buttons */
+    .btn {
+        padding: 0.6rem 0.9rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.03);
+        background: var(--bg-surface);
+        color: var(--text-main);
+        font-weight: 600;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(2,6,23,0.06); }
+
+    .btn-primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; border: none; }
+    .btn-success { background: linear-gradient(135deg,#10b981,#059669); color: #fff; border: none; }
+    .btn-outline { background: transparent; border: 1px solid rgba(99,102,241,0.12); }
+    .btn-secondary { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(99,102,241,0.06); }
+    .btn-small { padding: 0.45rem 0.7rem; font-size: 0.92rem; }
+
+    /* Concordance table premium styling */
+    .concordance-table table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid rgba(99,102,241,0.06);
+        background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));
+    }
+
+    .concordance-table thead th {
+        background: linear-gradient(90deg, rgba(99,102,241,0.12), rgba(139,92,246,0.12));
+        color: #fff;
+        padding: 0.75rem 1rem;
+        font-weight: 700;
+        text-align: left;
+        font-size: 0.9rem;
+    }
+
+    .concordance-table tbody tr:nth-child(odd) { background: rgba(99,102,241,0.02); }
+    .concordance-table tbody tr:hover { background: rgba(99,102,241,0.04); }
+
+    .concordance-table td { padding: 0.75rem 1rem; vertical-align: middle; font-size: 0.95rem; }
+
+    .keyword { display:inline-block; padding:0.25rem 0.6rem; border-radius:8px; background: linear-gradient(90deg,#06b6d4,#34d399); color:#063; color:#012; font-weight:800; }
+
+    .export-menu { border-radius: 10px; overflow: hidden; }
+    .export-menu a { display:block; padding:0.5rem 0.6rem; }
+
+    .pagination .btn { border-radius:8px; }
+
+    /* KWIC row subtle separators */
+    .kwic-row { padding:0.6rem 0; border-bottom: 1px solid rgba(99,102,241,0.03); }
+
+    @media (max-width: 768px) {
+        .concordance-table thead { display:none; }
+        .concordance-table tr { display:block; margin-bottom: 0.5rem; }
+        .concordance-table td { display:flex; justify-content:space-between; }
+    }
+</style>
+
 <script>
-    // Show/hide query field based on search type
-    document.getElementById('search_type').addEventListener('change', function (e) {
-        const queryGroup = document.getElementById('query-group');
-        if (e.target.value === 'pos') {
-            queryGroup.style.display = 'none';
-        } else {
-            queryGroup.style.display = 'block';
-        }
-    });
+    // Show/hide query field based on search type (kept for accessibility)
+    (function(){
+        var el = document.getElementById('search_type');
+        if(!el) return;
+        el.addEventListener('change', function (e) {
+            const queryGroup = document.getElementById('query-group');
+            if (e.target.value === 'pos') {
+                queryGroup.style.display = 'none';
+            } else {
+                queryGroup.style.display = 'block';
+            }
+        });
+    })();
 </script>
 {% endblock %}

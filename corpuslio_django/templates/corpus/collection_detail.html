@@ -7,43 +7,83 @@
 {% endblock %}
 
 {% block content %}
-<div class="header-with-action">
-    <div>
-        <h2>📁 {{ collection.name }}</h2>
-        <p style="color: #94a3b8;">{{ collection.description }}</p>
+<div class="modern-card collection-hero">
+    <div class="card-header">
+        <div class="card-icon"><span class="material-icons">collections_bookmark</span></div>
+        <div>
+            <h2 class="card-title">{{ collection.name }}</h2>
+            <p class="card-subtitle">{{ collection.description }}</p>
+        </div>
     </div>
-    <a href="{% url 'corpus:collections' %}" class="btn btn-secondary">← Koleksiyonlara Dön</a>
-</div>
-
-<!-- Collection Stats -->
-<div class="metrics-row">
-    <div class="metric">
-        <span class="metric-value">{{ collection.get_document_count }}</span>
-        <span class="metric-label">Belge</span>
-    </div>
-    <div class="metric">
-        <span class="metric-value">{{ collection.get_total_words }}</span>
-        <span class="metric-label">Toplam Kelime</span>
+    <div class="card-content" style="display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-top:0.5rem;">
+        <div class="metrics-row">
+            <div class="metric">
+                <span class="metric-value">{{ collection.get_document_count }}</span>
+                <span class="metric-label">Belge</span>
+            </div>
+            <div class="metric">
+                <span class="metric-value">{{ collection.get_total_words }}</span>
+                <span class="metric-label">Toplam Kelime</span>
+            </div>
+        </div>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+            {% if request.user == collection.owner or request.user.is_superuser %}
+            <a href="{% url 'corpus:edit_collection' collection.id %}" class="btn btn-primary">Düzenle</a>
+            <form method="post" action="{% url 'corpus:delete_collection' collection.id %}" style="display:inline; margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary" onclick="return confirm('Koleksiyonu silmek istediğinizden emin misiniz?');">Sil</button>
+            </form>
+            {% endif %}
+            <a href="{% url 'corpus:collections' %}" class="btn btn-outline">← Koleksiyonlara Dön</a>
+        </div>
     </div>
 </div>
 
 <!-- Documents in Collection -->
-<div class="card">
-    <h3>📚 Belgeler</h3>
+<div class="documents-section">
+    <h3 class="section-title">📚 Belgeler</h3>
     <div class="documents-grid" style="margin-top: 1rem;">
         {% for doc in documents %}
-        <div class="card document-card">
-            <h4>{{ doc.filename }}</h4>
-            <div class="document-meta">
-                <span>{{ doc.format }}</span>
-                <span>{{ doc.get_word_count }} kelime</span>
-                <span>{{ doc.upload_date|date:"d.m.Y" }}</span>
+        <div class="document-card">
+            <div class="document-card-body">
+                <div>
+                    <h4 class="doc-title">{{ doc.filename }}</h4>
+                    <div class="document-meta">
+                        <span>{{ doc.format }}</span>
+                        <span>{{ doc.get_word_count }} kelime</span>
+                        <span>{{ doc.upload_date|date:"d.m.Y" }}</span>
+                    </div>
+                </div>
+                <div class="document-actions">
+                    {% if doc.processed %}
+                    <a href="{% url 'corpus:analysis' doc.id %}" class="btn btn-primary btn-small">İncele</a>
+                    {% else %}
+                    <span class="badge">İşlenmedi</span>
+                    {% endif %}
+                </div>
             </div>
-            {% if doc.processed %}
-            <a href="{% url 'corpus:analysis' doc.id %}" class="btn btn-small">İncele</a>
-            {% endif %}
         </div>
         {% endfor %}
     </div>
 </div>
+
+<style>
+    .collection-hero { padding: 1.25rem; border-radius: 14px; }
+    .card-subtitle { color: #94a3b8; margin: 0; }
+    .metrics-row { display:flex; gap:1.25rem; align-items:center; }
+    .metric { background: rgba(99,102,241,0.03); padding: 0.6rem 0.9rem; border-radius: 10px; text-align:center; }
+    .metric-value { display:block; font-weight:700; font-size:1.1rem; color:var(--text-main); }
+    .metric-label { font-size:0.85rem; color:var(--text-secondary); }
+
+    .section-title { margin: 0 0 0.75rem 0; font-size:1.125rem; }
+
+    .document-card { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(99,102,241,0.04); border-radius:12px; padding:0.75rem; box-shadow:0 6px 24px rgba(2,6,23,0.04); }
+    .document-card-body { display:flex; justify-content:space-between; align-items:center; gap:1rem; }
+    .doc-title { margin:0 0 0.25rem 0; font-size:1rem; }
+    .document-meta { color:#9aa6bf; font-size:13px; display:flex; gap:0.75rem; }
+    .document-actions { display:flex; gap:0.5rem; align-items:center; }
+    .badge { padding:0.35rem 0.6rem; background:rgba(220,38,38,0.08); color:#dc2626; border-radius:10px; font-weight:600; }
+
+    @media (max-width:640px){ .document-card-body{flex-direction:column; align-items:flex-start;} .metrics-row{margin-top:0.5rem;} }
+</style>
 {% endblock %}

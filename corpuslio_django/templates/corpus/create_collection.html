@@ -3,75 +3,172 @@
 {% block title %}Yeni Koleksiyon{% endblock %}
 
 {% block content %}
-<h2>📁 Yeni Koleksiyon Oluştur</h2>
+<div class="modern-card">
+    <div class="card-header">
+        <div class="card-icon"><span class="material-icons">add_box</span></div>
+        <h3 class="card-title">{% if editing %}Koleksiyonu Düzenle{% else %}Yeni Koleksiyon Oluştur{% endif %}</h3>
+    </div>
+    <div class="card-content">
+        <form method="POST">
+            {% csrf_token %}
 
-<div class="card">
-    <form method="POST">
-        {% csrf_token %}
-
-        <div class="form-group">
-            <label for="name" class="form-label">Koleksiyon Adı *</label>
-            <input type="text" name="name" id="name" required class="form-control"
-                placeholder="Örn: 19. Yüzyıl Edebiyatı">
-        </div>
-
-        <div class="form-group">
-            <label for="description" class="form-label">Açıklama</label>
-            <textarea name="description" id="description" rows="3" class="form-control"
-                placeholder="Koleksiyon hakkında kısa bilgi..."></textarea>
-        </div>
-
-        <div class="form-group">
-            <label class="form-label">Belgeler Seçin</label>
-            <div class="document-selector">
-                {% for doc in documents %}
-                <div class="doc-checkbox">
-                    <input type="checkbox" name="documents" value="{{ doc.id }}" id="doc-{{ doc.id }}">
-                    <label for="doc-{{ doc.id }}">
-                        {{ doc.filename }}
-                        <span class="doc-meta">{{ doc.get_word_count }} kelime</span>
-                    </label>
-                </div>
-                {% endfor %}
+            <div class="form-group">
+                <label for="name" class="form-label">Koleksiyon Adı *</label>
+                <input type="text" name="name" id="name" required class="form-control"
+                    placeholder="Örn: 19. Yüzyıl Edebiyatı" value="{% if editing %}{{ collection.name }}{% endif %}">
             </div>
-        </div>
 
-        <div style="display: flex; gap: 1rem;">
-            <button type="submit" class="btn">Oluştur</button>
-            <a href="{% url 'corpus:collections' %}" class="btn btn-secondary">İptal</a>
-        </div>
-    </form>
+            <div class="form-group">
+                <label for="description" class="form-label">Açıklama</label>
+                <textarea name="description" id="description" rows="3" class="form-control"
+                    placeholder="Koleksiyon hakkında kısa bilgi...">{% if editing %}{{ collection.description }}{% endif %}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Belgeler Seçin</label>
+                <div class="document-selector">
+                    {% for doc in documents %}
+                    <div class="doc-checkbox">
+                        <input type="checkbox" name="documents" value="{{ doc.id }}" id="doc-{{ doc.id }}" {% if editing and doc in collection.documents.all %}checked{% endif %}>
+                        <label for="doc-{{ doc.id }}">
+                            <span class="doc-name">{{ doc.filename }}</span>
+                            <span class="doc-meta">{{ doc.get_word_count }} kelime</span>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">{% if editing %}Güncelle{% else %}Oluştur{% endif %}</button>
+                <a href="{% url 'corpus:collections' %}" class="btn btn-secondary">İptal</a>
+            </div>
+        </form>
+    </div>
 </div>
 
 <style>
+    .modern-card {
+        padding: 1.25rem;
+        border-radius: 16px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+        border: 1px solid rgba(99,102,241,0.06);
+        box-shadow: 0 10px 40px rgba(2,6,23,0.06);
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(99,102,241,0.03);
+    }
+
+    .card-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card-icon .material-icons {
+        color: white;
+        font-size: 20px;
+    }
+
+    .card-title {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .form-control {
+        padding: 0.65rem 0.75rem;
+        border-radius: 10px;
+        border: 1px solid rgba(99,102,241,0.08);
+        background: rgba(15,23,42,0.02);
+        color: var(--text-main);
+        outline: none;
+    }
+
+    .form-control:focus {
+        box-shadow: 0 6px 18px rgba(99,102,241,0.12);
+        border-color: rgba(99,102,241,0.22);
+    }
+
     .document-selector {
-        max-height: 400px;
+        max-height: 320px;
         overflow-y: auto;
-        border: 1px solid #334155;
-        border-radius: 8px;
-        padding: 1rem;
-        background: rgba(30, 41, 59, 0.3);
+        border-radius: 10px;
+        padding: 0.5rem;
+        background: rgba(30, 41, 59, 0.04);
+        border: 1px solid rgba(99,102,241,0.03);
     }
 
     .doc-checkbox {
-        padding: 0.5rem;
-        border-bottom: 1px solid #334155;
+        padding: 0.6rem;
+        border-bottom: 1px solid rgba(99,102,241,0.03);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     }
 
     .doc-checkbox:last-child {
         border-bottom: none;
     }
 
+    .doc-checkbox input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+    }
+
     .doc-checkbox label {
         display: flex;
         justify-content: space-between;
+        align-items: center;
+        width: 100%;
         cursor: pointer;
-        color: #f8fafc;
+        color: var(--text-main);
+    }
+
+    .doc-name {
+        color: var(--text-main);
+        font-weight: 600;
     }
 
     .doc-meta {
         color: #94a3b8;
         font-size: 13px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        margin-top: 0.5rem;
+    }
+
+    @media (max-width: 640px) {
+        .form-actions { flex-direction: column-reverse; align-items: stretch; }
+        .form-actions .btn { width: 100%; }
     }
 </style>
 {% endblock %}

@@ -1,0 +1,22 @@
+{% extends "corpus/base.html" %}
+
+{% block title %}Koleksiyonu Sil{% endblock %}
+
+{% block content %}
+<div class="modern-card">
+    <div class="card-header">
+        <div class="card-icon"><span class="material-icons">delete_forever</span></div>
+        <h3 class="card-title">Koleksiyonu Sil</h3>
+    </div>
+    <div class="card-content">
+        <p>"{{ collection.name }}" koleksiyonunu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.</p>
+        <form method="post">
+            {% csrf_token %}
+            <div style="display:flex; gap:0.75rem; justify-content:flex-end; margin-top:1rem;">
+                <a href="{% url 'corpus:collection_detail' collection.id %}" class="btn btn-secondary">İptal</a>
+                <button type="submit" class="btn btn-primary">Sil ve Onayla</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
