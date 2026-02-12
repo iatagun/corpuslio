@@ -6,522 +6,778 @@
 {% block title %}Profilim - CorpusIO{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 1200px; margin-top: 40px;">
-    <div class="profile-header" style="margin-bottom: 2rem;">
-        <h1 style="color: var(--text-main); font-size: 2rem; margin-bottom: 0.5rem;">
-            👤 {{ user.get_full_name|default:user.username }}
-        </h1>
-        <p style="color: var(--text-secondary); font-size: 1.1rem;">
-            {{ user.email }}
-        </p>
+<div class="profile-page-wrapper">
+    <!-- Profile Hero Section with Gradient -->
+    <div class="profile-hero">
+        <div class="profile-hero-content">
+            <div class="profile-avatar-large">
+                <span class="material-icons">person</span>
+            </div>
+            <div class="profile-hero-info">
+                <h1 class="profile-hero-title">{{ user.get_full_name|default:user.username }}</h1>
+                <p class="profile-hero-email">{{ user.email }}</p>
+                <div class="profile-hero-badges">
+                    {% if user.is_superuser %}
+                    <span class="profile-badge badge-admin">⚡ Süper Yönetici</span>
+                    {% elif profile.role == 'registered' %}
+                    <span class="profile-badge badge-registered">📝 Kayıtlı Kullanıcı</span>
+                    {% elif profile.role == 'verified' %}
+                    <span class="profile-badge badge-verified">✅ Doğrulanmış Araştırmacı</span>
+                    {% elif profile.role == 'developer' %}
+                    <span class="profile-badge badge-developer">💻 Geliştirici</span>
+                    {% elif profile.role == 'admin' %}
+                    <span class="profile-badge badge-admin">⚡ Yönetici</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="profile-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
-        <!-- Role & Status Card -->
-        <div class="card">
-            <div class="card-header">
-                <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-main);">
-                    🎯 Hesap Durumu
-                </h2>
-            </div>
-            <div class="card-body">
-                <div style="margin-bottom: 1.5rem;">
-                    <label
-                        style="color: var(--text-secondary); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
-                        Yetki Seviyesi
-                    </label>
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        {% if user.is_superuser %}
-                        <span class="role-badge role-admin"
-                            style="padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                            ⚡ Süper Yönetici (Sınırsız)
-                        </span>
-                        {% elif profile.role == 'registered' %}
-                        <span class="role-badge role-registered"
-                            style="padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 1rem;">
-                            📝 Kayıtlı Kullanıcı
-                        </span>
-                        {% elif profile.role == 'verified' %}
-                        <span class="role-badge role-verified"
-                            style="padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 1rem;">
-                            ✅ Doğrulanmış Araştırmacı
-                        </span>
-                        {% elif profile.role == 'developer' %}
-                        <span class="role-badge role-developer"
-                            style="padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 1rem;">
-                            💻 Geliştirici
-                        </span>
-                        {% elif profile.role == 'admin' %}
-                        <span class="role-badge role-admin"
-                            style="padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 1rem;">
-                            ⚡ Yönetici
-                        </span>
-                        {% endif %}
+    <div class="profile-container">
+        <!-- Quick Actions Bar -->
+        <div class="quick-actions-bar">
+            <a class="quick-action-btn primary" href="{% url 'corpus:export_history' %}">
+                <span class="material-icons">history</span>
+                <span>Export Geçmişi</span>
+            </a>
+            {% if user.is_authenticated %}
+            <a class="quick-action-btn" href="{% url 'corpus:corpus_search' %}">
+                <span class="material-icons">search</span>
+                <span>Korpus Ara</span>
+            </a>
+            <a class="quick-action-btn" href="{% url 'corpus:dashboard' %}">
+                <span class="material-icons">dashboard</span>
+                <span>Dashboard</span>
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <!-- Account Info Card -->
+            <div class="modern-card account-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <span class="material-icons">badge</span>
+                    </div>
+                    <h3 class="card-title">Hesap Bilgileri</h3>
+                </div>
+                <div class="card-content">
+                    {% if profile.role == 'verified' or profile.role == 'developer' or profile.role == 'admin' %}
+                    {% if profile.institution %}
+                    <div class="detail-row">
+                        <span class="detail-label">Kurum</span>
+                        <span class="detail-value">{{ profile.institution }}</span>
+                    </div>
+                    {% endif %}
+                    {% if profile.orcid %}
+                    <div class="detail-row">
+                        <span class="detail-label">ORCID</span>
+                        <a href="https://orcid.org/{{ profile.orcid }}" target="_blank" class="detail-link">{{
+                            profile.orcid }}</a>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                    <div class="detail-row">
+                        <span class="detail-label">Üyelik Tarihi</span>
+                        <span class="detail-value">{{ user.date_joined|date:"d F Y" }}</span>
                     </div>
                 </div>
+            </div>
 
-                {% if profile.role == 'verified' or profile.role == 'developer' or profile.role == 'admin' %}
-                <div style="margin-bottom: 1.5rem;">
-                    <label
-                        style="color: var(--text-secondary); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
-                        Kurum
-                    </label>
-                    <p style="color: var(--text-main); margin: 0;">
-                        {{ profile.institution|default:"Belirtilmemiş" }}
-                    </p>
+            <!-- Export Quota Card -->
+            <div class="modern-card quota-card">
+                <div class="quota-visual-modern">
+                    <svg class="circular-progress" viewBox="0 0 120 120">
+                        <defs>
+                            <linearGradient id="quota-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#6366f1" />
+                                <stop offset="50%" stop-color="#8b5cf6" />
+                                <stop offset="100%" stop-color="#d946ef" />
+                            </linearGradient>
+                        </defs>
+                        <circle class="progress-bg" cx="60" cy="60" r="52" />
+                        <circle class="progress-bar" cx="60" cy="60" r="52" stroke="url(#quota-gradient)"
+                            stroke-dasharray="{{ export_percentage|floatformat:0 }}, 100" />
+                    </svg>
+                    <div class="quota-center">
+                        <div class="quota-percent">{{ export_percentage|floatformat:0 }}%</div>
+                        <div class="quota-label">Kullanım</div>
+                    </div>
                 </div>
-
-                {% if profile.orcid %}
-                <div style="margin-bottom: 1.5rem;">
-                    <label
-                        style="color: var(--text-secondary); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
-                        ORCID
-                    </label>
-                    <a href="https://orcid.org/{{ profile.orcid }}" target="_blank"
-                        style="color: #3b82f6; text-decoration: none;">
-                        {{ profile.orcid }}
-                    </a>
-                </div>
-                {% endif %}
-                {% endif %}
-
-                <div style="margin-bottom: 0;">
-                    <label
-                        style="color: var(--text-secondary); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
-                        Üyelik Tarihi
-                    </label>
-                    <p style="color: var(--text-main); margin: 0;">
-                        {{ user.date_joined|date:"d F Y" }}
-                    </p>
-                </div>
-
-                <!-- Watermark Preference -->
-                <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle);">
-                    <form method="post" action="{% url 'corpus:update_watermark_preference' %}" id="watermark-form">
-                        {% csrf_token %}
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <div style="flex: 1;">
-                                <label for="enable_watermark"
-                                    style="color: var(--text-main); font-weight: 500; display: block; margin-bottom: 0.25rem; cursor: pointer;">
-                                    📝 Export'larda Filigran/Atıf
-                                </label>
-                                <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0;">
-                                    Export dosyalarınızda CorpusLIO atıf bilgisi gösterilsin mi?
-                                </p>
-                            </div>
-                            <div style="margin-left: 1rem;">
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="enable_watermark" name="enable_watermark" {% if
-                                        profile.enable_watermark %}checked{% endif %} onchange="this.form.submit()">
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
+                <div class="quota-details">
+                    <div class="quota-stat">
+                        <span class="material-icons">cloud_upload</span>
+                        <div>
+                            <div class="stat-label">Kullanılan</div>
+                            <div class="stat-value">{{ profile.export_used_mb|floatformat:2 }} MB</div>
                         </div>
-                    </form>
+                    </div>
+                    <div class="quota-stat">
+                        <span class="material-icons">storage</span>
+                        <div>
+                            <div class="stat-label">Limit</div>
+                            <div class="stat-value">{{ profile.export_quota_mb }} MB</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Quota Tracking Card -->
-        <div class="card">
+        <!-- Usage Statistics -->
+        <div class="modern-card usage-card">
             <div class="card-header">
-                <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-main);">
-                    📊 Kullanım İstatistikleri
-                </h2>
+                <div class="card-icon">
+                    <span class="material-icons">analytics</span>
+                </div>
+                <h2 class="card-title">Kullanım İstatistikleri</h2>
             </div>
-            <div class="card-body">
+            <div class="card-content">
                 {% if user.is_superuser %}
                 <!-- Superuser unlimited notice -->
-                <div style="text-align: center; padding: 2rem;">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">♾️</div>
-                    <h3 style="color: var(--text-main); margin-bottom: 0.5rem;">Sınırsız Erişim</h3>
-                    <p style="color: var(--text-secondary); margin: 0;">
-                        Süper yönetici olarak tüm kotalardan muafsınız.
-                    </p>
+                <div class="unlimited-notice">
+                    <div class="unlimited-icon">♾️</div>
+                    <h3>Sınırsız Erişim</h3>
+                    <p>Süper yönetici olarak tüm kotalardan muafsınız.</p>
                 </div>
                 {% else %}
                 <!-- Query Quota -->
-                <div style="margin-bottom: 1.5rem;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <label style="color: var(--text-secondary); font-size: 0.9rem;">
-                            Günlük Sorgu Limiti
-                        </label>
-                        <span style="color: var(--text-main); font-weight: 600;">
-                            {{ profile.queries_today }} / {% if query_limit %}{{ query_limit }}{% else %}Sınırsız{%
-                            endif %}
-                        </span>
-                    </div>
-                    {% if query_limit %}
-                    <div class="progress-bar"
-                        style="background: var(--bg-surface-hover); height: 8px; border-radius: 4px; overflow: hidden;">
-                        <div
-                            style="background: linear-gradient(90deg, #3b82f6, #2563eb); height: 100%; width: {{ query_percentage }}%; transition: width 0.3s;">
+                <div class="stat-section">
+                    <div class="stat-header">
+                        <span class="stat-icon material-icons">search</span>
+                        <div class="stat-info">
+                            <span class="stat-name">Günlük Sorgu Limiti</span>
+                            <span class="stat-values">{{ profile.queries_today }} / {% if query_limit %}{{ query_limit
+                                }}{% else %}Sınırsız{% endif %}</span>
                         </div>
                     </div>
+                    {% if query_limit %}
+                    <div class="modern-progress">
+                        <div class="progress-fill query-fill" style="width: {{ query_percentage }}%;"></div>
+                    </div>
                     {% endif %}
-                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 0;">
-                        Sıfırlanma: {% if query_reset_is_tomorrow %}Yarın 00:00{% else %}{{ query_reset|date:"d F Y" }}
-                        00:00{% endif %}
-                    </p>
+                    <p class="stat-reset">Sıfırlanma: {% if query_reset_is_tomorrow %}Yarın 00:00{% else %}{{
+                        query_reset|date:"d F Y" }} 00:00{% endif %}</p>
                 </div>
 
                 <!-- Export Quota -->
-                <div style="margin-bottom: 1.5rem;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <label style="color: var(--text-secondary); font-size: 0.9rem;">
-                            Aylık Dışa Aktarma Kotası
-                        </label>
-                        <span style="color: var(--text-main); font-weight: 600;">
-                            {{ profile.export_used_mb|floatformat:2 }} MB / {{ profile.export_quota_mb }} MB
-                        </span>
-                    </div>
-                    <div class="progress-bar"
-                        style="background: var(--bg-surface-hover); height: 8px; border-radius: 4px; overflow: hidden;">
-                        <div
-                            style="background: linear-gradient(90deg, #10b981, #059669); height: 100%; width: {{ export_percentage }}%; transition: width 0.3s;">
+                <div class="stat-section">
+                    <div class="stat-header">
+                        <span class="stat-icon material-icons">cloud_download</span>
+                        <div class="stat-info">
+                            <span class="stat-name">Aylık Dışa Aktarma Kotası</span>
+                            <span class="stat-values">{{ profile.export_used_mb|floatformat:2 }} MB / {{
+                                profile.export_quota_mb }} MB</span>
                         </div>
                     </div>
-                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 0;">
-                        Sıfırlanma: {{ profile.export_last_reset|date:"d F Y" }}
-                    </p>
-
-                    <!-- Export History Link -->
-                    <div style="margin-top: 1rem;">
-                        <a href="{% url 'corpus:export_history' %}"
-                            style="display: inline-block; background: #4f46e5; color: white; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: background 0.2s;">
-                            📦 Export Geçmişini Görüntüle
-                        </a>
+                    <div class="modern-progress">
+                        <div class="progress-fill export-fill" style="width: {{ export_percentage }}%;"></div>
                     </div>
+                    <p class="stat-reset">Sıfırlanma: {{ profile.export_last_reset|date:"d F Y" }}</p>
                 </div>
 
                 {% if profile.role == 'developer' or profile.role == 'admin' %}
                 <!-- API Calls -->
-                <div style="margin-bottom: 0;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <label style="color: var(--text-secondary); font-size: 0.9rem;">
-                            API Çağrıları (Bugün)
-                        </label>
-                        <span style="color: var(--text-main); font-weight: 600;">
-                            {{ profile.api_calls_today }} / {{ profile.api_quota_daily }}
-                        </span>
-                    </div>
-                    <div class="progress-bar"
-                        style="background: var(--bg-surface-hover); height: 8px; border-radius: 4px; overflow: hidden;">
-                        <div
-                            style="background: linear-gradient(90deg, #f59e0b, #d97706); height: 100%; width: {% widthratio profile.api_calls_today profile.api_quota_daily 100 %}%; transition: width 0.3s;">
+                <div class="stat-section">
+                    <div class="stat-header">
+                        <span class="stat-icon material-icons">api</span>
+                        <div class="stat-info">
+                            <span class="stat-name">API Çağrıları (Bugün)</span>
+                            <span class="stat-values">{{ profile.api_calls_today }} / {{ profile.api_quota_daily
+                                }}</span>
                         </div>
+                    </div>
+                    <div class="modern-progress">
+                        <div class="progress-fill api-fill"
+                            style="width: {% widthratio profile.api_calls_today profile.api_quota_daily 100 %}%;"></div>
                     </div>
                 </div>
                 {% endif %}
                 {% endif %}
             </div>
         </div>
-    </div>
 
-    {% if user.is_superuser or profile.role == 'developer' or profile.role == 'admin' %}
-    <!-- API Key Card (Developer/Admin only) -->
-    <div class="card" style="margin-bottom: 2rem;">
-        <div class="card-header">
-            <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-main);">
-                🔑 API Erişim Anahtarı
-            </h2>
-        </div>
-        <div class="card-body">
-            {% if profile.api_key %}
-            <div
-                style="background: var(--bg-surface-hover); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 1rem; margin-bottom: 1rem; font-family: 'Courier New', monospace;">
-                <code id="api-key" style="color: var(--text-main); word-break: break-all;">{{ profile.api_key }}</code>
+        <!-- Watermark Preference Card -->
+        <div class="modern-card watermark-card">
+            <div class="card-header">
+                <div class="card-icon">
+                    <span class="material-icons">branding_watermark</span>
+                </div>
+                <h3 class="card-title">Filigran Tercihi</h3>
             </div>
-            <div style="display: flex; gap: 1rem;">
+            <div class="card-content">
+                <form method="post" action="{% url 'corpus:update_watermark_preference' %}" id="watermark-form">
+                    {% csrf_token %}
+                    <div class="watermark-setting">
+                        <div class="watermark-info">
+                            <div class="watermark-title">Export'larda Filigran/Atıf</div>
+                            <p class="watermark-desc">Export dosyalarınızda CorpusLIO atıf bilgisi gösterilsin mi?</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="enable_watermark" name="enable_watermark" {% if
+                                profile.enable_watermark %}checked{% endif %} onchange="this.form.submit()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if user.is_superuser or profile.role == 'developer' or profile.role == 'admin' %}
+        <!-- API Key Card -->
+        <div class="modern-card api-card">
+            <div class="card-header">
+                <div class="card-icon">
+                    <span class="material-icons">vpn_key</span>
+                </div>
+                <h3 class="card-title">API Erişim Anahtarı</h3>
+            </div>
+            <div class="card-content">
+                {% if profile.api_key %}
+                <div class="api-key-box">
+                    <code id="api-key">{{ profile.api_key }}</code>
+                </div>
                 <button onclick="copyApiKey()" class="btn btn-primary">
-                    📋 Kopyala
+                    <span class="material-icons">content_copy</span>
+                    Kopyala
                 </button>
+                <p class="api-warning">⚠️ API anahtarınızı güvenli tutun. Başkalarıyla paylaşmayın.</p>
+                {% else %}
+                <p class="api-notice">Henüz API anahtarınız oluşturulmamış. Lütfen yöneticiye başvurun.</p>
+                {% endif %}
             </div>
-            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 1rem; margin-bottom: 0;">
-                ⚠️ API anahtarınızı güvenli tutun. Başkalarıyla paylaşmayın.
-            </p>
-            {% else %}
-            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
-                Henüz API anahtarınız oluşturulmamış.
-            </p>
-            <p style="color: var(--text-secondary); font-size: 0.9rem;">
-                API anahtarı otoma tik olarak oluşturulacaktır. Lütfen yöneticiye başvurun.
-            </p>
-            {% endif %}
         </div>
+        {% endif %}
+
+        {% if not user.is_superuser and profile.role == 'registered' %}
+        <!-- Upgrade CTA -->
+        <div class="modern-card upgrade-card">
+            <div class="upgrade-content">
+                <div class="upgrade-icon">✨</div>
+                <h3 class="upgrade-title">Daha Fazla Erişim İçin Hesabınızı Yükseltin</h3>
+                <p class="upgrade-desc">Doğrulanmış araştırmacı olarak günlük 1000 sorgu hakkı ve aylık 100MB dışa
+                    aktarma kotası kazanın.</p>
+                <a href="mailto:support@corpusio.org?subject=Hesap Doğrulama Talebi" class="btn btn-upgrade">
+                    Başvuru Yap →
+                </a>
+            </div>
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
-
-    <!-- Detailed Activity Logs (Query & Export) -->
-    <div class="card" style="margin-top: 2rem;">
-        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="margin: 0; font-size: 1.3rem; color: var(--text-main);">
-                🔍 Detaylı Aktivite Geçmişi
-            </h2>
-            <span
-                style="background: var(--bg-surface-hover); padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem; color: var(--text-secondary);">
-                Bugün: {{ profile.queries_today }} sorgu, {{ profile.export_used_mb|floatformat:2 }} MB export
-                <span style="margin-left: 10px; opacity: 0.7;">
-                    ({{ recent_query_logs|length }} log, {{ recent_export_logs|length }} export)
-                </span>
-            </span>
-        </div>
-        <div class="card-body">
-            {% if recent_query_logs %}
-            <h3
-                style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 1rem; border-bottom: 2px solid var(--border-subtle); padding-bottom: 0.5rem;">
-                📊 Son Query Logları
-                <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: normal;">
-                    (Rate limit edilenler kotaya dahil değildir)
-                </span>
-            </h3>
-            <div class="table-responsive" style="margin-bottom: 2rem;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                    <thead>
-                        <tr style="border-bottom: 2px solid var(--border-subtle);">
-                            <th
-                                style="padding: 0.6rem; text-align: left; color: var(--text-secondary); font-weight: 600;">
-                                Sorgu</th>
-                            <th
-                                style="padding: 0.6rem; text-align: left; color: var(--text-secondary); font-weight: 600;">
-                                Tip</th>
-                            <th
-                                style="padding: 0.6rem; text-align: center; color: var(--text-secondary); font-weight: 600;">
-                                Sonuç</th>
-                            <th
-                                style="padding: 0.6rem; text-align: center; color: var(--text-secondary); font-weight: 600;">
-                                Süre</th>
-                            <th
-                                style="padding: 0.6rem; text-align: center; color: var(--text-secondary); font-weight: 600;">
-                                Durum</th>
-                            <th
-                                style="padding: 0.6rem; text-align: right; color: var(--text-secondary); font-weight: 600;">
-                                Tarih</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for log in recent_query_logs %}
-                        <tr style="border-bottom: 1px solid var(--border-subtle);">
-                            <td
-                                style="padding: 0.6rem; color: var(--text-main); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                {{ log.query_text|truncatewords:8 }}
-                            </td>
-                            <td style="padding: 0.6rem;">
-                                <span
-                                    style="background: #dbeafe; color: #1e40af; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">
-                                    {{ log.get_query_type_display|default:"Kelime" }}
-                                </span>
-                            </td>
-                            <td style="padding: 0.6rem; text-align: center; color: var(--text-color);">
-                                {{ log.result_count }}
-                            </td>
-                            <td
-                                style="padding: 0.6rem; text-align: center; color: var(--muted-color); font-size: 0.85rem;">
-                                {{ log.execution_time_ms }}ms
-                            </td>
-                            <td style="padding: 0.6rem; text-align: center;">
-                                {% if log.rate_limit_hit %}
-                                <div>
-                                    <span
-                                        style="background: #fee2e2; color: #dc2626; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; display: block; margin-bottom: 0.2rem;">
-                                        🚫 Reddedildi
-                                    </span>
-                                    <span style="color: #6b7280; font-size: 0.7rem; font-style: italic;">
-                                        Kotaya dahil değil
-                                    </span>
-                                </div>
-                                {% elif log.is_cached %}
-                                <div>
-                                    <span
-                                        style="background: #d1fae5; color: #059669; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; display: block; margin-bottom: 0.2rem;">
-                                        ⚡ Cache
-                                    </span>
-                                    <span style="color: #6b7280; font-size: 0.7rem; font-style: italic;">
-                                        Kotaya dahil
-                                    </span>
-                                </div>
-                                {% else %}
-                                <div>
-                                    <span
-                                        style="background: #e0e7ff; color: #4f46e5; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; display: block; margin-bottom: 0.2rem;">
-                                        ✓ Başarılı
-                                    </span>
-                                    <span style="color: #6b7280; font-size: 0.7rem; font-style: italic;">
-                                        Kotaya dahil
-                                    </span>
-                                </div>
-                                {% endif %}
-                            </td>
-                            <td
-                                style="padding: 0.6rem; text-align: right; color: var(--text-secondary); font-size: 0.85rem;">
-                                {{ log.created_at|date:"d.m H:i" }}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% endif %}
-
-            {% if recent_export_logs %}
-            <h3
-                style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 1rem; border-bottom: 2px solid var(--border-subtle); padding-bottom: 0.5rem;">
-                📦 Son Export Logları (Kotaya Dahil)
-            </h3>
-            <div class="table-responsive">
-                <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                    <thead>
-                        <tr style="border-bottom: 2px solid var(--border-subtle);">
-                            <th
-                                style="padding: 0.6rem; text-align: left; color: var(--text-secondary); font-weight: 600;">
-                                Tip</th>
-                            <th
-                                style="padding: 0.6rem; text-align: left; color: var(--text-secondary); font-weight: 600;">
-                                Format</th>
-                            <th
-                                style="padding: 0.6rem; text-align: center; color: var(--text-secondary); font-weight: 600;">
-                                Boyut</th>
-                            <th
-                                style="padding: 0.6rem; text-align: center; color: var(--text-secondary); font-weight: 600;">
-                                Kota Değişimi</th>
-                            <th
-                                style="padding: 0.6rem; text-align: center; color: var(--text-secondary); font-weight: 600;">
-                                Filigran</th>
-                            <th
-                                style="padding: 0.6rem; text-align: right; color: var(--text-secondary); font-weight: 600;">
-                                Tarih</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for log in recent_export_logs %}
-                        <tr style="border-bottom: 1px solid var(--border-subtle);">
-                            <td style="padding: 0.6rem;">
-                                <span
-                                    style="background: #fef3c7; color: #92400e; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">
-                                    {{ log.get_export_type_display }}
-                                </span>
-                            </td>
-                            <td
-                                style="padding: 0.6rem; color: var(--text-main); text-transform: uppercase; font-weight: 600;">
-                                {{ log.format }}
-                            </td>
-                            <td style="padding: 0.6rem; text-align: center; color: var(--text-main); font-weight: 500;">
-                                {{ log.file_size_mb|floatformat:2 }} MB
-                            </td>
-                            <td
-                                style="padding: 0.6rem; text-align: center; color: var(--text-secondary); font-size: 0.85rem;">
-                                {{ log.quota_before_mb|floatformat:2 }} → {{ log.quota_after_mb|floatformat:2 }} MB
-                            </td>
-                            <td style="padding: 0.6rem; text-align: center;">
-                                {% if log.watermark_applied %}
-                                <span style="color: #059669;">✓</span>
-                                {% else %}
-                                <span style="color: #dc2626;">✗</span>
-                                {% endif %}
-                            </td>
-                            <td
-                                style="padding: 0.6rem; text-align: right; color: var(--text-secondary); font-size: 0.85rem;">
-                                {{ log.created_at|date:"d.m H:i" }}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% endif %}
-
-            {% if not recent_query_logs and not recent_export_logs %}
-            <div
-                style="text-align: center; padding: 3rem 1rem; background: var(--bg-surface-hover); border-radius: 8px;">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
-                <h3 style="color: var(--text-main); margin-bottom: 0.5rem;">Henüz Aktivite Yok</h3>
-                <p style="color: var(--text-secondary); margin: 0;">
-                    Arama yaptığınızda veya dosya export ettiğinizde aktiviteleriniz burada görünecek.
-                </p>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Upgrade CTA (if not max role) -->
-    {% if not user.is_superuser and profile.role == 'registered' %}
-    <div class="card" style="margin-top: 2rem; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none;">
-        <div class="card-body" style="padding: 2rem; text-align: center;">
-            <h3 style="color: white; font-size: 1.5rem; margin-bottom: 1rem;">
-                ✨ Daha Fazla Erişim İçin Hesabınızı Yükseltin
-            </h3>
-            <p style="color: rgba(255,255,255,0.9); margin-bottom: 1.5rem;">
-                Doğrulanmış araştırmacı olarak günlük 1000 sorgu hakkı ve aylık 100MB dışa aktarma kotası kazanın.
-            </p>
-            <a href="mailto:support@corpusio.org?subject=Hesap Doğrulama Talebi" class="btn"
-                style="background: white; color: #3b82f6; padding: 0.75rem 2rem; border-radius: 6px; text-decoration: none; font-weight: 600;">
-                Başvuru Yap →
-            </a>
-        </div>
-    </div>
-    {% endif %}
 </div>
 
 <style>
-    .role-badge {
-        display: inline-block;
+    /* Modern Profile Page Styles */
+    .profile-page-wrapper {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0;
     }
 
-    .role-registered {
-        background: #dbeafe;
-        color: #1e40af;
+    /* Profile Hero Section */
+    .profile-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        border-radius: 24px;
+        padding: 3rem 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+        position: relative;
+        overflow: hidden;
     }
 
-    .role-verified {
-        background: #d1fae5;
-        color: #065f46;
+    .profile-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+        pointer-events: none;
     }
 
-    .role-developer {
-        background: #fef3c7;
-        color: #92400e;
+    .profile-hero-content {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        position: relative;
+        z-index: 1;
     }
 
-    .role-admin {
-        background: #fce7f3;
-        color: #9f1239;
+    .profile-avatar-large {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     }
 
-    .btn {
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        border: none;
-        cursor: pointer;
-        font-weight: 500;
-        transition: all 0.2s;
-    }
-
-    .btn-primary {
-        background: #3b82f6;
+    .profile-avatar-large .material-icons {
+        font-size: 60px;
         color: white;
     }
 
-    .btn-primary:hover {
-        background: #2563eb;
-        transform: translateY(-1px);
+    .profile-hero-info {
+        flex: 1;
     }
 
-    .btn-secondary {
-        background: var(--bg-surface-hover);
-        color: var(--text-main);
-        border: 1px solid var(--border-subtle);
+    .profile-hero-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 0.5rem 0;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
 
-    .btn-secondary:hover {
+    .profile-hero-email {
+        font-size: 1.1rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0 0 1rem 0;
+    }
+
+    .profile-hero-badges {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .profile-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1.25rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .badge-admin {
+        background: rgba(139, 92, 246, 0.3);
+        color: white;
+    }
+
+    .badge-registered {
+        background: rgba(59, 130, 246, 0.3);
+        color: white;
+    }
+
+    .badge-verified {
+        background: rgba(16, 185, 129, 0.3);
+        color: white;
+    }
+
+    .badge-developer {
+        background: rgba(245, 158, 11, 0.3);
+        color: white;
+    }
+
+    /* Profile Container */
+    .profile-container {
+        padding: 0 1rem 2rem;
+    }
+
+    /* Quick Actions Bar */
+    .quick-actions-bar {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .quick-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
         background: var(--bg-surface);
+        border: 2px solid var(--border-subtle);
+        border-radius: 12px;
+        color: var(--text-main);
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .quick-action-btn.primary {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+        border-color: transparent;
+    }
+
+    .quick-action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+    }
+
+    .quick-action-btn.primary:hover {
+        box-shadow: 0 12px 35px rgba(139, 92, 246, 0.4);
+    }
+
+    .quick-action-btn .material-icons {
+        font-size: 20px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    /* Modern Cards */
+    .modern-card {
+        background: var(--bg-surface);
+        border-radius: 20px;
+        padding: 2rem;
+        border: 1px solid var(--border-subtle);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .modern-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--border-subtle);
+    }
+
+    .card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .card-icon .material-icons {
+        color: white;
+        font-size: 24px;
+    }
+
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin: 0;
+    }
+
+    .card-content {
+        /* Handled by specific card types */
+    }
+
+    /* Detail Rows */
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .detail-value {
+        font-size: 0.95rem;
+        color: var(--text-main);
+        font-weight: 600;
+    }
+
+    .detail-link {
+        color: #6366f1;
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.2s;
+    }
+
+    .detail-link:hover {
+        color: #8b5cf6;
+    }
+
+    /* Quota Card */
+    .quota-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .quota-visual-modern {
+        position: relative;
+        width: 160px;
+        height: 160px;
+        margin-bottom: 1.5rem;
+    }
+
+    .circular-progress {
+        transform: rotate(-90deg);
+        width: 100%;
+        height: 100%;
+    }
+
+    .progress-bg {
+        fill: none;
+        stroke: rgba(139, 92, 246, 0.1);
+        stroke-width: 10;
+    }
+
+    .progress-bar {
+        fill: none;
+        stroke-width: 10;
+        stroke-linecap: round;
+        stroke-dasharray: 100;
+        transition: stroke-dasharray 1s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: progressPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes progressPulse {
+
+        0%,
+        100% {
+            stroke-width: 10;
+        }
+
+        50% {
+            stroke-width: 12;
+        }
+    }
+
+    .quota-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .quota-percent {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6, #d946ef);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .quota-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+    }
+
+    .quota-details {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        width: 100%;
+    }
+
+    .quota-stat {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: rgba(139, 92, 246, 0.05);
+        border-radius: 12px;
+        border: 1px solid rgba(139, 92, 246, 0.1);
+    }
+
+    .quota-stat .material-icons {
+        font-size: 24px;
+        color: #8b5cf6;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    /* Usage Statistics */
+    .unlimited-notice {
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .unlimited-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .unlimited-notice h3 {
+        font-size: 1.5rem;
+        color: var(--text-main);
+        margin-bottom: 0.5rem;
+    }
+
+    .unlimited-notice p {
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .stat-section {
+        padding: 1.5rem 0;
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .stat-section:last-child {
+        border-bottom: none;
+    }
+
+    .stat-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .stat-icon {
+        color: #8b5cf6;
+        font-size: 28px;
+    }
+
+    .stat-info {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .stat-name {
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .stat-values {
+        font-size: 1rem;
+        color: var(--text-main);
+        font-weight: 700;
+    }
+
+    .modern-progress {
+        height: 10px;
+        background: rgba(139, 92, 246, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progress-fill {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .progress-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% {
+            transform: translateX(-100%);
+        }
+
+        100% {
+            transform: translateX(100%);
+        }
+    }
+
+    .query-fill {
+        background: linear-gradient(90deg, #3b82f6, #2563eb);
+    }
+
+    .export-fill {
+        background: linear-gradient(90deg, #10b981, #059669);
+    }
+
+    .api-fill {
+        background: linear-gradient(90deg, #f59e0b, #d97706);
+    }
+
+    .stat-reset {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin: 0.5rem 0 0 0;
+    }
+
+    /* Watermark Card */
+    .watermark-card {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
+        border-color: rgba(99, 102, 241, 0.2);
+    }
+
+    .watermark-setting {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+    }
+
+    .watermark-info {
+        flex: 1;
+    }
+
+    .watermark-title {
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 0.5rem;
+    }
+
+    .watermark-desc {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin: 0;
     }
 
     /* Toggle Switch */
     .toggle-switch {
         position: relative;
         display: inline-block;
-        width: 52px;
-        height: 28px;
+        width: 56px;
+        height: 30px;
+        flex-shrink: 0;
     }
 
     .toggle-switch input {
@@ -530,41 +786,175 @@
         height: 0;
     }
 
-    .slider {
+    .toggle-switch .slider {
         position: absolute;
         cursor: pointer;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background-color: #cbd5e1;
-        transition: 0.3s;
-        border-radius: 28px;
+        background: #cbd5e1;
+        border-radius: 30px;
+        transition: 0.4s;
     }
 
-    .slider:before {
+    .toggle-switch .slider:before {
         position: absolute;
         content: "";
-        height: 20px;
-        width: 20px;
+        height: 22px;
+        width: 22px;
         left: 4px;
         bottom: 4px;
-        background-color: white;
-        transition: 0.3s;
+        background: white;
         border-radius: 50%;
+        transition: 0.4s;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     }
 
-    input:checked+.slider {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
+    .toggle-switch input:checked+.slider {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
     }
 
-    input:checked+.slider:before {
-        transform: translateX(24px);
+    .toggle-switch input:checked+.slider:before {
+        transform: translateX(26px);
     }
 
+    /* API Card */
+    .api-key-box {
+        background: rgba(139, 92, 246, 0.05);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        word-break: break-all;
+    }
+
+    .api-key-box code {
+        color: var(--text-main);
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+    }
+
+    .api-warning {
+        font-size: 0.85rem;
+        color: #f59e0b;
+        margin: 1rem 0 0 0;
+    }
+
+    .api-notice {
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    /* Buttons */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-primary .material-icons {
+        font-size: 18px;
+    }
+
+    /* Upgrade Card */
+    .upgrade-card {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        border: none;
+        color: white;
+    }
+
+    .upgrade-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 60px rgba(99, 102, 241, 0.4);
+    }
+
+    .upgrade-content {
+        text-align: center;
+    }
+
+    .upgrade-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .upgrade-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 1rem 0;
+    }
+
+    .upgrade-desc {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0 0 1.5rem 0;
+    }
+
+    .btn-upgrade {
+        background: white;
+        color: #6366f1;
+        padding: 0.75rem 2rem;
+    }
+
+    .btn-upgrade:hover {
+        background: rgba(255, 255, 255, 0.95);
+        transform: scale(1.05);
+    }
+
+    /* Responsive Design */
     @media (max-width: 768px) {
-        .profile-grid {
-            grid-template-columns: 1fr !important;
+        .profile-hero {
+            padding: 2rem 1.5rem;
+        }
+
+        .profile-hero-content {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .profile-hero-title {
+            font-size: 2rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .quick-actions-bar {
+            flex-direction: column;
+        }
+
+        .quick-action-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .watermark-setting {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .stat-info {
+            flex-direction: column;
+            align-items: flex-start;
         }
     }
 </style>
@@ -573,7 +963,11 @@
     function copyApiKey() {
         const apiKey = document.getElementById('api-key').textContent;
         navigator.clipboard.writeText(apiKey).then(() => {
-            alert('API anahtarı panoya kopyalandı!');
+            if (typeof toastSuccess === 'function') {
+                toastSuccess('API anahtarı panoya kopyalandı!');
+            } else {
+                alert('API anahtarı panoya kopyalandı!');
+            }
         });
     }
 </script>
