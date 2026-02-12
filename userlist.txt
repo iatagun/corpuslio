@@ -1,0 +1,7 @@
+# PgBouncer User Authentication
+# Format: "username" "password_hash"
+# Generate MD5 hash: echo -n "passwordusername" | md5sum
+# Example: corpuslio_user with password 'changeme'
+
+"corpuslio_user" "md5<YOUR_MD5_HASH_HERE>"
+"postgres" "md5<POSTGRES_MD5_HASH_HERE>"

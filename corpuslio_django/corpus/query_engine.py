@@ -274,7 +274,7 @@ class CorpusQueryEngine:
         use_lemma: bool = False,
         limit: int = 100
     ) -> List[Dict]:
-        """N-gram extraction.
+        """N-gram extraction with streaming to prevent memory issues.
         
         Args:
             n: N-gram size (2=bigram, 3=trigram)
@@ -284,19 +284,33 @@ class CorpusQueryEngine:
         
         Returns:
             List of n-grams with frequencies
+        
+        NOTE: This implementation uses database streaming to prevent memory
+        explosion with large corpora. For very large datasets (100M+ tokens),
+        consider pre-computing n-grams or using the engine layer.
         """
-        # Get all sentences
+        # Build base sentence queryset
         if self.documents:
-            sentences = Sentence.objects.filter(
+            sentences_qs = Sentence.objects.filter(
                 document_id__in=self.documents
-            ).prefetch_related('tokens')
+            )
         else:
-            sentences = Sentence.objects.all().prefetch_related('tokens')
+            sentences_qs = Sentence.objects.all()
         
         ngram_counts = {}
+        processed_sentences = 0
+        max_sentences = 10000  # Safety limit to prevent runaway queries
         
-        for sentence in sentences:
-            tokens = list(sentence.tokens.order_by('index'))
+        # Use iterator() for memory-efficient streaming
+        # chunk_size=1000 processes 1000 sentences at a time
+        for sentence in sentences_qs.iterator(chunk_size=1000):
+            if processed_sentences >= max_sentences:
+                break
+            
+            # Get tokens for this sentence only (not prefetched)
+            tokens = list(Token.objects.filter(
+                sentence=sentence
+            ).order_by('index').only('form', 'lemma', 'upos'))
             
             # Generate n-grams
             for i in range(len(tokens) - n + 1):
@@ -317,6 +331,8 @@ class CorpusQueryEngine:
                 if ngram_str not in ngram_counts:
                     ngram_counts[ngram_str] = 0
                 ngram_counts[ngram_str] += 1
+            
+            processed_sentences += 1
         
         # Filter and sort
         results = [
