@@ -1045,7 +1045,8 @@ def profile_view(request):
     query_limit = profile.get_query_limit()
     query_percentage = (profile.queries_today / query_limit * 100) if query_limit else 0
     
-    export_percentage = (profile.export_used_mb / profile.export_quota_mb * 100) if profile.export_quota_mb > 0 else 0
+    export_quota = profile.get_export_quota()
+    export_percentage = (profile.export_used_mb / export_quota * 100) if export_quota > 0 else 0
     
     # Compute next query reset date and helper flag for display
     from datetime import date, timedelta
@@ -1068,6 +1069,7 @@ def profile_view(request):
         'profile': profile,
         'query_limit': query_limit,
         'query_percentage': query_percentage,
+        'export_quota': export_quota,
         'query_reset': next_reset_date,
         'query_reset_is_tomorrow': query_reset_is_tomorrow,
         'export_percentage': export_percentage,

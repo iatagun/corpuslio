@@ -202,9 +202,55 @@ class UserProfileAdmin(admin.ModelAdmin):
     get_verification_status.short_description = 'Doğrulama'
     
     def get_export_usage(self, obj):
-        percentage = (obj.export_used_mb / obj.export_quota_mb * 100) if obj.export_quota_mb > 0 else 0
-        return f"{obj.export_used_mb:.2f} / {obj.export_quota_mb} MB ({percentage:.0f}%)"
+        quota = obj.get_export_quota()
+        if quota == 0:
+            return f"{obj.export_used_mb:.2f} MB (Sınırsız)"
+        percentage = (obj.export_used_mb / quota * 100) if quota > 0 else 0
+        return f"{obj.export_used_mb:.2f} / {quota} MB ({percentage:.0f}%)"
     get_export_usage.short_description = 'Export Kullanımı'
+    
+    def save_model(self, request, obj, form, change):
+        """Update quota when role changes."""
+        if change and 'role' in form.changed_data:
+            # Role changed, update quota
+            obj.update_quota_for_role()
+        super().save_model(request, obj, form, change)
+    
+    actions = ['approve_verification', 'reject_verification', 'reset_quotas']
+    
+    def approve_verification(self, request, queryset):
+        """Approve researcher verification and upgrade to verified role."""
+        from django.utils import timezone
+        count = 0
+        for profile in queryset:
+            if profile.verification_status != 'approved':
+                profile.verification_status = 'approved'
+                profile.verified_at = timezone.now()
+                profile.verified_by = request.user
+                profile.role = 'verified'
+                profile.save()
+                profile.update_quota_for_role()  # Update quota for new role
+                count += 1
+        self.message_user(request, f'{count} araştırmacı onaylandı ve verified rolüne yükseltildi.')
+    approve_verification.short_description = 'Seçili araştırmacıları onayla (verified role)'
+    
+    def reject_verification(self, request, queryset):
+        """Reject researcher verification."""
+        count = queryset.update(verification_status='rejected', verified_at=None, verified_by=None)
+        self.message_user(request, f'{count} doğrulama talebi reddedildi.')
+    reject_verification.short_description = 'Seçili doğrulama taleplerini reddet'
+    
+    def reset_quotas(self, request, queryset):
+        """Reset export and query quotas for selected users."""
+        from decimal import Decimal
+        count = 0
+        for profile in queryset:
+            profile.export_used_mb = Decimal('0.00')
+            profile.queries_today = 0
+            profile.save(update_fields=['export_used_mb', 'queries_today'])
+            count += 1
+        self.message_user(request, f'{count} kullanıcının kotası sıfırlandı.')
+    reset_quotas.short_description = 'Seçili kullanıcıların kotalarını sıfırla'
 
 
 @admin.register(QueryLog)

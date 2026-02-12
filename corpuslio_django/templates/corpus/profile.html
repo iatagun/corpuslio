@@ -63,6 +63,27 @@
                     <h3 class="card-title">Hesap Bilgileri</h3>
                 </div>
                 <div class="card-content">
+                    <div class="detail-row">
+                        <span class="detail-label">Rol</span>
+                        <span class="detail-value">
+                            {% if profile.role == 'admin' %}
+                            <span style="background:linear-gradient(90deg,#ef4444,#dc2626); color:#fff; padding:0.25rem 0.65rem; border-radius:8px; font-weight:700; font-size:0.85rem;">👑 {{ profile.get_role_display }}</span>
+                            {% elif profile.role == 'verified' %}
+                            <span style="background:linear-gradient(90deg,#10b981,#059669); color:#fff; padding:0.25rem 0.65rem; border-radius:8px; font-weight:700; font-size:0.85rem;">✓ {{ profile.get_role_display }}</span>
+                            {% elif profile.role == 'developer' %}
+                            <span style="background:linear-gradient(90deg,#f59e0b,#d97706); color:#fff; padding:0.25rem 0.65rem; border-radius:8px; font-weight:700; font-size:0.85rem;">⚡ {{ profile.get_role_display }}</span>
+                            {% else %}
+                            <span style="background:linear-gradient(90deg,#3b82f6,#2563eb); color:#fff; padding:0.25rem 0.65rem; border-radius:8px; font-weight:700; font-size:0.85rem;">{{ profile.get_role_display }}</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Limitler</span>
+                        <span class="detail-value" style="display:flex; flex-direction:column; gap:0.25rem; font-size:0.85rem;">
+                            <span style="color:var(--text-secondary);">🔍 {% if query_limit == 0 %}Sınırsız{% else %}{{ query_limit }}{% endif %} sorgu/gün</span>
+                            <span style="color:var(--text-secondary);">💾 {% if export_quota == 0 %}Sınırsız{% else %}{{ export_quota }} MB{% endif %}/ay</span>
+                        </span>
+                    </div>
                     {% if profile.role == 'verified' or profile.role == 'developer' or profile.role == 'admin' %}
                     {% if profile.institution %}
                     <div class="detail-row">
@@ -117,7 +138,7 @@
                         <span class="material-icons">storage</span>
                         <div>
                             <div class="stat-label">Limit</div>
-                            <div class="stat-value">{{ profile.export_quota_mb }} MB</div>
+                            <div class="stat-value">{% if export_quota == 0 %}Sınırsız{% else %}{{ export_quota }} MB{% endif %}</div>
                         </div>
                     </div>
                 </div>
@@ -165,7 +186,7 @@
                         <span class="stat-icon material-icons">cloud_download</span>
                         <div class="stat-info">
                             <span class="stat-name">Aylık Dışa Aktarma Kotası</span>
-                            <span class="stat-values">{{ profile.export_used_mb|floatformat:2 }} MB / {{ profile.export_quota_mb|default_if_none:"—" }}</span>
+                            <span class="stat-values">{{ profile.export_used_mb|floatformat:2 }} MB / {% if export_quota == 0 %}Sınırsız{% else %}{{ export_quota }} MB{% endif %}</span>
                         </div>
                     </div>
                     <div class="modern-progress">

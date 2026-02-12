@@ -15,6 +15,7 @@ from django.utils import timezone
 
 # Import models for logging/quotas
 from .models import ExportLog, UserProfile
+from .permissions import has_role
 
 
 def generate_citation(request_user=None):
@@ -30,9 +31,16 @@ def generate_citation(request_user=None):
 
 
 def export_concordance_csv(results, query, user=None):
-    """Export KWIC concordance results to CSV with watermark."""
+    """Export KWIC concordance results to CSV with watermark.
+    
+    For verified researchers: includes full linguistic annotations (morphology, dependency).
+    For regular users: basic lemma and POS.
+    """
     output = StringIO()
     writer = csv.writer(output)
+    
+    # Check if user is verified researcher
+    is_verified = user and has_role(user, 'verified')
     
     # Watermark header
     citation = generate_citation(user)
@@ -41,22 +49,47 @@ def export_concordance_csv(results, query, user=None):
     writer.writerow([f'# Arama Sorgusu: {query}'])
     writer.writerow([f'# Toplam Sonuç: {len(results)}'])
     writer.writerow([f'# Export Tarihi: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'])
+    if is_verified:
+        writer.writerow(['# Format: Tam Dilbilimsel Açıklamalar (Doğrulanmış Araştırmacı)'])
     writer.writerow([])
     
-    # Data headers
-    writer.writerow(['Sol Bağlam', 'Anahtar Kelime', 'Sağ Bağlam', 'Lemma', 'POS', 'Belge', 'Cümle ID'])
+    # Data headers - extended for verified researchers
+    if is_verified:
+        writer.writerow([
+            'Sol Bağlam', 'Anahtar Kelime', 'Sağ Bağlam', 
+            'Lemma', 'UPOS', 'XPOS',
+            'Morfolojik Özellikler', 'Dependency İlişkisi', 'Head ID',
+            'Belge', 'Cümle ID'
+        ])
+    else:
+        writer.writerow(['Sol Bağlam', 'Anahtar Kelime', 'Sağ Bağlam', 'Lemma', 'POS', 'Belge', 'Cümle ID'])
     
     # Data rows
     for result in results:
-        writer.writerow([
-            result.get('left', ''),
-            result.get('keyword', ''),
-            result.get('right', ''),
-            result.get('lemma', ''),
-            result.get('pos', ''),
-            result.get('document', ''),
-            result.get('sentence_id', '')
-        ])
+        if is_verified:
+            writer.writerow([
+                result.get('left', ''),
+                result.get('keyword', ''),
+                result.get('right', ''),
+                result.get('lemma', ''),
+                result.get('upos', result.get('pos', '')),
+                result.get('xpos', ''),
+                result.get('feats', ''),
+                result.get('deprel', ''),
+                result.get('head', ''),
+                result.get('document', ''),
+                result.get('sentence_id', '')
+            ])
+        else:
+            writer.writerow([
+                result.get('left', ''),
+                result.get('keyword', ''),
+                result.get('right', ''),
+                result.get('lemma', ''),
+                result.get('pos', ''),
+                result.get('document', ''),
+                result.get('sentence_id', '')
+            ])
     
     # Finalize bytes (include UTF-8 BOM) and log export
     content_str = output.getvalue()
@@ -66,8 +99,12 @@ def export_concordance_csv(results, query, user=None):
 
 
 def export_concordance_json(results, query, user=None):
-    """Export KWIC concordance results to JSON with metadata."""
+    """Export KWIC concordance results to JSON with metadata.
+    
+    For verified researchers: includes annotation_level field and full linguistic data.
+    """
     citation = generate_citation(user)
+    is_verified = user and has_role(user, 'verified')
     
     data = {
         'metadata': {
@@ -76,7 +113,16 @@ def export_concordance_json(results, query, user=None):
             'query': query,
             'total_results': len(results),
             'export_date': datetime.now().isoformat(),
-            'note': 'Bu veri akademik amaçlarla kullanılabilir. Lütfen yukarıdaki atıf bilgisini kullanın.'
+            'annotation_level': 'full_linguistic' if is_verified else 'basic',
+            'user_role': 'verified_researcher' if is_verified else 'registered',
+            'note': 'Bu veri akademik amaçlarla kullanılabilir. Lütfen yukarıdaki atıf bilgisini kullanın.',
+            'schema': {
+                'upos': 'Universal POS tag (CoNLL-U)',
+                'xpos': 'Language-specific POS tag',
+                'feats': 'Morphological features (Case, Number, Person, etc.)',
+                'deprel': 'Dependency relation',
+                'head': 'Head token ID in dependency tree'
+            } if is_verified else None
         },
         'results': results
     }
@@ -88,9 +134,14 @@ def export_concordance_json(results, query, user=None):
 
 
 def export_collocation_csv(collocates, keyword, user=None):
-    """Export collocation analysis to CSV."""
+    """Export collocation analysis to CSV.
+    
+    For verified researchers: includes POS tags and lemma forms.
+    """
     output = StringIO()
     writer = csv.writer(output)
+    
+    is_verified = user and has_role(user, 'verified')
     
     # Watermark
     citation = generate_citation(user)
@@ -99,20 +150,37 @@ def export_collocation_csv(collocates, keyword, user=None):
     writer.writerow([f'# Anahtar Kelime: {keyword}'])
     writer.writerow([f'# Toplam Kollokat: {len(collocates)}'])
     writer.writerow([f'# Export Tarihi: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'])
+    if is_verified:
+        writer.writerow(['# Format: Lemma ve POS Bilgili (Doğrulanmış Araştırmacı)'])
     writer.writerow([])
     
     # Headers
-    writer.writerow(['Sıra', 'Kollokat', 'Frekans', 'Sol Pozisyon', 'Sağ Pozisyon'])
+    if is_verified:
+        writer.writerow(['Sıra', 'Kollokat', 'Lemma', 'POS', 'Frekans', 'Sol Pozisyon', 'Sağ Pozisyon', 'MI Skoru'])
+    else:
+        writer.writerow(['Sıra', 'Kollokat', 'Frekans', 'Sol Pozisyon', 'Sağ Pozisyon'])
     
     # Data
     for idx, coll in enumerate(collocates, 1):
-        writer.writerow([
-            idx,
-            coll.get('word', ''),
-            coll.get('frequency', 0),
-            coll.get('left_count', 0),
-            coll.get('right_count', 0)
-        ])
+        if is_verified:
+            writer.writerow([
+                idx,
+                coll.get('word', ''),
+                coll.get('lemma', ''),
+                coll.get('pos', ''),
+                coll.get('frequency', 0),
+                coll.get('left_count', 0),
+                coll.get('right_count', 0),
+                coll.get('mi_score', '')
+            ])
+        else:
+            writer.writerow([
+                idx,
+                coll.get('word', ''),
+                coll.get('frequency', 0),
+                coll.get('left_count', 0),
+                coll.get('right_count', 0)
+            ])
     
     content_str = output.getvalue()
     content_bytes = ('\ufeff' + content_str).encode('utf-8')
@@ -121,9 +189,14 @@ def export_collocation_csv(collocates, keyword, user=None):
 
 
 def export_ngram_csv(ngrams, n, user=None):
-    """Export n-gram analysis to CSV."""
+    """Export n-gram analysis to CSV.
+    
+    For verified researchers: includes lemma and POS tag breakdown for each n-gram.
+    """
     output = StringIO()
     writer = csv.writer(output)
+    
+    is_verified = user and has_role(user, 'verified')
     
     # Watermark
     citation = generate_citation(user)
@@ -131,18 +204,32 @@ def export_ngram_csv(ngrams, n, user=None):
     writer.writerow([f'# {citation}'])
     writer.writerow([f'# Toplam {n}-gram: {len(ngrams)}'])
     writer.writerow([f'# Export Tarihi: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'])
+    if is_verified:
+        writer.writerow(['# Format: Lemma ve POS Bilgili (Doğrulanmış Araştırmacı)'])
     writer.writerow([])
     
     # Headers
-    writer.writerow(['Sıra', 'N-gram', 'Frekans'])
+    if is_verified:
+        writer.writerow(['Sıra', 'N-gram', 'Frekans', 'Lemma Dizisi', 'POS Dizisi'])
+    else:
+        writer.writerow(['Sıra', 'N-gram', 'Frekans'])
     
     # Data
     for idx, ngram in enumerate(ngrams, 1):
-        writer.writerow([
-            idx,
-            ngram.get('ngram', ''),
-            ngram.get('frequency', 0)
-        ])
+        if is_verified:
+            writer.writerow([
+                idx,
+                ngram.get('ngram', ''),
+                ngram.get('frequency', 0),
+                ngram.get('lemma_sequence', ''),
+                ngram.get('pos_sequence', '')
+            ])
+        else:
+            writer.writerow([
+                idx,
+                ngram.get('ngram', ''),
+                ngram.get('frequency', 0)
+            ])
     
     content_str = output.getvalue()
     content_bytes = ('\ufeff' + content_str).encode('utf-8')
@@ -151,9 +238,14 @@ def export_ngram_csv(ngrams, n, user=None):
 
 
 def export_frequency_csv(frequencies, user=None):
-    """Export word frequency list to CSV."""
+    """Export word frequency list to CSV.
+    
+    For verified researchers: includes POS tag distribution.
+    """
     output = StringIO()
     writer = csv.writer(output)
+    
+    is_verified = user and has_role(user, 'verified')
     
     # Watermark
     citation = generate_citation(user)
@@ -161,18 +253,31 @@ def export_frequency_csv(frequencies, user=None):
     writer.writerow([f'# {citation}'])
     writer.writerow([f'# Toplam Token: {len(frequencies)}'])
     writer.writerow([f'# Export Tarihi: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'])
+    if is_verified:
+        writer.writerow(['# Format: POS Etiketli (Doğrulanmış Araştırmacı)'])
     writer.writerow([])
     
     # Headers
-    writer.writerow(['Sıra', 'Kelime/Lemma', 'Frekans'])
+    if is_verified:
+        writer.writerow(['Sıra', 'Kelime/Lemma', 'Frekans', 'POS Etiketi'])
+    else:
+        writer.writerow(['Sıra', 'Kelime/Lemma', 'Frekans'])
     
     # Data
     for idx, freq in enumerate(frequencies, 1):
-        writer.writerow([
-            idx,
-            freq.get('word', ''),
-            freq.get('frequency', 0)
-        ])
+        if is_verified:
+            writer.writerow([
+                idx,
+                freq.get('word', ''),
+                freq.get('frequency', 0),
+                freq.get('pos', '')
+            ])
+        else:
+            writer.writerow([
+                idx,
+                freq.get('word', ''),
+                freq.get('frequency', 0)
+            ])
     
     content_str = output.getvalue()
     content_bytes = ('\ufeff' + content_str).encode('utf-8')

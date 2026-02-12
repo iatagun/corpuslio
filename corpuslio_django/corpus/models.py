@@ -108,9 +108,9 @@ class UserProfile(models.Model):
     
     # Export quotas
     export_quota_mb = models.IntegerField(
-        default=5,
+        default=10,
         verbose_name="Aylık Export Kotası (MB)",
-        help_text="Registered: 5MB, Verified: 100MB"
+        help_text="Registered: 10MB, Verified: 100MB, Developer: 500MB"
     )
     export_used_mb = models.DecimalField(
         max_digits=10,
@@ -228,7 +228,14 @@ class UserProfile(models.Model):
         return f"{self.user.username} ({self.get_role_display()})"
     
     def get_query_limit(self):
-        """Get daily query limit based on role."""
+        """Get daily query limit based on role.
+        
+        Role-based limits:
+        - registered: 100 queries/day (basic access)
+        - verified: 1000 queries/day (researcher tier)
+        - developer: 10000 queries/day (API tier)
+        - admin: unlimited
+        """
         # Superusers have unlimited queries
         if self.user.is_superuser:
             return 0  # unlimited
@@ -236,10 +243,10 @@ class UserProfile(models.Model):
         limits = {
             'registered': 100,
             'verified': 1000,
-            'developer': 0,  # unlimited (rate-limited by API)
+            'developer': 10000,
             'admin': 0,      # unlimited
         }
-        return limits.get(self.role, 10)  # Default 10 for others
+        return limits.get(self.role, 50)  # Default 50 for others
     
     def can_query(self):
         """Check if user can make more queries today."""
@@ -258,7 +265,39 @@ class UserProfile(models.Model):
         if self.user.is_superuser:
             return True
         
-        return (self.export_used_mb + size_mb) <= self.export_quota_mb
+        # Get role-based quota
+        quota = self.get_export_quota()
+        if quota == 0:  # unlimited
+            return True
+            
+        return (self.export_used_mb + size_mb) <= quota
+    
+    def get_export_quota(self):
+        """Get monthly export quota (MB) based on role.
+        
+        Role-based quotas:
+        - registered: 10 MB/month (basic tier)
+        - verified: 100 MB/month (researcher tier)
+        - developer: 500 MB/month (API tier)
+        - admin: unlimited
+        """
+        if self.user.is_superuser:
+            return 0  # unlimited
+        
+        quotas = {
+            'registered': 10,
+            'verified': 100,
+            'developer': 500,
+            'admin': 0,  # unlimited
+        }
+        return quotas.get(self.role, 5)  # Default 5MB for others
+    
+    def update_quota_for_role(self):
+        """Update export_quota_mb when role changes."""
+        new_quota = self.get_export_quota()
+        if new_quota != 0:  # Don't update if unlimited
+            self.export_quota_mb = new_quota
+            self.save(update_fields=['export_quota_mb'])
     
     def increment_query_count(self):
         """Increment today's query count with automatic daily reset."""
