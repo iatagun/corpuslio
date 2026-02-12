@@ -147,8 +147,7 @@
                         <span class="stat-icon material-icons">search</span>
                         <div class="stat-info">
                             <span class="stat-name">Günlük Sorgu Limiti</span>
-                            <span class="stat-values">{{ profile.queries_today }} / {% if query_limit %}{{ query_limit
-                                }}{% else %}Sınırsız{% endif %}</span>
+                            <span class="stat-values">{{ profile.queries_today }} / {{ query_limit|default:"Sınırsız" }}</span>
                         </div>
                     </div>
                     {% if query_limit %}
@@ -166,8 +165,7 @@
                         <span class="stat-icon material-icons">cloud_download</span>
                         <div class="stat-info">
                             <span class="stat-name">Aylık Dışa Aktarma Kotası</span>
-                            <span class="stat-values">{{ profile.export_used_mb|floatformat:2 }} MB / {{
-                                profile.export_quota_mb }} MB</span>
+                            <span class="stat-values">{{ profile.export_used_mb|floatformat:2 }} MB / {{ profile.export_quota_mb|default_if_none:"—" }}</span>
                         </div>
                     </div>
                     <div class="modern-progress">
@@ -214,8 +212,7 @@
                             <p class="watermark-desc">Export dosyalarınızda CorpusLIO atıf bilgisi gösterilsin mi?</p>
                         </div>
                         <label class="toggle-switch">
-                            <input type="checkbox" id="enable_watermark" name="enable_watermark" {% if
-                                profile.enable_watermark %}checked{% endif %} onchange="this.form.submit()">
+                            <input type="checkbox" id="enable_watermark" name="enable_watermark" {% if profile.enable_watermark %}checked{% endif %} onchange="this.form.submit()">
                             <span class="slider"></span>
                         </label>
                     </div>
