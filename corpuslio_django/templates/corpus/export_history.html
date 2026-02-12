@@ -427,3 +427,46 @@
     </div>
 </div>
 {% endblock %}
+<script>
+    // Debug overlay + auto-toggle desktop/mobile export views
+    (function(){
+        try{
+            var dbg = document.getElementById('__viewport_debug');
+            if(!dbg){
+                dbg = document.createElement('div');
+                dbg.id = '__viewport_debug';
+                dbg.style.position = 'fixed';
+                dbg.style.bottom = '8px';
+                dbg.style.right = '8px';
+                dbg.style.background = 'rgba(0,0,0,0.6)';
+                dbg.style.color = '#fff';
+                dbg.style.padding = '6px 8px';
+                dbg.style.borderRadius = '6px';
+                dbg.style.fontSize = '12px';
+                dbg.style.zIndex = 99999;
+                dbg.style.pointerEvents = 'none';
+                document.body.appendChild(dbg);
+            }
+
+            var desktop = document.querySelector('.export-table-desktop');
+            var mobile = document.querySelector('.export-table-mobile');
+
+            function setView(){
+                var w = window.innerWidth || document.documentElement.clientWidth;
+                dbg.textContent = 'w:' + w + ' h:' + (window.innerHeight||document.documentElement.clientHeight) + ' dpr:' + (window.devicePixelRatio||1);
+                // If viewport is wider than 1024px, force desktop view
+                if(w > 1024){
+                    if(desktop) desktop.style.setProperty('display','block','important');
+                    if(mobile) mobile.style.setProperty('display','none','important');
+                } else {
+                    if(desktop) desktop.style.setProperty('display','none','important');
+                    if(mobile) mobile.style.setProperty('display','block','important');
+                }
+            }
+
+            setView();
+            window.addEventListener('resize', setView);
+            console.log('ExportHistory view toggler active');
+        }catch(e){ console.warn('ExportHistory toggler failed', e); }
+    })();
+</script>
