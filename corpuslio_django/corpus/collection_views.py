@@ -40,22 +40,29 @@ def create_collection_view(request):
         description = request.POST.get('description', '')
         doc_ids = request.POST.getlist('documents')
         
-        if name:
-            collection = Collection.objects.create(
-                name=name,
-                description=description
-            )
-            # assign ownership to the creating user
-            collection.owner = request.user
-            collection.save()
-            
-            if doc_ids:
-                collection.documents.set(Document.objects.filter(id__in=doc_ids))
-            
-            messages.success(request, f'✅ "{name}" koleksiyonu oluşturuldu!')
-            return redirect('corpus:collection_detail', coll_id=collection.id)
-        else:
+        if not name:
             messages.error(request, '❌ Koleksiyon adı gereklidir.')
+        elif not doc_ids:
+            messages.error(request, '❌ En az bir belge seçilmelidir.')
+        else:
+            # Check if selected documents have at least 1 word total
+            selected_docs = Document.objects.filter(id__in=doc_ids)
+            total_words = sum(doc.get_word_count() for doc in selected_docs)
+            
+            if total_words == 0:
+                messages.error(request, '❌ Seçilen belgeler en az 1 kelime içermelidir.')
+            else:
+                collection = Collection.objects.create(
+                    name=name,
+                    description=description
+                )
+                # assign ownership to the creating user
+                collection.owner = request.user
+                collection.save()
+                collection.documents.set(selected_docs)
+                
+                messages.success(request, f'✅ "{name}" koleksiyonu oluşturuldu!')
+                return redirect('corpus:collection_detail', coll_id=collection.id)
     
     documents = Document.objects.all()
     context = {
@@ -79,14 +86,23 @@ def edit_collection_view(request, coll_id):
         doc_ids = request.POST.getlist('documents')
 
         if not name:
-            messages.error(request, 'Koleksiyon adı gereklidir.')
+            messages.error(request, '❌ Koleksiyon adı gereklidir.')
+        elif not doc_ids:
+            messages.error(request, '❌ En az bir belge seçilmelidir.')
         else:
-            collection.name = name
-            collection.description = description
-            collection.save()
-            collection.documents.set(Document.objects.filter(id__in=doc_ids))
-            messages.success(request, f'✅ "{name}" koleksiyonu güncellendi!')
-            return redirect('corpus:collection_detail', coll_id=collection.id)
+            # Check if selected documents have at least 1 word total
+            selected_docs = Document.objects.filter(id__in=doc_ids)
+            total_words = sum(doc.get_word_count() for doc in selected_docs)
+            
+            if total_words == 0:
+                messages.error(request, '❌ Seçilen belgeler en az 1 kelime içermelidir.')
+            else:
+                collection.name = name
+                collection.description = description
+                collection.save()
+                collection.documents.set(selected_docs)
+                messages.success(request, f'✅ "{name}" koleksiyonu güncellendi!')
+                return redirect('corpus:collection_detail', coll_id=collection.id)
 
     documents = Document.objects.all()
     context = {

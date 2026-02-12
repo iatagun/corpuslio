@@ -103,8 +103,9 @@ def corpus_search_view(request):
         unique_docs = len(set(r.get('document', '') for r in results))
         execution_time = int((time.time() - start_time) * 1000)  # ms
     
-    # Get available collections, genres, authors
-    collections = CollectionService.objects.all()
+    # Get available collections, genres, authors (only show collections with documents)
+    from django.db.models import Count
+    collections = CollectionService.objects.annotate(doc_count=Count('documents')).filter(doc_count__gt=0)
     
     # Get unique genres and authors from CorpusMetadata.global_metadata JSONField
     from corpus.models import CorpusMetadata
@@ -181,8 +182,9 @@ def collocation_view(request):
         
         execution_time = int((time.time() - start_time) * 1000)
     
-    # Get available collections
-    collections = CollectionService.objects.all()
+    # Get available collections (only show collections with documents)
+    from django.db.models import Count
+    collections = CollectionService.objects.annotate(doc_count=Count('documents')).filter(doc_count__gt=0)
     
     context = {
         'keyword': keyword,
@@ -236,8 +238,9 @@ def ngram_view(request):
         
         execution_time = int((time.time() - start_time) * 1000)
     
-    # Get available collections
-    collections = CollectionService.objects.all()
+    # Get available collections (only show collections with documents)
+    from django.db.models import Count
+    collections = CollectionService.objects.annotate(doc_count=Count('documents')).filter(doc_count__gt=0)
     
     context = {
         'n': n,
@@ -295,8 +298,9 @@ def frequency_view(request):
         
         execution_time = int((time.time() - start_time) * 1000)
     
-    # Get available collections
-    collections = CollectionService.objects.all()
+    # Get available collections (only show collections with documents)
+    from django.db.models import Count
+    collections = CollectionService.objects.annotate(doc_count=Count('documents')).filter(doc_count__gt=0)
     
     context = {
         'use_lemma': use_lemma,

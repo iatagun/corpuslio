@@ -44,6 +44,16 @@ class Collection(models.Model):
             total += doc.get_word_count()
         return total
 
+    @property
+    def document_count(self):
+        """Compatibility property for templates expecting `document_count`."""
+        return self.get_document_count()
+
+    @property
+    def total_words(self):
+        """Compatibility property for templates expecting `total_words`."""
+        return self.get_total_words()
+
 
 class QueryHistory(models.Model):
     """Store user's search queries for history and favorites."""
